@@ -1,0 +1,14 @@
+Package: hutilsc
+Title: High-performance Functions For Atomic Vectors
+Version: 0.1.0
+Authors@R: 
+    person(given = "Hugh",
+           family = "Parsonage",
+           role = c("aut", "cre"),
+           email = "hugh.parsonage@gmail.com")
+Description: Sister of the 'hutilscpp' package, designed for better install time.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
