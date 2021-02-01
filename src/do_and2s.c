@@ -47,7 +47,9 @@ SEXP do_and_lgl_lgl(SEXP A, SEXP B, SEXP nThread) {
   int *restrict ansp = INTEGER(ans);
   const int * ap = LOGICAL(A);
   const int * bp = LOGICAL(B);
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads)
+#endif 
   for (R_xlen_t i = 0; i < AN; ++i) {
     ansp[i] = ap[i] && bp[i];
   }
@@ -317,8 +319,9 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
     }
     
     // both ordinary between
-    
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads)
+#endif
     for (R_xlen_t i = 0; i < N; ++i) {
       int x1pi = x1p[i];
       int x2pi = x2p[i];
@@ -335,8 +338,9 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
       xlength(y1) == 1 && xlength(y2) == 1) {
     const int y_1 = asInteger(y1);
     const int y_2 = asInteger(y2);
-    
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads)
+#endif
     for (R_xlen_t i = 0; i < N; ++i) {
       int o = 1;
       int x1pi = x1p[i];

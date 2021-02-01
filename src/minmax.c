@@ -1,6 +1,5 @@
 #include "hutilsc.h"
 
-
 SEXP do_minmax(SEXP x, SEXP emptyResult, SEXP nThread) {
   R_xlen_t N = xlength(x);
   if (N == 0) {
@@ -13,7 +12,9 @@ SEXP do_minmax(SEXP x, SEXP emptyResult, SEXP nThread) {
     const int *xp = INTEGER(x);
     int xmin = xp[0];
     int xmax = xp[0];
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nthreads) reduction(min : xmin) reduction(max : xmax)
+#endif
     for (R_xlen_t i = 1; i < N; ++i) {
       int xi = xp[i];
       bool nochange = xi >= xmin && xi <= xmax;

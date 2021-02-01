@@ -1,8 +1,4 @@
 #include "hutilsc.h"
-
-
-
-
  
 #define for_weq(EXPR)                                          \
 for (int i = 0; i < n; ++i) {                                  \
