@@ -373,6 +373,65 @@ SEXP lookup4_char(SEXP x) {
   return ans;
 }
 
+SEXP pad0(SEXP x, SEXP width) {
+  R_xlen_t N = xlength(x);
+  const int w = asInteger(width);
+  SEXP ans = PROTECT(allocVector(STRSXP, N));
+  for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    int strleni = strlen(xi);
+    if (strleni >= w) {
+      SET_STRING_ELT(ans, i, mkCharCE(xi, CE_UTF8));
+      continue;
+    }
+    int z = w - strleni;
+    char * acp = malloc(w * sizeof(char));
+    for (int c = 0; c < z; ++c) {
+      acp[c] = '0';
+    }
+    for (int c = z; c <= w; ++c) {
+      acp[c] = xi[c - z];
+    }
+    const char * cacp = (const char *)acp;
+    SET_STRING_ELT(ans, i, mkCharCE(cacp, CE_UTF8));
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP tabulate_nchar18(SEXP x) {
+  R_xlen_t N = xlength(x);
+  if (TYPEOF(x) != STRSXP) {
+    error("x is not a character.");
+  }
+
+  
+  int counters[19][256] = {0};
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    for (int c = 0; c < 19; ++c) {
+      if (xi[c] == '\0') {
+        break;
+      }
+      unsigned int xci = (unsigned int)(xi[c]);
+      counters[c][xci] += 1;
+    }
+  }
+  SEXP ans = PROTECT(allocVector(INTSXP, 19));
+  int *restrict ansp = INTEGER(ans);
+  
+  for (int i = 0; i < 19; ++i) {
+    int n = 0;
+    for (int j = 0; j < 256; ++j) {
+      n += counters[i][j] > 0;
+    }
+    ansp[i] = n;
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
 SEXP encodeRecordID(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != STRSXP) {

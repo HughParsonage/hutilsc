@@ -41,3 +41,4 @@ vignettes/*.pdf
 !*.R
 !*.c
 !*.h
+!.github/*

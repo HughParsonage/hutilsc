@@ -1,7 +1,7 @@
 #include "hutilsc.h"
 
 
-SEXP is_binary_sexp(SEXP sx) {
+SEXP is_binary_call(SEXP sx) {
   if (TYPEOF(sx) != LANGSXP) {
     return_false;
   }

@@ -3,6 +3,7 @@
   if (is.null(getOption("hutilsc.nThread"))) {
     options("hutilsc.nThread" = 1L)
   }
+  utils::globalVariables(".")
   invisible(NULL)
 }
 

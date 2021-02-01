@@ -14,6 +14,8 @@
 #include <omp.h>
 #endif
 
+#define DEBUG 1
+
 // int op = !(eq || gt || lt) ? 0 : (eq ? (gt ? 2 : (lt ? 3 : 1)) : (gt ? 4 : 5));
 // != == >= <=  >  <
 //  0  1  2  3  4  5
@@ -46,6 +48,10 @@ return ans;                                                    \
 int do_op2M(SEXP op);
 
 float ssqrt_fast(float x);
-
-
+int radix_find(const int * k1p, const int a, int x0, int x1, int N);
+int linear_find(const int * k1, const int a, const int N);
+int linear_find_from(const int * k1, const int a, int from, const int N);
+void radix_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
+void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
+  
 #endif

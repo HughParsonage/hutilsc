@@ -1,5 +1,6 @@
 #' Package of miscellaneous functions in C
 #' @useDynLib hutilsc, .registration = TRUE
+#' @import data.table
 #' @importFrom utils packageName
 
 #' @keywords internal
