@@ -28,8 +28,8 @@ expect_equal(DT$color, c(1L, 1L, 1L, 1L, 2L, 2L))
 DT2 <- data.table(x = c(8L, 9L, 12L, 13L, 16L),
                   y = c(16L, 16L, 13L, 14L, 17L))
 setkey(DT2, x, y)
-color_subgraphs(DT, new_col = "color2")
-expect_equal(DT$color2, c(1L, 2L, 3L, 3L, 2L))
+color_subgraphs(DT2, new_col = "color2")
+expect_equal(DT2$color2, c(1L, 2L, 3L, 3L, 2L))
 
 
 
