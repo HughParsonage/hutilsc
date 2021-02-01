@@ -1,6 +1,6 @@
 #include "hutilsc.h"
 
-inline int pmax0_int_(int x) {
+int pmax0_int_(int x) {
   return (x > 0) ? x : 0;
 }
 
