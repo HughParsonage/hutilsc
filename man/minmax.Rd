@@ -4,12 +4,18 @@
 \alias{minmax}
 \title{Minimum and maximum}
 \usage{
-minmax(x, nThread = getOption("hutilsc.nThread", 1L))
+minmax(x, empty_result = NULL, nThread = getOption("hutilsc.nThread", 1L))
 }
 \arguments{
 \item{x}{A vector for which the minimum and maximum are desired.}
 
+\item{empty_result}{The return value if \code{length(x) == 0}.}
+
 \item{nThread}{An integer, the number of threads to use.}
+}
+\value{
+A length-two vector, the minimum and maximum of \code{x}. If
+\code{typeof(x)} is not supported, \code{NULL}.
 }
 \description{
 Minimum and maximum
