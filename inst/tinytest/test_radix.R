@@ -5,7 +5,7 @@ expect_equal(hutilsc:::test_radix_find(max(kilo1) + 1L, kilo1), length(kilo1) - 
 expect_equal(hutilsc:::test_radix_find_range(3L, kilo1), c(1L, 3L))
 
 kilo1_large_a <- 1:1e7
-expect_equal(hutilsc:::test_radix_find(1e6L, kilo1_large), 1e6L - 1L)
+expect_equal(hutilsc:::test_radix_find(1e6L, kilo1_large_a), 1e6L - 1L)
 kilo1_large_b <- rep(-5:100, each = 1001)
 expect_equal(hutilsc:::test_radix_find(9L, kilo1_large_b), 
              which.max(kilo1_large_b == 9L) - 1L)
