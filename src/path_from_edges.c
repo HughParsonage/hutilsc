@@ -172,7 +172,7 @@ int max_precendents(const int * k1, const R_xlen_t N) {
   return maxp;
 }
 
-SEXP color_graph(SEXP K1, SEXP K2) {
+SEXP do_color_graph(SEXP K1, SEXP K2) {
   // color graph using the colors 1,2,3
   // where each color defines a separate group
   const R_xlen_t N = xlength(K1);
@@ -190,7 +190,16 @@ SEXP color_graph(SEXP K1, SEXP K2) {
   }
   int color = 1;
   ansp[0] = 1;
+  R_xlen_t i0 = 0;
+  while (i0 < N && k1[i0] == k1[0]) {
+    ansp[i0] = 1;
+    int k2i0 = k2[i0];
+    ansp[k2i0] = 1;
+    ++i0;
+  }
+  
   for (R_xlen_t i = 0; i < N; ++i) {
+    
     if (ansp[i]) {
       R_xlen_t RR[2] = {-1, -1};
       radix_find_range(k2[i], k1, RR, N);

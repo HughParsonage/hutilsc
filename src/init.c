@@ -10,6 +10,7 @@
 /* .Call calls */
 extern SEXP do_and_lgl_int(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_and2s(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP do_color_graph(SEXP, SEXP);
 extern SEXP do_Decode3202(SEXP);
 extern SEXP do_Encode3202(SEXP);
 extern SEXP do_haversine_distance(SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -26,6 +27,7 @@ extern SEXP one_edge_dist(SEXP, SEXP, SEXP, SEXP);
 static const R_CallMethodDef CallEntries[] = {
     {"do_and_lgl_int",           (DL_FUNC) &do_and_lgl_int,           5},
     {"do_and2s",                 (DL_FUNC) &do_and2s,                 9},
+    {"do_color_graph",           (DL_FUNC) &do_color_graph,           2},
     {"do_Decode3202",            (DL_FUNC) &do_Decode3202,            1},
     {"do_Encode3202",            (DL_FUNC) &do_Encode3202,            1},
     {"do_haversine_distance",    (DL_FUNC) &do_haversine_distance,    5},
