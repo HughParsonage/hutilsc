@@ -1,5 +1,5 @@
 Package: hutilsc
-Title: High-performance Functions For Atomic Vectors
+Title: High-Performance Functions for Atomic Vectors
 Version: 0.2.0
 Authors@R: 
     person(given = "Hugh",

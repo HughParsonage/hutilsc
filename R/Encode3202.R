@@ -14,14 +14,14 @@
 #' @export
 
 Encode3202 <- function(x) {
-  .Call("Encode3202", x, PACKAGE = packageName())
+  .Call("do_Encode3202", x, PACKAGE = packageName())
 }
 
 #' @rdname Encode3202
 #' @export
 Decode3202 <- function(enc) {
   stopifnot(is.integer(enc))
-  .Call("Decode3202", enc, PACKAGE = packageName())
+  .Call("do_Decode3202", enc, PACKAGE = packageName())
 }
 
 #' @rdname Encode3202
@@ -39,5 +39,5 @@ Lookup4 <- function(enc) {
 #' @rdname Encode3202
 #' @export
 names2int <- function(x, y) {
-  .Call("names2int", x, y, PACKAGE = packageName())
+  .Call("do_names2int", x, y, PACKAGE = packageName())
 }
