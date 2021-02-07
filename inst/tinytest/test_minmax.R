@@ -11,3 +11,10 @@ expect_identical(minmax(integer(0), empty_result = c(Inf, -Inf)), c(Inf, -Inf))
 expect_identical(minmax(new.env()), NULL)
 
 
+expect_equal(wminmax(x), c(which.min(x), which.max(x)))
+expect_equal(wminmax(y), c(which.min(y), which.max(y)))
+expect_equal(wminmax(z), c(which.min(z), which.max(z)))
+
+
+
+

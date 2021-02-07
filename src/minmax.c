@@ -73,3 +73,119 @@ SEXP do_minmax(SEXP x, SEXP emptyResult, SEXP nThread) {
   }
   return R_NilValue;
 }
+
+void do_whichminmax_lgl(const int * x, R_xlen_t N,
+                        R_xlen_t * ansp) {
+  R_xlen_t wmin = 0;
+  R_xlen_t wmax = 0;
+  R_xlen_t i = 0;
+  
+  // Stop when x[wmin] = 0
+  // Stop when x[xmax] = 1;
+  // Continue when x[i] is NA
+  bool search4wmin = (x[0] != 0);
+  bool search4wmax = (x[0] != 0);
+  
+  while (++i < N && search4wmin && search4wmax) {
+    int xi = x[i];
+    if (xi == 1) {
+      wmax = i;
+      search4wmax = false;
+    } else if (xi == 0) {
+      wmin = i;
+      search4wmin = false;
+    }
+  }
+  ansp[0] = wmin;
+  ansp[1] = wmax;
+}
+
+void do_whichminmax_int(const int * x, R_xlen_t N, R_xlen_t * ansp) {
+  R_xlen_t wmin = 0, wmax = 0;
+  int xmin = x[0];
+  int xmax = x[0];
+  for (R_xlen_t i = 1; i < N; ++i) {
+    int xi = x[i];
+    if (xi < xmin) {
+      xmin = xi;
+      i = wmin;
+    } else if (xi > xmax) {
+      xmax = xi;
+      i = wmax;
+    }
+  }
+  ansp[0] = wmin;
+  ansp[1] = wmax;
+}
+
+void do_whichminmax_dbl(const double * x, R_xlen_t N, R_xlen_t * ansp) {
+  R_xlen_t wmin = 0, wmax = 0;
+  double xmin = x[0];
+  double xmax = x[0];
+  for (R_xlen_t i = 1; i < N; ++i) {
+    double xi = x[i];
+    if (xi < xmin) {
+      xmin = xi;
+      i = wmin;
+    } else if (xi > xmax) {
+      xmax = xi;
+      i = wmax;
+    }
+  }
+  ansp[0] = wmin;
+  ansp[1] = wmax;
+}
+
+SEXP do_whichminmax(SEXP x, SEXP nThread) {
+  
+  R_xlen_t N = xlength(x);
+  // Choose N - 1 since we want the minimum that satisfies.
+  R_xlen_t wmin = N;
+  R_xlen_t wmax = N;
+  R_xlen_t ansp[2] = {0, 0};
+  
+  if (TYPEOF(x) == LGLSXP) {
+    const int * xp = INTEGER(x);
+    do_whichminmax_lgl(xp, N, ansp);
+  } else if (TYPEOF(x) == INTSXP) {
+    const int * xp = INTEGER(x);
+    do_whichminmax_int(xp, N, ansp);
+  } else if (TYPEOF(x) == REALSXP) {
+    const double * xp = REAL(x);
+    do_whichminmax_dbl(xp, N, ansp);
+  } else if (TYPEOF(x) == STRSXP) {
+    const char * xi0 = CHAR(STRING_ELT(x, 0));
+    R_xlen_t wmin = 0, wmax = 0;
+    const char * xmin = xi0;
+    const char * xmax = xi0;
+    for (R_xlen_t i = 1; i < N; ++i) {
+      const char * xi = CHAR(STRING_ELT(x, i));
+      if (strcmp(xi, xmin) < 0) {
+        xmin = xi;
+        wmin = i;
+      } else if (strcmp(xi, xmax) > 0) {
+        xmax = xi;
+        wmax = i;
+      }
+    }
+    ansp[0] = wmin;
+    ansp[1] = wmax;
+  }
+  if (ansp[0] > INT_MAX || ansp[1] > INT_MAX) {
+    SEXP ans = PROTECT(allocVector(REALSXP, 2));
+    REAL(ans)[0] = ansp[0];
+    REAL(ans)[1] = ansp[1];
+    UNPROTECT(1);
+    return ans;
+  } else {
+    SEXP ans = PROTECT(allocVector(INTSXP, 2));
+    INTEGER(ans)[0] = ansp[0];
+    INTEGER(ans)[1] = ansp[1];
+    UNPROTECT(1);
+    return ans;
+  }
+  
+  return R_NilValue;
+}
+
+

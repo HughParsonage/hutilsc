@@ -2,9 +2,12 @@
 % Please edit documentation in R/minmax.R
 \name{minmax}
 \alias{minmax}
+\alias{wminmax}
 \title{Minimum and maximum}
 \usage{
 minmax(x, empty_result = NULL, nThread = getOption("hutilsc.nThread", 1L))
+
+wminmax(x)
 }
 \arguments{
 \item{x}{A vector for which the minimum and maximum are desired.}
