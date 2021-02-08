@@ -100,7 +100,7 @@ void do_whichminmax_lgl(const int * x, R_xlen_t N,
   ansp[1] = wmax;
 }
 
-void do_whichminmax_int(const int * x, R_xlen_t N, R_xlen_t * ansp) {
+void do_whichminmax_int(const int x[], R_xlen_t N, R_xlen_t * ansp) {
   R_xlen_t wmin = 0, wmax = 0;
   int xmin = x[0];
   int xmax = x[0];
@@ -108,10 +108,10 @@ void do_whichminmax_int(const int * x, R_xlen_t N, R_xlen_t * ansp) {
     int xi = x[i];
     if (xi < xmin) {
       xmin = xi;
-      i = wmin;
+      wmin = i;
     } else if (xi > xmax) {
       xmax = xi;
-      i = wmax;
+      wmax = i;
     }
   }
   ansp[0] = wmin;
@@ -126,23 +126,23 @@ void do_whichminmax_dbl(const double * x, R_xlen_t N, R_xlen_t * ansp) {
     double xi = x[i];
     if (xi < xmin) {
       xmin = xi;
-      i = wmin;
+      wmin = i;
     } else if (xi > xmax) {
       xmax = xi;
-      i = wmax;
+      wmax = i;
     }
   }
   ansp[0] = wmin;
   ansp[1] = wmax;
 }
 
-SEXP do_whichminmax(SEXP x, SEXP nThread) {
+SEXP do_whichminmax(SEXP x) {
   
   R_xlen_t N = xlength(x);
   // Choose N - 1 since we want the minimum that satisfies.
   R_xlen_t wmin = N;
   R_xlen_t wmax = N;
-  R_xlen_t ansp[2] = {0, 0};
+  R_xlen_t ansp[2] = {-1, -1};
   
   if (TYPEOF(x) == LGLSXP) {
     const int * xp = INTEGER(x);

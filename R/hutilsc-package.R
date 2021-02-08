@@ -1,6 +1,8 @@
 #' Package of miscellaneous functions in C
 #' @useDynLib hutilsc, .registration = TRUE
 #' @import data.table
+#' @importFrom checkmate vname
+#' @importFrom utils hasName
 #' @importFrom utils packageName
 
 #' @keywords internal
