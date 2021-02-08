@@ -26,6 +26,13 @@ Decode3202 <- function(enc) {
 
 #' @rdname Encode3202
 #' @export
+Validate3202 <- function(x) {
+  stopifnot(is.character(x))
+  .Call("do_Validate3202", x, PACKAGE = packageName())
+}
+
+#' @rdname Encode3202
+#' @export
 Lookup2 <- function(x) {
   .Call("lookup2_char", x, PACKAGE = packageName())
 }
@@ -61,3 +68,9 @@ EncodeRecordID <- function(x) {
 DecodeRecordID <- function(x) {
   .Call("do_decodeRecordID", x, PACKAGE = packageName())
 }
+
+pad0 <- function(x, w) {
+  stopifnot(is.character(x), is.integer(w))
+  .Call("do_pad0", x, w, PACKAGE = packageName())
+}
+

@@ -96,7 +96,7 @@ char nth_digit(int x, int n) {
   return digit2char(d);
 }
 
-SEXP Validate3202(SEXP x) {
+SEXP do_Validate3202(SEXP x) {
   R_xlen_t N = xlength(x);
   int typeofx = TYPEOF(x);
   if (typeofx != STRSXP) {
@@ -427,9 +427,7 @@ SEXP lookup4_char(SEXP x) {
 }
 
 
-
-
-SEXP pad0(SEXP x, SEXP width) {
+SEXP do_pad0(SEXP x, SEXP width) {
   R_xlen_t N = xlength(x);
   const int w = asInteger(width);
   SEXP ans = PROTECT(allocVector(STRSXP, N));

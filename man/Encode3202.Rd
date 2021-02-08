@@ -3,6 +3,7 @@
 \name{Encode3202}
 \alias{Encode3202}
 \alias{Decode3202}
+\alias{Validate3202}
 \alias{Lookup2}
 \alias{Lookup4}
 \alias{names2int}
@@ -11,6 +12,8 @@
 Encode3202(x)
 
 Decode3202(enc)
+
+Validate3202(x)
 
 Lookup2(x)
 
