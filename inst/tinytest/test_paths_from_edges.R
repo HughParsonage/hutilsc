@@ -31,5 +31,12 @@ setkey(DT2, x, y)
 color_subgraphs(DT2, new_col = "color2")
 expect_equal(DT2$color2, c(1L, 2L, 3L, 3L, 2L))
 
+# Multiple paths
+DT <- data.table(x = c(1L, 1L, 1L, 2L, 3L, 4L, 5L), 
+                 y = c(2L, 3L, 4L, 5L, 5L, 5L, 6L),
+                 key = "x,y")
+path_a <- paths_from_edges(1L, 5L, Edges = DT)
+
+
 
 

@@ -27,6 +27,7 @@ DT[, x := NULL][, y := NULL]
 setkey(DT, x1, x2)
 color_subgraphs(DT)
 
+#                       #   #  ##  ##  ##  ## 
 DT <- data.table(x = c(1L, 1L, 2L, 4L, 8L, 9L),
                  y = c(2L, 3L, 4L, 5L, 9L, 10L))
 setkey(DT, x, y)

@@ -41,3 +41,23 @@ Lookup4 <- function(enc) {
 names2int <- function(x, y) {
   .Call("do_names2int", x, y, PACKAGE = packageName())
 }
+
+CountRecordID <- function(x) {
+  .Call("do_CountRecordID", x, PACKAGE = packageName())
+}
+
+unique_char_n <- function(x, n) {
+  .Call("do_unique_char_n", x, n, PACKAGE = packageName())
+}
+
+classify_chars <- function(x) {
+  .Call("do_classify_chars", x, 18L, PACKAGE = packageName())
+}
+
+EncodeRecordID <- function(x) {
+  .Call("do_encodeRecordID", x, PACKAGE = packageName())
+}
+
+DecodeRecordID <- function(x) {
+  .Call("do_decodeRecordID", x, PACKAGE = packageName())
+}

@@ -46,3 +46,6 @@ vignettes/*.pdf
 !*.c
 !*.h
 !.github/*
+!tests/*.R
+!inst/*.R
+

@@ -62,7 +62,6 @@ int unique_sorted_before(int x, const int * k, R_xlen_t N) {
 }
 
 
-
 SEXP reaches_dest(SEXP dest, SEXP K1, SEXP K2) {
   R_xlen_t N = xlength(K1);
   if (N != xlength(K2)) {
@@ -199,14 +198,12 @@ SEXP do_color_graph(SEXP K1, SEXP K2) {
   }
   
   for (R_xlen_t i = 0; i < N; ++i) {
-    
     if (ansp[i]) {
       R_xlen_t RR[2] = {-1, -1};
       radix_find_range(k2[i], k1, RR, N);
       for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
         ansp[j] = ansp[i]; // color by existing coloring
       }
-      
       continue; // already colored
     }
     // not reached by any previous node
@@ -227,7 +224,6 @@ SEXP do_color_graph(SEXP K1, SEXP K2) {
         ansp[j] = color;
       }
     }
-    
   }
   UNPROTECT(1);
   return ans;
@@ -275,3 +271,100 @@ SEXP do_path_from_edges(SEXP orig, SEXP dest, SEXP K1, SEXP K2) {
   UNPROTECT(1);
   return ans;
 }
+
+SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
+  R_xlen_t N = xlength(path);
+  if (TYPEOF(path) != INTSXP) {
+    return R_NilValue;
+  }
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int * pp = INTEGER(path);
+  
+  int a = pp[0];
+  int r = radix_find(k1, a, 0, N, N);
+  if (pp[r] != a) {
+    Rprintf("pp[r] != a");
+    return_false;
+  }
+  for (R_xlen_t i = 1; i < N; ++i) {
+    int r = radix_find(k1, a, 0, N, N);
+    R_xlen_t R[2] = {-1, -1};
+    radix_find_range(a, k1, R, N);
+    int p2 = pp[i];
+    bool hits_next = false;
+    for (R_xlen_t j = R[0]; j <= R[1]; ++j) {
+      if (k2[j] == p2) {
+        hits_next = true;
+        break;
+      }
+    }
+    if (!hits_next) {
+      return_false;
+    }
+    a = p2;
+  }
+  return_true;
+}
+
+SEXP do_reaches_between(SEXP aa, SEXP bb, SEXP K1, SEXP K2) {
+  const int a = asInteger(aa);
+  const int b = asInteger(bb);
+  
+  if (b <= a + 1) {
+    return R_NilValue;
+  }
+  
+  R_xlen_t N = xlength(K1);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  
+  R_xlen_t R[2] = {-1, -1};
+  radix_find_range(a, k1, R, N);
+  if (R[1] < R[0]) {
+    return R_NilValue;
+  }
+  
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, b));
+  int * restrict ansp = INTEGER(ans);
+  for (R_xlen_t i = 0; i < b; ++i) {
+    ansp[i] = (i < a) ? 0 : NA_INTEGER;
+  }
+  
+  for (int j = R[0]; j <= R[1]; ++j) {
+    ansp[j] = 1;
+    int destj = k2[j];
+    if (destj < b) {
+      ansp[destj] = 1;
+    }
+    
+  }
+  
+  // Now go through each vertex from a to b,
+  // Has it been reached? If so, it is reachable
+  // And so are its descendants
+  // If not, say so.
+  for (int v = a; v < b; ++v) {
+    if (ansp[v] == 1) {
+      radix_find_range(v, k1, R, N);
+      for (int j = R[0]; j <= R[1]; ++j) {
+        ansp[j] = 1;
+        int destj = k2[j];
+        if (destj < b) {
+          ansp[destj] = 1;
+        }
+      }
+    } else {
+      ansp[v] = 0;
+    }
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+
+
+
+
+

@@ -460,8 +460,6 @@ SEXP tabulate_nchar18(SEXP x) {
   if (TYPEOF(x) != STRSXP) {
     error("x is not a character.");
   }
-
-  
   int counters[19][256] = {0};
   
   for (R_xlen_t i = 0; i < N; ++i) {
@@ -488,7 +486,229 @@ SEXP tabulate_nchar18(SEXP x) {
   return ans;
 }
 
-SEXP encodeRecordID(SEXP x) {
+bool is_normal_RecordID(const char * x) {
+  bool o = 
+    x[0] == '5' &&
+    x[1] == '0' &&
+    x[2] == '0' &&
+    x[3] == '2' &&
+    x[4] == 'P' &&
+    x[5] == '0' &&
+    x[6] == '0' &&
+    x[7] == '0' &&
+    x[8] == '0' &&
+    x[9] == '0' &&
+    x[10] != '\0' &&
+    x[11] != '\0' &&
+    x[12] != '\0' &&
+    x[13] != '\0' &&
+    x[14] != '\0' &&
+    x[15] != '\0' &&
+    x[16] != '\0' &&
+    x[17] != '\0' &&
+    x[18] == '\0';
+  return o;
+}
+
+bool is_normal_AccountID(const char * x) {
+  bool o = 
+    x[0] == '0' &&
+    x[1] == '0' &&
+    x[2] == '1' &&
+    x[3] == '2' &&
+    x[4] == 'P' &&
+    x[5] == '0' &&
+    x[6] == '0' &&
+    x[7] == '0' &&
+    x[8] == '0' &&
+    x[9] == '0' &&
+    x[10] != '\0' &&
+    x[11] != '\0' &&
+    x[12] != '\0' &&
+    x[13] != '\0' &&
+    x[14] != '\0' &&
+    x[15] != '\0' &&
+    x[16] != '\0' &&
+    x[17] != '\0' &&
+    x[18] == '\0';
+  return o;
+}
+
+int strlen_blw_18(const char * x) {
+  int o = 0;
+  while (o < 18 && x[o] != '\0') {
+    ++o;
+  }
+  return o;
+}
+
+int strlen2(const char * x) {
+  int o = 0;
+  while (x[o] != '\0') {
+    ++o;
+  }
+  return o;
+}
+
+SEXP do_Strlen(SEXP x, SEXP mm) {
+  const int m = asInteger(mm);
+  const R_xlen_t N = xlength(x);
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  switch(m) {
+  case 0: {
+    for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    ansp[i] = strlen(xi);
+  }
+  }
+    break;
+  case 1: {
+    for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    ansp[i] = strlen_blw_18(xi);
+  }
+  }
+    break;
+  case 2: {
+    for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    ansp[i] = strlen2(xi);
+  }
+  }
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+
+SEXP do_CountRecordID(SEXP x) {
+  R_xlen_t N = xlength(x);
+  if (TYPEOF(x) != STRSXP) {
+    return R_NilValue;
+  }
+  int counters[19][256] = {0};
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    bool normal = is_normal_RecordID(xi);
+    if (normal) {
+      for (int c = 0; c < 19; ++c) {
+        if (xi[c] == '\0') {
+          break;
+        }
+        unsigned int xci = (unsigned int)(xi[c]);
+        counters[c][xci] += 1;
+      }
+    } else {
+      int strleni = strlen(xi);
+      int p = 18 - strleni;
+      for (int c = p; c < 18; ++c) {
+        unsigned int xci = (unsigned int)(xi[c - p]);
+        counters[c][xci] += 1;
+      }
+    }
+  }
+  SEXP ans = PROTECT(allocVector(INTSXP, 19));
+  int *restrict ansp = INTEGER(ans);
+  
+  for (int i = 0; i < 19; ++i) {
+    int n = 0;
+    for (int j = 0; j < 256; ++j) {
+      n += counters[i][j] > 0;
+    }
+    ansp[i] = n;
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP do_unique_char_n(SEXP x, SEXP cc) {
+  R_xlen_t N = xlength(x);
+  int c = asInteger(cc);
+  SEXP ans = PROTECT(allocVector(STRSXP, N));
+  for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    int strleni = strlen(xi);
+    char xca[2] = "  ";
+    xca[0] = xi[strleni - c];
+    xca[1] = '\0';
+    char * xci = xca;
+    const char * xcip = xci;
+    SET_STRING_ELT(ans, i, mkCharCE(xcip, CE_UTF8));
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP do_classify_chars(SEXP x, SEXP MaxNchar) {
+  R_xlen_t N = xlength(x);
+  const int mn = asInteger(MaxNchar);
+  SEXP ans = PROTECT(allocVector(INTSXP, mn));
+  int * restrict ansp = INTEGER(ans);
+  
+  // 0-9    2
+  // A-Z    3
+  // a-z    5
+  // Anything else 7
+  
+  bool digit_classes[mn][3];
+  for (int j = 0; j < mn; ++j) {
+    digit_classes[j][0] = false;
+    digit_classes[j][1] = false;
+    digit_classes[j][2] = false;
+  }
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    int strleni = strlen(xi);
+    if (mn == strleni) {
+      for (int c = mn - 1; c >= 0; --c) {
+        char xic = xi[c];
+        digit_classes[c][0] |= (xic >= '0' && xic <= '9');
+        digit_classes[c][1] |= (xic >= 'a' && xic <= 'z');
+        digit_classes[c][2] |= (xic >= 'A' && xic <= 'Z');
+      }
+      
+    } else {
+      int nc = 0;
+      for (int c = strleni - 1; (c >= 0) && (nc < mn); --c, ++nc) {
+        char xic = xi[c];
+        digit_classes[c][0] |= (xic >= '0' && xic <= '9');
+        digit_classes[c][1] |= (xic >= 'a' && xic <= 'z');
+        digit_classes[c][2] |= (xic >= 'A' && xic <= 'Z');
+      }
+    }
+  }
+  for (int j = 0; j < mn; ++j) {
+    ansp[j] = 1;
+    ansp[j] *= 2 * digit_classes[j][0];
+    ansp[j] *= 3 * digit_classes[j][1];
+    ansp[j] *= 5 * digit_classes[j][2];
+    ansp[j] = ansp[j] * (ansp[j] != 2);
+  }
+  
+  UNPROTECT(1);
+  return ans;
+}
+
+unsigned int alphnum2uint(char x) {
+  if (x < '0' || x > 'z') {
+    return 0U;
+  }
+  if (x <= '9') {
+    return x - '0';
+  }
+  if (x <= 'Z') {
+    return 10U + (x - 'A');
+  }
+  return 10U + 26U + (x - 'a');
+}
+
+
+
+
+SEXP do_encodeRecordID(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != STRSXP) {
     error("x is not a character.");
@@ -500,13 +720,112 @@ SEXP encodeRecordID(SEXP x) {
     //const char * xi = CHAR(STRING_ELT(x, i));
     // 5002e0000052JlLAAU
     // 012345678901234567
-    int a = 0;
-    ansp[i] = a;
+    //  inds  12,13,14,15, 18  -1 are the only characters that aren't constant
     
+    const char * xi = CHAR(STRING_ELT(x, i));
+    bool normal = is_normal_RecordID(xi);
+    
+    if (normal) {
+      unsigned int a = 0U, pw = 1U;
+      a += pw * alphnum2uint(xi[17]);
+      pw *= 62U;
+      a += pw * alphnum2uint(xi[14]);
+      pw *= 62U;
+      a += pw * alphnum2uint(xi[13]);
+      pw *= 62U;
+      a += pw * alphnum2uint(xi[12]);
+      pw *= 62U;
+      a += pw * alphnum2uint(xi[11]);
+      ansp[i] = a;
+    } else {
+      int a = (-INT_MAX) + 1;
+      
+      unsigned int strleni = strlen(xi);
+      strleni = (strleni > 8U) ? 8U : strleni;
+      int ten = tens[strleni];
+      for (unsigned int c = 0; c < strleni; ++c) {
+        char xic = xi[c];
+        unsigned int d = xic - '0';
+        if (d > 9U) {
+          break;
+        }
+        a += ten * d;
+        ten /= 10;
+      }
+      ansp[i] = a;
+    }
   }
   UNPROTECT(1);
   return ans;
-  
 }
+
+SEXP do_decodeRecordID(SEXP x) {
+  R_xlen_t N = xlength(x);
+  if (TYPEOF(x) != INTSXP) {
+    error("TYPEOF(x) != INTSXP");
+  }
+  char string[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  unsigned int pows[4] = {62U, 62U * 62U, 62U * 62U * 62U, 62U * 62U * 62U * 62U};
+  
+  int * restrict xp = INTEGER(x);
+  SEXP ans = PROTECT(allocVector(STRSXP, N));
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int xpi = xp[i];
+    if (xpi < 0) {
+      unsigned int nxpi = xpi + INT_MAX - 1;
+      int n_digits = n_digits0(nxpi);
+      char o[n_digits + 1];
+      int ten = 1;
+      for (int d = n_digits - 1; d >= 0; --d) {
+        o[d] = string[(nxpi / ten) % 10];
+        ten *= 10;
+      }
+      o[n_digits - 1] = '\0';
+      const char * oi = o;
+      SET_STRING_ELT(ans, i, mkCharCE(oi, CE_UTF8));
+      continue;
+    }
+      
+    unsigned int ei = xp[i]; // encoded
+    char xi[19];
+    xi[0] = '5';
+    xi[1] = '0';
+    xi[2] = '0';
+    xi[3] = '2';
+    xi[4] = 'P';
+    xi[5] = '0';
+    xi[6] = '0';
+    xi[7] = '0';
+    xi[8] = '0';
+    xi[9] = '0';
+    xi[10] = 'D';
+    
+    unsigned int xp11 = (ei / pows[3]) % 62U;
+    xi[11] = string[xp11];
+    
+    unsigned int xp12 = (ei / pows[2]) % 62U;
+    xi[12] = string[xp12];
+    
+    unsigned int xp13 = (ei / pows[1]) % 62U;
+    xi[13] = string[xp13];
+    
+    unsigned int xp14 = (ei / pows[0]) % 62U;
+    xi[14] = string[xp14];
+    
+    xi[15] = 'Q';
+    xi[16] = 'A';
+    
+    unsigned int xp17 = ei % 62U;
+    xi[17] = string[xp17];
+    
+    xi[18] = '\0';
+    const char * ansi = xi;
+    SET_STRING_ELT(ans, i, mkCharCE(ansi, CE_UTF8));
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+
 
 
