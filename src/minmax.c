@@ -140,8 +140,6 @@ SEXP do_whichminmax(SEXP x) {
   
   R_xlen_t N = xlength(x);
   // Choose N - 1 since we want the minimum that satisfies.
-  R_xlen_t wmin = N;
-  R_xlen_t wmax = N;
   R_xlen_t ansp[2] = {-1, -1};
   
   if (TYPEOF(x) == LGLSXP) {

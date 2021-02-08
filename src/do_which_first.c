@@ -16,8 +16,18 @@ SEXP do_which_first_eq(SEXP x, SEXP o, SEXP a) {
   int k = 0;
   const int aa = asInteger(a);   
   for (int i = 0; i < n; ++i) {
-    if (xp[i] == aa) {
-      k = i + 1;
+    switch(opp) {
+    case OP_EQ:
+      if (xp[i] == aa) {
+        k = i + 1;
+        break;
+      }
+      break;
+    case OP_NE:
+      if (xp[i] != aa) {
+        k = i + 1;
+        break;
+      }
       break;
     }
   }

@@ -143,8 +143,8 @@ SEXP reaches_dest(SEXP dest, SEXP K1, SEXP K2) {
         }
       }
     }
-    int sss = iisum(ansp, N);
-    Rprintf("sss = %d\n");
+    // int sss = iisum(ansp, N);
+    // Rprintf("sss = %d\n", sss);
   } while (sum != iisum(ansp, N) && while_count++ < N);
     
   
@@ -288,7 +288,7 @@ SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
     return_false;
   }
   for (R_xlen_t i = 1; i < N; ++i) {
-    int r = radix_find(k1, a, 0, N, N);
+    
     R_xlen_t R[2] = {-1, -1};
     radix_find_range(a, k1, R, N);
     int p2 = pp[i];
