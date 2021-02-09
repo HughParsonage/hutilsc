@@ -25,10 +25,8 @@ extern SEXP do_names2int(SEXP, SEXP);
 extern SEXP do_pad0(SEXP, SEXP);
 extern SEXP do_pmax0(SEXP);
 extern SEXP do_reaches_between(SEXP, SEXP, SEXP, SEXP);
-extern SEXP do_Strlen(SEXP, SEXP);
 extern SEXP do_test_radix_find(SEXP, SEXP, SEXP);
 extern SEXP do_test_radix_find_range(SEXP, SEXP);
-extern SEXP do_unique_char_n(SEXP, SEXP);
 extern SEXP do_Validate3202(SEXP);
 extern SEXP do_whichminmax(SEXP);
 extern SEXP is_binary_call(SEXP);
@@ -54,10 +52,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_pad0",                  (DL_FUNC) &do_pad0,                  2},
     {"do_pmax0",                 (DL_FUNC) &do_pmax0,                 1},
     {"do_reaches_between",       (DL_FUNC) &do_reaches_between,       4},
-    {"do_Strlen",                (DL_FUNC) &do_Strlen,                2},
     {"do_test_radix_find",       (DL_FUNC) &do_test_radix_find,       3},
     {"do_test_radix_find_range", (DL_FUNC) &do_test_radix_find_range, 2},
-    {"do_unique_char_n",         (DL_FUNC) &do_unique_char_n,         2},
     {"do_Validate3202",          (DL_FUNC) &do_Validate3202,          1},
     {"do_whichminmax",           (DL_FUNC) &do_whichminmax,           1},
     {"is_binary_call",           (DL_FUNC) &is_binary_call,           1},

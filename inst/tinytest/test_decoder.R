@@ -24,3 +24,4 @@ expect_equal(counts3, c(rep(1L, length(counts) - 3L), 2:3, 0L))
 
 expect_equal(hutilsc:::classify_chars(c("aA", "bb", "aa", "Za"), 2), c(15L, 15L))
 expect_equal(hutilsc:::classify_chars(c("aA", "bb", "aa", "Z0"), 2), c(15L, 30L))
+expect_equal(hutilsc:::classify_chars(c("aA", "bb", "aa", "Z0", "A0"), 2), c(15L, 30L))

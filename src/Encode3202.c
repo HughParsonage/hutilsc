@@ -532,54 +532,6 @@ bool is_normal_AccountID(const char * x) {
   return o;
 }
 
-int strlen_blw_18(const char * x) {
-  int o = 0;
-  while (o < 18 && x[o] != '\0') {
-    ++o;
-  }
-  return o;
-}
-
-int strlen2(const char * x) {
-  int o = 0;
-  while (x[o] != '\0') {
-    ++o;
-  }
-  return o;
-}
-
-SEXP do_Strlen(SEXP x, SEXP mm) {
-  const int m = asInteger(mm);
-  const R_xlen_t N = xlength(x);
-  SEXP ans = PROTECT(allocVector(INTSXP, N));
-  int * restrict ansp = INTEGER(ans);
-  switch(m) {
-  case 0: {
-    for (R_xlen_t i = 0; i < N; ++i) {
-    const char * xi = CHAR(STRING_ELT(x, i));
-    ansp[i] = strlen(xi);
-  }
-  }
-    break;
-  case 1: {
-    for (R_xlen_t i = 0; i < N; ++i) {
-    const char * xi = CHAR(STRING_ELT(x, i));
-    ansp[i] = strlen_blw_18(xi);
-  }
-  }
-    break;
-  case 2: {
-    for (R_xlen_t i = 0; i < N; ++i) {
-    const char * xi = CHAR(STRING_ELT(x, i));
-    ansp[i] = strlen2(xi);
-  }
-  }
-  }
-  UNPROTECT(1);
-  return ans;
-}
-
-
 SEXP do_CountRecordID(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != STRSXP) {
@@ -616,24 +568,6 @@ SEXP do_CountRecordID(SEXP x) {
       n += counters[i][j] > 0;
     }
     ansp[i] = n;
-  }
-  UNPROTECT(1);
-  return ans;
-}
-
-SEXP do_unique_char_n(SEXP x, SEXP cc) {
-  R_xlen_t N = xlength(x);
-  int c = asInteger(cc);
-  SEXP ans = PROTECT(allocVector(STRSXP, N));
-  for (R_xlen_t i = 0; i < N; ++i) {
-    const char * xi = CHAR(STRING_ELT(x, i));
-    int strleni = strlen(xi);
-    char xca[2] = "  ";
-    xca[0] = xi[strleni - c];
-    xca[1] = '\0';
-    char * xci = xca;
-    const char * xcip = xci;
-    SET_STRING_ELT(ans, i, mkCharCE(xcip, CE_UTF8));
   }
   UNPROTECT(1);
   return ans;
@@ -679,11 +613,11 @@ SEXP do_classify_chars(SEXP x, SEXP MaxNchar) {
     }
   }
   for (int j = 0; j < mn; ++j) {
-    ansp[j] = 1;
-    ansp[j] *= digit_classes[j][0] ? 2 : 1;
-    ansp[j] *= digit_classes[j][1] ? 3 : 1;
-    ansp[j] *= digit_classes[j][2] ? 5 : 1;
-    ansp[j] = ansp[j] * (ansp[j] != 2);
+    int k = j;
+    ansp[k] = 1;
+    ansp[k] *= digit_classes[j][0] ? 2 : 1;
+    ansp[k] *= digit_classes[j][1] ? 3 : 1;
+    ansp[k] *= digit_classes[j][2] ? 5 : 1;
   }
   
   UNPROTECT(1);
