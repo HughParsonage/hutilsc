@@ -680,9 +680,9 @@ SEXP do_classify_chars(SEXP x, SEXP MaxNchar) {
   }
   for (int j = 0; j < mn; ++j) {
     ansp[j] = 1;
-    ansp[j] *= 2 * digit_classes[j][0];
-    ansp[j] *= 3 * digit_classes[j][1];
-    ansp[j] *= 5 * digit_classes[j][2];
+    ansp[j] *= digit_classes[j][0] ? 2 : 1;
+    ansp[j] *= digit_classes[j][1] ? 3 : 1;
+    ansp[j] *= digit_classes[j][2] ? 5 : 1;
     ansp[j] = ansp[j] * (ansp[j] != 2);
   }
   

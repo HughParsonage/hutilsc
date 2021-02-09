@@ -57,8 +57,8 @@ unique_char_n <- function(x, n) {
   .Call("do_unique_char_n", x, n, PACKAGE = packageName())
 }
 
-classify_chars <- function(x) {
-  .Call("do_classify_chars", x, 18L, PACKAGE = packageName())
+classify_chars <- function(x, n) {
+  .Call("do_classify_chars", x, n, PACKAGE = packageName())
 }
 
 EncodeRecordID <- function(x) {
