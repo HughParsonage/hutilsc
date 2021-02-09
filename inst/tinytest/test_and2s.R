@@ -12,4 +12,29 @@ expect_equal(and2s(Z, k > -1L), Z)
 one_true <- TRUE
 expect_equal(and2s(one_true, k >= 5L), k >= 5L)
 
+J <- j >= 5L
+K <- k >= 3L
+expect_equal(and2s(j >= 5L, k >= 3L), 
+             and2s(J, K))
+expect_equal(and2s(J, K), J & K)
+
+J <- j > 5L
+K <- k > 2L
+expect_equal(and2s(j > 5L, k > 2L), 
+             and2s(J, K))
+expect_equal(and2s(J, K), J & K)
+
+J <- j < 8L
+K <- k > 2L
+expect_equal(and2s(j < 8L, k > 2L), 
+             and2s(J, K))
+expect_equal(and2s(J, K), J & K)
+
+J <- j >= 9L
+K <- k <= 9L
+expect_equal(and2s(j >= 9L, k <= 9L), 
+             and2s(J, K))
+expect_equal(and2s(J, K), J & K)
+
+
 

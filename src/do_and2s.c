@@ -415,9 +415,6 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
     return ans;
   }
   
-  
-  
-  
   if (xlength(x1) == xlength(y1) && 
       xlength(x2) == xlength(y2)) {
 
