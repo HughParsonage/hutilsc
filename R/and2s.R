@@ -3,15 +3,15 @@
 and2s <- function(exp1, exp2, nThread = 1L) {
   sexp1 <- substitute(exp1)
   sexp2 <- substitute(exp2)
+  ans <- NULL
   if (is.symbol(sexp1)) {
     if (length(sexp2) == 3) {
       op2c <- as.character(sexp2[[1L]]) 
       x2 <- eval.parent(sexp2[[2L]])
       y2 <- eval.parent(sexp2[[3L]])
-      return(.Call("do_and_lgl_int", exp1, x2, op2c, y2, nThread, PACKAGE = packageName()))
+      ans <- .Call("do_and_lgl_int", exp1, x2, op2c, y2, nThread, PACKAGE = packageName())
     }
-  }
-  if (is.call(sexp1) && is.call(sexp1)) {
+  } else if (is.call(sexp1) && is.call(sexp1)) {
     if (length(sexp1) == 3L && length(sexp2) == 3L) {
       # (x1 <op1> y1) & (x2 <op2> y2)
       
@@ -27,15 +27,14 @@ and2s <- function(exp1, exp2, nThread = 1L) {
               x2, op2, y2, 
               NULL, NULL,
               nThread)
-      if (is.null(ans)) {
-        return(exp1 & exp2)
-      } else {
-        return(ans)
-      }
     }
   }
   
-  
+  if (is.null(ans)) {
+    return(exp1 & exp2)
+  } else {
+    return(ans)
+  }
   
 }
 
