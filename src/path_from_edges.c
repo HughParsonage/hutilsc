@@ -273,7 +273,7 @@ SEXP do_path_from_edges(SEXP orig, SEXP dest, SEXP K1, SEXP K2) {
 }
 
 SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
-  R_xlen_t N = xlength(path);
+  R_xlen_t N = xlength(K1);
   if (TYPEOF(path) != INTSXP) {
     return R_NilValue;
   }
@@ -283,11 +283,12 @@ SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
   
   int a = pp[0];
   int r = radix_find(k1, a, 0, N, N);
-  if (pp[r] != a) {
-    Rprintf("pp[r] != a");
+  if (k1[r] != a) {
     return_false;
   }
-  for (R_xlen_t i = 1; i < N; ++i) {
+  int n = xlength(path);
+  
+  for (int i = 1; i < n; ++i) {
     
     R_xlen_t R[2] = {-1, -1};
     radix_find_range(a, k1, R, N);
