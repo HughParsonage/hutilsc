@@ -965,6 +965,10 @@ SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
               SEXP nThread, 
               SEXP depth) {
   // Return NULL if not separated -- revert to expr1 & expr2
+  if (TYPEOF(depth) != INTSXP ||
+      TYPEOF(nThread) != INTSXP) {
+    return R_NilValue;
+  }
   int idepth = asInteger(depth);
   Rprintf("idepth = %d\n");
   if (idepth > 2) {
