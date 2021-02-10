@@ -27,7 +27,8 @@ and2s <- function(exp1, exp2, nThread = 1L) {
               x1, op1, y1,
               x2, op2, y2, 
               NULL, NULL,
-              nThread)
+              nThread, 
+              0L)
     }
   }
   
