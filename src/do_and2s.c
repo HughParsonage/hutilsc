@@ -185,9 +185,10 @@ SEXP do_and_lgl_int(SEXP A, SEXP x2, SEXP op2, SEXP y2, SEXP nThread) {
 SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
                     SEXP x2, SEXP op2, SEXP y2,
                     SEXP nThread) {
+  Rprintf("a\n")
   const int o1 = do_op2M(op1);
   const int o2 = do_op2M(op2);
-  Rprintf("o1 = %d\to2 = %d\n", o1, o2);
+  Rprintf("\no1 = %d\to2 = %d\n", o1, o2);
   if (o1 > o2) {
     // Avoid duplicating
     return(do_and_int_int(x2, op2, y2, 
