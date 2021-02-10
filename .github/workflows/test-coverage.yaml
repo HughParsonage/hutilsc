@@ -65,7 +65,7 @@ jobs:
           Rdevel -q -e "ip <- function(x) install.packages(x, quiet = TRUE, repos = 'https://cran.r-project.org'); ip(c('data.table', 'checkmate'))"
           Rdevel CMD build .
           Rdevel CMD INSTALL hutilsc*.tar.gz
-          Rdevel -q -e "xx <- c(5L, 4L, 1L); y <- rev(x); hutilsc:::and2s(xx >= 1L, y <= 4L)"
+          Rdevel -q -e "xx <- c(5L, 4L, 1L); y <- rev(xx); hutilsc:::and2s(xx >= 1L, y <= 4L)"
           
 
 
