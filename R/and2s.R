@@ -21,7 +21,7 @@ and2s <- function(exp1, exp2, nThread = 1L) {
       y1 <- eval.parent(sexp1[[3L]])
       x2 <- eval.parent(sexp2[[2L]])
       y2 <- eval.parent(sexp2[[3L]])
-      cat(x1, op1, y1, "\n", x2, op2, y2, "\n")
+      cat("\n\n", x1, op1, y1, "\n", x2, op2, y2, "\n\n")
       ans <-
         .Call("do_and2s", 
               x1, op1, y1,
