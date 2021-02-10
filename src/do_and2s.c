@@ -1,6 +1,34 @@
 #include "hutilsc.h"
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Just &
 SEXP do_and_lgl_lgl(SEXP A, SEXP B, SEXP nThread) {
   R_xlen_t AN = xlength(A);
@@ -154,14 +182,12 @@ SEXP do_and_lgl_int(SEXP A, SEXP x2, SEXP op2, SEXP y2, SEXP nThread) {
 }
 
 
-
-
 SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
                     SEXP x2, SEXP op2, SEXP y2,
                     SEXP nThread) {
-  
   const int o1 = do_op2M(op1);
   const int o2 = do_op2M(op2);
+  Rprintf("o1 = %d\to2 = %d\n", o1, o2);
   if (o1 > o2) {
     // Avoid duplicating
     return(do_and_int_int(x2, op2, y2, 
@@ -939,6 +965,7 @@ SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
               SEXP depth) {
   // Return NULL if not separated -- revert to expr1 & expr2
   int idepth = asInteger(depth);
+  Rprintf("idepth = %d\n");
   if (idepth > 2) {
     return R_NilValue;
   }
