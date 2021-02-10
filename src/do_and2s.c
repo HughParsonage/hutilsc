@@ -338,6 +338,10 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
       xlength(y1) == 1 && xlength(y2) == 1) {
     const int y_1 = asInteger(y1);
     const int y_2 = asInteger(y2);
+    Rprintf("y_1 = %d", y_1, "\n");
+    Rprintf("y_2 = %d", y_2, "\n");
+    
+    
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads)
 #endif

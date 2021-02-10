@@ -47,3 +47,26 @@ jobs:
       - name: Test coverage
         run: covr::codecov(quiet = FALSE)
         shell: Rscript {0}
+  test-r-sanitizers:
+    name: r-package (ubuntu-latest, R-devel, GCC ASAN/UBSAN)
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    container:
+      image: rhub/rocker-gcc-san
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 5
+          submodules: true
+      - name: Install packages
+        shell: bash
+        run: |
+          Rdevel -q -e "ip <- function(x) install.packages(x, quiet = TRUE, repos = 'https://cran.r-project.org'); ip(c('data.table', 'checkmate'))"
+          Rdevel CMD build .
+          Rdevel CMD INSTALL hutilsc*.tar.gz
+          Rdevel -q -e "xx <- c(5L, 4L, 1L); y <- rev(x); hutilsc:::and2s(xx >= 1L, y <= 4L)"
+          
+
+
+          
