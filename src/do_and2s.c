@@ -181,21 +181,24 @@ SEXP do_and_lgl_int(SEXP A, SEXP x2, SEXP op2, SEXP y2, SEXP nThread) {
   return R_NilValue;
 }
 
-
 SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
                     SEXP x2, SEXP op2, SEXP y2,
                     SEXP nThread) {
-  Rprintf("a\n");
   const int o1 = do_op2M(op1);
   const int o2 = do_op2M(op2);
-  Rprintf("\no1 = %d\to2 = %d\n", o1, o2);
+  if (o1 == OP_BW && xlength(y1) != 2) {
+    return R_NilValue;
+  }
+  if (o2 == OP_BW && xlength(y2) != 2) {
+    return R_NilValue;
+  }
+  
   if (o1 > o2) {
     // Avoid duplicating
     return(do_and_int_int(x2, op2, y2, 
                           x1, op1, y1,
                           nThread));
   }
-  
   int nThreads = asInteger(nThread);
   R_xlen_t N = xlength(x1);
   
@@ -211,6 +214,7 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
   if (xlength(y2) != 1 && xlength(y2) != N) {
     return R_NilValue;
   }
+  
   if (xlength(y1) == 1 && xlength(x2) == 1 && xlength(y2) == 1) {
     int Y = 1;
     const int x2i = asInteger(x2);
@@ -273,10 +277,8 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
   int *restrict ansp = LOGICAL(ans);
   
   if (o1 == OP_IN && o2 == OP_IN) {
-
     R_xlen_t t1 = xlength(y1);
     R_xlen_t t2 = xlength(y2);
-    
     
     for (R_xlen_t i = 0; i < N; ++i) {
       int o = 0;
@@ -361,13 +363,121 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
     return ans; 
   }
   
+  if (o1 == OP_IN && o2 == OP_BW) {
+    const int y2_lwr = y2p[0];
+    const int y2_upr = y2p[1];
+    R_xlen_t M = xlength(y1);
+    
+    for (R_xlen_t i = 0; i < N; ++i) {
+      char o = 0;
+      ansp[i] = 0;
+      int x1pi = x1p[i];
+      for (R_xlen_t j = 0; j < M; ++j) {
+        if (x1pi == y2p[j]) {
+          o = 1;
+          break;
+        }
+      }
+      if (o) {
+        ansp[i] = x2p[i] >= y2_lwr && x2p[i] <= y2_upr;
+      }
+    }
+    UNPROTECT(1);
+    return ans;
+  }
+  
+  if (o2 == OP_IN) {
+    R_xlen_t M = xlength(y2);
+    if (xlength(x1) == xlength(y1)) {
+      switch(o1) {
+      case OP_NE:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] != y1p[i]) {
+            for (R_xlen_t j = 0; j < N; ++j) {
+              if (x2p[i] == y1p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_EQ:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] == y1p[i]) {
+            for (R_xlen_t j = 0; j < N; ++j) {
+              if (x2p[i] == y1p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_GE:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] >= y1p[i]) {
+            for (R_xlen_t j = 0; j < N; ++j) {
+              if (x2p[i] == y1p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_LE:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] <= y1p[i]) {
+            for (R_xlen_t j = 0; j < N; ++j) {
+              if (x2p[i] == y1p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_GT:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] > y1p[i]) {
+            for (R_xlen_t j = 0; j < N; ++j) {
+              if (x2p[i] == y1p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_LT:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] < y1p[i]) {
+            for (R_xlen_t j = 0; j < N; ++j) {
+              if (x2p[i] == y1p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+    UNPROTECT(1);
+    return ans;
+  }
+  
   if (xlength(x1) == length(x2) &&
       xlength(y1) == 1 && xlength(y2) == 1) {
     const int y_1 = asInteger(y1);
     const int y_2 = asInteger(y2);
-    Rprintf("y_1 = %d", y_1, "\n");
-    Rprintf("y_2 = %d", y_2, "\n");
-    
     
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads)
@@ -448,17 +558,11 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
   
   if (xlength(x1) == xlength(y1) && 
       xlength(x2) == xlength(y2)) {
-
-    
     const int * x1p = INTEGER(x1);
     const int * y1p = INTEGER(y1);
     
     const int * x2p = INTEGER(x2);
     const int * y2p = INTEGER(y2);
-    
-    
-    SEXP ans = PROTECT(allocVector(LGLSXP, N));
-    int * restrict ansp = LOGICAL(ans);
     
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads)
@@ -506,7 +610,7 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
     UNPROTECT(1);
     return ans;
   }
-  
+  UNPROTECT(1);
   
   return R_NilValue;
 }
@@ -970,7 +1074,9 @@ SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
     return R_NilValue;
   }
   int idepth = asInteger(depth);
-  Rprintf("idepth = %d\n");
+  if (idepth < -100 || idepth > 100) {
+    Rprintf("idepth = %d\n", idepth);
+  }
   if (idepth > 2) {
     return R_NilValue;
   }
