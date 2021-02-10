@@ -4,8 +4,20 @@ k <- c(7L, 10L, 8L, 6L, 3L, 1L, 4L, 5L, 2L, 9L)
 
 and2s <- hutilsc:::and2s
 
-expect_equal(and2s(j == 1L, k == 2L),
-             `&`(j == 1L, k == 2L))
+for (i in 2:9) {
+  j <- rep(j, i)
+  k <- rep(k, i)
+  expect_equal(and2s(j == 1L, k == 2L),
+               `&`(j == 1L, k == 2L))
+  expect_equal(and2s(j >= 1L, k >= 2L),
+               `&`(j >= 1L, k >= 2L))
+  expect_equal(and2s(j != 1L, k == 2L),
+               `&`(j != 1L, k == 2L))
+  expect_equal(and2s(j != 1L, k < 2L),
+               `&`(j != 1L, k < 2L))
+  JJ <- j > 1L
+  expect_equal(and2s(JJ, JJ), JJ)
+}
 
 Z <- j == j
 expect_equal(and2s(Z, k > -1L), Z)

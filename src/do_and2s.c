@@ -450,7 +450,7 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
       case OP_LE:
         o = x1pi <= y1pi; break;
       case OP_LT:
-        o = x1pi >  y1pi; break;
+        o = x1pi <  y1pi; break;
       }
       if (o) {
         int x2pi = x2p[i];
@@ -467,7 +467,7 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
         case OP_LE:
           o = x2pi <= y2pi; break;
         case OP_LT:
-          o = x2pi >  y2pi; break;
+          o = x2pi <  y2pi; break;
         }
       }
       ansp[i] = o ? 1 : 0;
@@ -928,8 +928,6 @@ SEXP test_scalar_xoy(SEXP x, SEXP o, SEXP y) {
   return_true;
 }
 
-
-
 SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
               SEXP x2, SEXP op2, SEXP y2,
               SEXP A, SEXP B,
@@ -953,7 +951,7 @@ SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
       return R_NilValue;
     }
     if (N == 1) {
-      if (xlength(x2) == 1) {
+      if (xlength(x2) == 1 || true) {
         // Just evaluate at R level
         // Will be slower but no-one would care
         return R_NilValue;
@@ -988,7 +986,7 @@ SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
     //  X1 <op1> Y1  &  x2 <op2> Y2
     // 
     // reverse it
-    if (xlength(x2) == 1 && xlength(y2) > 1) {
+    if (false && xlength(x2) == 1 && xlength(y2) > 1) {
       
       ++idepth;
       SEXP new_depth = PROTECT(ScalarInteger(idepth));

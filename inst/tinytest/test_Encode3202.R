@@ -2,6 +2,8 @@
 Validate3202 <- hutilsc:::Validate3202
 Decode3202 <- hutilsc:::Decode3202
 Encode3202 <- hutilsc:::Encode3202
+Lookup4 <- hutilsc:::Lookup4
+names2int <- hutilsc:::names2int
 
 x <- c("320200000002", "320201000000")
 expect_true(Validate3202(x))
