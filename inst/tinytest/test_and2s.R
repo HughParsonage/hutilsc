@@ -82,6 +82,9 @@ Cj <-
      m2 = c(1L, 101L))
 Cj[, ii := .I]
 Cj[, res := test_2expr(.BY[[1]], n1, n2, op1, op2, m1, m2), by = "ii"]
+for (r in 1:nrow(Cj)) {
+  expect_true(Cj$res[r], info = r)
+}
 
 
 

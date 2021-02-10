@@ -211,7 +211,7 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
   if (xlength(y1) != 1 && xlength(y1) != N) {
     return R_NilValue;
   }
-  if (xlength(y2) != 1 && xlength(y2) != N) {
+  if (xlength(y2) != 1 && xlength(y2) != N && o2 != OP_IN && o2 != OP_BW) {
     return R_NilValue;
   }
   
@@ -281,6 +281,7 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
     R_xlen_t t2 = xlength(y2);
     
     for (R_xlen_t i = 0; i < N; ++i) {
+      ansp[i] = 0;
       int o = 0;
       for (R_xlen_t t = 0; t < t1; ++t) {
         if (x1p[i] == y1p[t]) {
@@ -290,13 +291,12 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
       }
       if (o) {
         for (R_xlen_t t = 0; t < t2; ++t) {
-          if (y1p[i] == y2p[t]) {
-            o += 1;
+          if (x2p[i] == y2p[t]) {
+            ansp[i] = 1;
             break;
           }
         }
       }
-      ansp[i] = o;
     }
     UNPROTECT(1);
     return ans;
@@ -385,17 +385,100 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
     UNPROTECT(1);
     return ans;
   }
-  
   if (o2 == OP_IN) {
     R_xlen_t M = xlength(y2);
-    if (xlength(x1) == xlength(y1)) {
+    if (xlength(y1) == 1) {
+      const int y1pi = y1p[0];
+      switch(o1) {
+      case OP_NE:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] != y1pi) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_EQ:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] == y1pi) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_GE:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] >= y1pi) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_LE:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] <= y1pi) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_GT:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] > y1pi) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      case OP_LT:
+        for (R_xlen_t i = 0; i < N; ++i) {
+          ansp[i] = 0;
+          if (x1p[i] < y1pi) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
+                ansp[i] = 1;
+                break;
+              }
+            }
+          }
+        }
+        break;
+      }
+    } 
+    
+    if (xlength(y1) == N) {
       switch(o1) {
       case OP_NE:
         for (R_xlen_t i = 0; i < N; ++i) {
           ansp[i] = 0;
           if (x1p[i] != y1p[i]) {
-            for (R_xlen_t j = 0; j < N; ++j) {
-              if (x2p[i] == y1p[j]) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
                 ansp[i] = 1;
                 break;
               }
@@ -407,8 +490,8 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
         for (R_xlen_t i = 0; i < N; ++i) {
           ansp[i] = 0;
           if (x1p[i] == y1p[i]) {
-            for (R_xlen_t j = 0; j < N; ++j) {
-              if (x2p[i] == y1p[j]) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
                 ansp[i] = 1;
                 break;
               }
@@ -420,8 +503,8 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
         for (R_xlen_t i = 0; i < N; ++i) {
           ansp[i] = 0;
           if (x1p[i] >= y1p[i]) {
-            for (R_xlen_t j = 0; j < N; ++j) {
-              if (x2p[i] == y1p[j]) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
                 ansp[i] = 1;
                 break;
               }
@@ -433,8 +516,8 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
         for (R_xlen_t i = 0; i < N; ++i) {
           ansp[i] = 0;
           if (x1p[i] <= y1p[i]) {
-            for (R_xlen_t j = 0; j < N; ++j) {
-              if (x2p[i] == y1p[j]) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
                 ansp[i] = 1;
                 break;
               }
@@ -446,8 +529,8 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
         for (R_xlen_t i = 0; i < N; ++i) {
           ansp[i] = 0;
           if (x1p[i] > y1p[i]) {
-            for (R_xlen_t j = 0; j < N; ++j) {
-              if (x2p[i] == y1p[j]) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
                 ansp[i] = 1;
                 break;
               }
@@ -459,8 +542,8 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
         for (R_xlen_t i = 0; i < N; ++i) {
           ansp[i] = 0;
           if (x1p[i] < y1p[i]) {
-            for (R_xlen_t j = 0; j < N; ++j) {
-              if (x2p[i] == y1p[j]) {
+            for (R_xlen_t j = 0; j < M; ++j) {
+              if (x2p[i] == y2p[j]) {
                 ansp[i] = 1;
                 break;
               }
