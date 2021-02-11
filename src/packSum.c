@@ -49,7 +49,7 @@ SEXP sum_int_from_lgl(SEXP x) {
 }
 
 
-SEXP packSum(SEXP x) {
+SEXP do_packSum(SEXP x) {
   switch(TYPEOF(x)) {
   case RAWSXP: return sum_raw_from_lgl(x);
   case INTSXP: return sum_int_from_lgl(x);
