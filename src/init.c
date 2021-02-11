@@ -22,6 +22,7 @@ extern SEXP do_is_constant(SEXP, SEXP);
 extern SEXP do_is_valid_path(SEXP, SEXP, SEXP);
 extern SEXP do_minmax(SEXP, SEXP, SEXP);
 extern SEXP do_names2int(SEXP, SEXP);
+extern SEXP do_packSum(SEXP);
 extern SEXP do_pad0(SEXP, SEXP);
 extern SEXP do_pmax0(SEXP);
 extern SEXP do_reaches_between(SEXP, SEXP, SEXP, SEXP);
@@ -49,6 +50,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_is_valid_path",         (DL_FUNC) &do_is_valid_path,          3},
     {"do_minmax",                (DL_FUNC) &do_minmax,                 3},
     {"do_names2int",             (DL_FUNC) &do_names2int,              2},
+    {"do_packSum",               (DL_FUNC) &do_packSum,                1},
     {"do_pad0",                  (DL_FUNC) &do_pad0,                   2},
     {"do_pmax0",                 (DL_FUNC) &do_pmax0,                  1},
     {"do_reaches_between",       (DL_FUNC) &do_reaches_between,        4},
