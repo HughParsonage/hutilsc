@@ -691,6 +691,8 @@ SEXP do_encodeRecordID(SEXP x) {
   return ans;
 }
 
+
+
 SEXP do_decodeRecordID(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != INTSXP) {

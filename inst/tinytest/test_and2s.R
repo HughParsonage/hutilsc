@@ -48,5 +48,52 @@ expect_equal(and2s(j >= 9L, k <= 9L),
              and2s(J, K))
 expect_equal(and2s(J, K), J & K)
 
+test_2expr <- function(irow,
+                       n1, n2, op1, op2, m1, m2, 
+                       type1 = "integer", 
+                       type2 = "integer",
+                       seed = 1,
+                       orig_seed = get0(".Random.seed")) {
+  force(irow)
+  set.seed(seed)
+  on.exit(set.seed(orig_seed))
+  x1 <- sample(-5:10, size = n1, replace = TRUE)
+  y1 <- sample(-5:10, size = m1, replace = TRUE)
+  x2 <- sample(-5:10, size = n2, replace = TRUE)
+  y2 <- sample(-5:10, size = m2, replace = TRUE)
+  ops <- c("!=", "==", ">=", "<=", ">", "<", "%in%")
+  
+  ANS <- 
+    eval(parse(text = paste("and2s(x1", ops[op1], "y1,", "x2", ops[op2], "y2);")))
+  
+  EXP <-
+    eval(parse(text = paste("`&`(x1", ops[op1], "y1,", "x2", ops[op2], "y2);")))
+  
+  identical(ANS, EXP)
+}
+
+library(data.table)
+Cj <- 
+  CJ(n1 = c(1L, 101L), 
+     n2 = c(1L, 101L),
+     op1 = 1:7,
+     op2 = 1:7,
+     m1 = c(1L, 101L),
+     m2 = c(1L, 101L))
+Cj[, ii := .I]
+Cj[, res := test_2expr(.BY[[1]], n1, n2, op1, op2, m1, m2), by = "ii"]
+for (r in 1:nrow(Cj)) {
+  expect_true(Cj$res[r], info = r)
+}
+
+
+
+
+
+
+
+
+
+
 
 

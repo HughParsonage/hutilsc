@@ -39,7 +39,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          install.packages(c("remotes"))
+          install.packages(c("remotes", "curl"))
           remotes::install_deps(dependencies = TRUE)
           remotes::install_cran("covr")
         shell: Rscript {0}
@@ -62,10 +62,11 @@ jobs:
       - name: Test SAN
         shell: bash
         run: |
-          Rdevel -q -e "ip <- function(x) install.packages(x, quiet = TRUE, repos = 'https://cran.r-project.org'); ip(c('data.table', 'checkmate'))"
+          Rdevel -q -e "ip <- function(x) install.packages(x, quiet = TRUE, repos = 'https://cran.r-project.org'); ip(c('data.table', 'checkmate', 'tinytest', 'withr'))"
           Rdevel CMD build .
           Rdevel CMD INSTALL hutilsc*.tar.gz
           Rdevel -q -e "xx <- c(5L, 4L, 1L); y <- rev(xx); hutilsc:::and2s(xx >= 1L, y <= 4L)"
+          Rdevel -q -e "library(hutilsc); tinytest::test_all()"
           
 
 
