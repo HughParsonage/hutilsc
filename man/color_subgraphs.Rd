@@ -4,13 +4,19 @@
 \alias{color_subgraphs}
 \title{Color subgraphs}
 \usage{
-color_subgraphs(DT, new_col = "color")
+color_subgraphs(
+  DT,
+  new_col = "color",
+  verbose = getOption("hutilsc.verbose", FALSE)
+)
 }
 \arguments{
 \item{DT}{A \code{data.table}, whose keys represent the edges of a graph.
 As the graph is undirected, each edge must connect a node to a higher node.}
 
 \item{new_col}{\code{character(1)} The new column name for the coloring.}
+
+\item{verbose}{Whether to display verbose info.}
 }
 \value{
 \code{DT} with an extra integer column, identifying each subgraph.

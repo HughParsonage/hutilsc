@@ -14,7 +14,7 @@
 #include <omp.h>
 #endif
 
-#define DEBUG 1
+#define DEBUG 0
 
 // int op = !(eq || gt || lt) ? 0 : (eq ? (gt ? 2 : (lt ? 3 : 1)) : (gt ? 4 : 5));
 // != == >= <=  >  <

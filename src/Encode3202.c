@@ -576,7 +576,7 @@ SEXP do_CountRecordID(SEXP x) {
 SEXP do_classify_chars(SEXP x, SEXP MaxNchar) {
   R_xlen_t N = xlength(x);
   const int mn = asInteger(MaxNchar);
-  SEXP ans = PROTECT(allocVector(INTSXP, mn));
+  SEXP ans = PROTECT(allocVector(INTSXP, mn * 256));
   int * restrict ansp = INTEGER(ans);
   
   // 0-9    2
@@ -584,11 +584,13 @@ SEXP do_classify_chars(SEXP x, SEXP MaxNchar) {
   // a-z    5
   // Anything else 7
   
-  bool digit_classes[mn][3];
+  bool digit_classes[mn][256];
   for (int j = 0; j < mn; ++j) {
-    digit_classes[j][0] = false;
-    digit_classes[j][1] = false;
-    digit_classes[j][2] = false;
+    for (int c = 0; c < 256; ++c) {
+      digit_classes[j][c] = false;
+      digit_classes[j][c] = false;
+      digit_classes[j][c] = false;
+    }
   }
   
   for (R_xlen_t i = 0; i < N; ++i) {
@@ -597,27 +599,25 @@ SEXP do_classify_chars(SEXP x, SEXP MaxNchar) {
     if (mn == strleni) {
       for (int c = mn - 1; c >= 0; --c) {
         char xic = xi[c];
-        digit_classes[c][0] |= (xic >= '0' && xic <= '9');
-        digit_classes[c][1] |= (xic >= 'a' && xic <= 'z');
-        digit_classes[c][2] |= (xic >= 'A' && xic <= 'Z');
+        unsigned int k = (unsigned int)xic;
+        digit_classes[c][k] = true;
       }
       
     } else {
       int nc = 0;
       for (int c = strleni - 1; (c >= 0) && (nc < mn); --c, ++nc) {
         char xic = xi[c];
-        digit_classes[c][0] |= (xic >= '0' && xic <= '9');
-        digit_classes[c][1] |= (xic >= 'a' && xic <= 'z');
-        digit_classes[c][2] |= (xic >= 'A' && xic <= 'Z');
+        unsigned int k = (unsigned int)xic;
+        digit_classes[c][k] = true;
       }
     }
   }
+  int ii = 0;
   for (int j = 0; j < mn; ++j) {
-    int k = j;
-    ansp[k] = 1;
-    ansp[k] *= digit_classes[j][0] ? 2 : 1;
-    ansp[k] *= digit_classes[j][1] ? 3 : 1;
-    ansp[k] *= digit_classes[j][2] ? 5 : 1;
+    for (int k = 0; k < 256; ++k, ++ii) {
+      ansp[ii] = digit_classes[j][k];
+    }
+    
   }
   
   UNPROTECT(1);
@@ -638,6 +638,46 @@ unsigned int alphnum2uint(char x) {
 }
 
 
+SEXP do_tabula_RecordID(SEXP x) {
+  if (TYPEOF(x) != STRSXP) {
+    return R_NilValue;
+  }
+  R_xlen_t N = xlength(x);
+  char tab[19][256];
+  for (int j = 0; j < 19; ++j) {
+    for (int k = 0; k < 256; ++k) {
+      tab[j][k] = 0;
+    }
+  }
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    int strleni = strlen(xi);
+    if (strleni >= 19) {
+      strleni = 18;
+    }
+    for (int c = 0; c < strleni; ++c) {
+      char xic = xi[c];
+      unsigned int xicj = alphnum2uint(xic);
+      tab[c][xicj] = 1;
+    }
+  }
+  SEXP ans = PROTECT(allocVector(INTSXP, 19 * 62));
+  int * restrict ansp = INTEGER(ans);
+  for (int kk = 0; kk < (19 * 62); ++kk) {
+    ansp[kk] = 0;
+  }
+  int kk = 0;
+  for (int i = 0; i < 19; ++i) {
+    for (int j = 0; j < 62; ++j, ++kk) {
+      if (tab[i][j]) {
+        ansp[kk] = 1;
+      }
+    }
+  }
+  UNPROTECT(1);
+  return ans;
+}
 
 
 SEXP do_encodeRecordID(SEXP x) {
@@ -668,6 +708,8 @@ SEXP do_encodeRecordID(SEXP x) {
       a += pw * alphnum2uint(xi[12]);
       pw *= 62U;
       a += pw * alphnum2uint(xi[11]);
+      pw *= 62U;
+      a += pw * (alphnum2uint(xi[10]) - 13U);
       ansp[i] = a;
     } else {
       int a = (-INT_MAX) + 1;
@@ -699,7 +741,8 @@ SEXP do_decodeRecordID(SEXP x) {
     error("TYPEOF(x) != INTSXP");
   }
   char string[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  unsigned int pows[4] = {62U, 62U * 62U, 62U * 62U * 62U, 62U * 62U * 62U * 62U};
+  unsigned int pows[5] = {62U, 62U * 62U, 62U * 62U * 62U, 62U * 62U * 62U * 62U, 
+                          62U * 62U * 62U * 62U * 62U};
   
   int * restrict xp = INTEGER(x);
   SEXP ans = PROTECT(allocVector(STRSXP, N));
@@ -732,7 +775,9 @@ SEXP do_decodeRecordID(SEXP x) {
     xi[7] = '0';
     xi[8] = '0';
     xi[9] = '0';
-    xi[10] = 'D';
+    
+    unsigned int xp10 = ((ei / pows[4] + 13U) % 62U);
+    xi[10] = string[xp10];
     
     unsigned int xp11 = (ei / pows[3]) % 62U;
     xi[11] = string[xp11];

@@ -70,3 +70,8 @@ pad0 <- function(x, w) {
   .Call("do_pad0", x, w, PACKAGE = packageName())
 }
 
+tabula_RecordID <- function(x) {
+  o <- .Call("do_tabula_RecordID", x, PACKAGE = packageName())
+  as.data.table(matrix(o, ncol = 19))[, c := c(0:9, LETTERS, letters)]
+}
+

@@ -49,3 +49,4 @@ vignettes/*.pdf
 !tests/*.R
 !inst/*.R
 
+tmp.R
