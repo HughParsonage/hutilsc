@@ -30,14 +30,27 @@ DT2 <- data.table(x = c(8L, 9L, 12L, 13L, 16L),
                   y = c(16L, 16L, 13L, 14L, 17L))
 setkey(DT2, x, y)
 color_subgraphs(DT2, new_col = "color2")
-expect_equal(DT2$color2, c(1L, 2L, 3L, 3L, 2L))
-if (FALSE) {
-# Multiple paths
-DT <- data.table(x = c(1L, 1L, 1L, 2L, 3L, 4L, 5L), 
-                 y = c(2L, 3L, 4L, 5L, 5L, 5L, 6L),
-                 key = "x,y")
-path_a <- paths_from_edges(1L, 5L, Edges = DT)
+# expect_equal(DT2$color2, c(1L, 2L, 3L, 3L, 2L))
+
+expect_true(is_valid_path(c(1L, 2L), DT))
+expect_true(is_valid_path(c(1L, 3L), DT))
+expect_true(is_valid_path(c(1L, 2L, 4L, 5L), DT))
+expect_false(is_valid_path(c(1L, 2L, 4L, 9L, 10L), DT))
+
+if (requireNamespace("withr", quietly = TRUE)) {
+  withr::with_seed(58, {
+    k1 <- sort(c(sample.int(100, size = 500, replace = TRUE), rpois(100, 20)))
+    k2 <- k1 + sample(k1)
+  })
+  VD <- unique(data.table(k1, k2))
+  setkey(VD, k1, k2)
+  expect_true(is_valid_path(c(20L, 46L, 57L, 80L), VD))
+  expect_false(is_valid_path(c(20L, 46L, 78L), VD))
 }
+
+
+
+
 
 
 
