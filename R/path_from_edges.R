@@ -3,8 +3,12 @@
 #' @param a,b Scalar integers. The origin and destination of a path.
 #' @param Edges A list of two integer vectors, giving each edge of the graph.
 #' 
+#' @param len For \code{common_contacts}, the length of the path to consider.
+#' 
 #' @return If a path from \code{orig} to \code{dest} exists, \code{is_valid_path}
 #' returns \code{TRUE}.
+#' 
+#' \code{common_contacts} returns the nodes that are between the nodes.
 #' 
 #' @export is_valid_path
 
