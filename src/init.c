@@ -12,6 +12,7 @@ extern SEXP do_and_lgl_int(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_and2s(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_classify_chars(SEXP, SEXP);
 extern SEXP do_color_graph(SEXP, SEXP, SEXP);
+extern SEXP do_common_contacts(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_CountRecordID(SEXP);
 extern SEXP do_Decode3202(SEXP);
 extern SEXP do_decodeRecordID(SEXP);
@@ -46,6 +47,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_and2s",                 (DL_FUNC) &do_and2s,                 10},
     {"do_classify_chars",        (DL_FUNC) &do_classify_chars,         2},
     {"do_color_graph",           (DL_FUNC) &do_color_graph,            3},
+    {"do_common_contacts",       (DL_FUNC) &do_common_contacts,        6},
     {"do_CountRecordID",         (DL_FUNC) &do_CountRecordID,          1},
     {"do_Decode3202",            (DL_FUNC) &do_Decode3202,             1},
     {"do_decodeRecordID",        (DL_FUNC) &do_decodeRecordID,         1},

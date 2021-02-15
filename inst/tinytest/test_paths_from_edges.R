@@ -48,6 +48,16 @@ if (requireNamespace("withr", quietly = TRUE)) {
   expect_false(is_valid_path(c(20L, 46L, 78L), VD))
 }
 
+# Common contacts
+EdgesCC <- 
+  rbind(data.table(x = 1L, y = 2:11),
+        data.table(x = 2:11, y = 13L)) %>%
+  setkey(x, y)
+
+expect_equal(common_contacts(1L, 13L, EdgesCC, len = 3L),
+             2:11)
+
+
 
 
 
