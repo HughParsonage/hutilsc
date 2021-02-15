@@ -6,171 +6,6 @@ struct Node {
   struct Node *right;
 };
 
-bool has_no_precedents(int k2i,
-                       const int * k1, 
-                       const int * k2,
-                       const R_xlen_t N) {
-  int r = radix_find(k1, k2i, 0, N, N);
-  return k1[r] != k2i;
-}
-
-R_xlen_t apply_reaches_dest(int * ansp, 
-                            const int * k1,
-                            const int * k2,
-                            R_xlen_t i, R_xlen_t N) {
-  int k2i = k2[i];
-  R_xlen_t r = radix_find(k1, k2i, 0, N, N);
-  Rprintf("\t%d\n", (int) r);
-  if (r < 0 || r >= N) {
-    return 0;
-  }
-  if (k1[r] != k2i) {
-    return 0;
-  }
-  while (k1[r] == k2i) {
-    ansp[r] = 1;
-    ++r;
-  }
-  return r;
-}
-
-int iisum(int * ap, R_xlen_t N) {
-  int s = 0;
-  for (R_xlen_t i = 0; i < N; ++i) {
-    s += ap[i] > 0;
-  }
-  return s;
-}
-
-int unique_sorted_before(int x, const int * k, R_xlen_t N) {
-  // k = a sorted array
-  // x the value in k for which the number of unique values 
-  // before is desired.
-  if (x > k[N - 2]) {
-    return N - 1;
-  }
-  if (x == k[0]) {
-    return 0;
-  }
-  R_xlen_t i = 1;
-  int o = 0;
-  while (k[i] < x) {
-    o += k[i] != k[i - 1];
-    ++i;
-  }
-  return o;
-}
-
-
-SEXP reaches_dest(SEXP dest, SEXP K1, SEXP K2) {
-  R_xlen_t N = xlength(K1);
-  if (N != xlength(K2)) {
-    error("Lengths.");
-  }
-  const int b = asInteger(dest);
-  const int * k1 = INTEGER(K1);
-  const int * k2 = INTEGER(K2);
-  
-  // RR is the range of values in kl which reach dest
-  R_xlen_t RR[2] = {-1, 0};
-  radix_find_range(b, k1, RR, N);
-  R_xlen_t last_b = RR[0];
-  while (last_b > 0 && k2[last_b] != b) {
-    --last_b;
-  }
-  Rprintf("%d ", last_b);
-  if (last_b == 0 && k2[last_b] != b) {
-    return R_NilValue;
-  }
-  
-  
-  int k1_tmp = k1[last_b];
-  radix_find_range(k1_tmp, k1, RR, N);
-  
-  Rprintf("k1_tmp = %d; RR0 = %d, RR1 = %d\n", k1_tmp, RR[0], RR[1]);
-  
-  SEXP ans = PROTECT(allocVector(INTSXP, N));
-  int * restrict ansp = INTEGER(ans);
-  for (R_xlen_t i = 0; i < N; ++i) {
-    ansp[i] = 0;
-  }
-  
-  
-  Rprintf("ansp0 = %d\nrr = ", ansp[0]);
-  
-  for (R_xlen_t rr = RR[0]; rr <= RR[1]; ++rr) {
-    Rprintf("%d,", (int)rr);
-    ansp[rr] = 1;
-    int k1rr = k1[rr];
-    for (R_xlen_t rri = 0; rri < RR[0]; ++rri) {
-      if (k2[rri] > k1rr) {
-        break;
-      }
-      if (k2[rri] == k1rr) {
-        ansp[rri] = 1;
-      }
-    }
-  }
-  
-  Rprintf(";\n ");
-  
-  int sum = iisum(ansp, N);
-  R_xlen_t while_count = 0;
-  
-  R_xlen_t RR0 = RR[0];
-  
-  do {
-    sum = iisum(ansp, N);
-    Rprintf("sum = %d | ", sum);
-    
-    bool same_RR0 = true;
-    // For every k1 entry currently,
-    // find its location in k2, and then find 
-    // the k1 location corresponding
-    for (R_xlen_t i = 0; i < RR0; ++i) {
-      if (ansp[i]) {
-        Rprintf("%d: ", (int)i);
-        if (same_RR0) {
-          RR0 = i;
-          same_RR0 = false;
-        }
-        int k1pi = k1[i];
-        for (R_xlen_t j = 0; j < i; ++j) {
-          int k2pj = k2[j];
-          if (k1pi == k2pj) {
-            ansp[j] = 1;
-          }
-        }
-      }
-    }
-    // int sss = iisum(ansp, N);
-    // Rprintf("sss = %d\n", sss);
-  } while (sum != iisum(ansp, N) && while_count++ < N);
-    
-  
-  
-  UNPROTECT(1);
-  return ans;
-}
-
-int max_precendents(const int * k1, const R_xlen_t N) {
-  // The maximum number of precedents is the maximum 
-  // count in k1.  Since this is sorted, we only require
-  // one simple pass through.
-  
-  int maxp = 0;
-  int current_max = 1; // always at least one precedent
-  for (R_xlen_t i = 1; i < N; ++i) {
-    if (k1[i - 1] != k1[i]) { // new k1 value
-      if (maxp > current_max) {
-        maxp = current_max;
-        current_max = 1;
-      }
-    }
-  }
-  return maxp;
-}
-
 SEXP do_ensure_leq(SEXP K1, SEXP K2) {
   if (TYPEOF(K1) != TYPEOF(K2)) {
     error("(ensure_leq): typeof differ.");
@@ -195,6 +30,7 @@ SEXP do_ensure_leq(SEXP K1, SEXP K2) {
   }
   return R_NilValue;
 }
+
 
 SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
   // color graph using the colors 1,2,3
@@ -347,9 +183,6 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
   return ans;
 }
 
-
-
-
 SEXP do_path_from_edges(SEXP orig, SEXP dest, SEXP K1, SEXP K2) {
   int N = xlength(K1);
   const int a = asInteger(orig);
@@ -391,24 +224,13 @@ SEXP do_path_from_edges(SEXP orig, SEXP dest, SEXP K1, SEXP K2) {
   return ans;
 }
 
-SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
-  R_xlen_t N = xlength(K1);
-  if (TYPEOF(path) != INTSXP) {
-    return R_NilValue;
-  }
-  const int * k1 = INTEGER(K1);
-  const int * k2 = INTEGER(K2);
-  const int * pp = INTEGER(path);
-  
+bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, R_xlen_t N) {
   int a = pp[0];
   int r = radix_find(k1, a, 0, N, N);
   if (k1[r] != a) {
-    return_false;
+    return false;
   }
-  int n = xlength(path);
-  
   for (int i = 1; i < n; ++i) {
-    
     R_xlen_t R[2] = {-1, -1};
     radix_find_range(a, k1, R, N);
     int p2 = pp[i];
@@ -420,14 +242,29 @@ SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
       }
     }
     if (!hits_next) {
-      return_false;
+      return false;
     }
     a = p2;
   }
-  return_true;
+  return true;
 }
 
-SEXP do_reaches_between(SEXP aa, SEXP bb, SEXP K1, SEXP K2) {
+SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
+  R_xlen_t N = xlength(K1);
+  if (TYPEOF(path) != INTSXP) {
+    return R_NilValue;
+  }
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int * pp = INTEGER(path);
+  
+  int n = xlength(path);
+  
+  bool o = one_valid_path(pp, k1, k2, n, N);
+  return ScalarLogical(o);
+}
+
+SEXP do_reaches_between(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes) {
   const int a = asInteger(aa);
   const int b = asInteger(bb);
   
@@ -448,39 +285,53 @@ SEXP do_reaches_between(SEXP aa, SEXP bb, SEXP K1, SEXP K2) {
   
   SEXP ans = PROTECT(allocVector(INTSXP, b));
   int * restrict ansp = INTEGER(ans);
-  for (R_xlen_t i = 0; i < b; ++i) {
-    ansp[i] = (i < a) ? 0 : NA_INTEGER;
+  warning("Not yet implemnted.");
+  for (R_xlen_t i = 0; i < N; ++i) {
+    ansp[i] = 0;
   }
   
-  for (int j = R[0]; j <= R[1]; ++j) {
-    ansp[j] = 1;
-    int destj = k2[j];
-    if (destj < b) {
-      ansp[destj] = 1;
-    }
-    
-  }
-  
-  // Now go through each vertex from a to b,
-  // Has it been reached? If so, it is reachable
-  // And so are its descendants
-  // If not, say so.
-  for (int v = a; v < b; ++v) {
-    if (ansp[v] == 1) {
-      radix_find_range(v, k1, R, N);
-      for (int j = R[0]; j <= R[1]; ++j) {
-        ansp[j] = 1;
-        int destj = k2[j];
-        if (destj < b) {
-          ansp[destj] = 1;
-        }
-      }
-    } else {
-      ansp[v] = 0;
-    }
-  }
   UNPROTECT(1);
   return ans;
+}
+
+
+SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len) {
+  R_xlen_t N = xlength(K1);
+  const int a = asInteger(aa);
+  const int b = asInteger(bb);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int len = asInteger(Len);
+  
+  
+  R_xlen_t UN = xlength(Nodes);
+  const int * nodes = INTEGER(Nodes);
+  
+  int r_a = radix_find(nodes, a, 0, UN, UN);
+  int r_b = radix_find(nodes, b, 0, UN, UN);
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, r_b - r_a));
+  int * restrict ansp = INTEGER(ans);
+  R_xlen_t n_common_cases = 0;
+  
+  
+  for (R_xlen_t i = 0, j = r_a; j < r_b; ++j, ++i) {
+    int pp[3] = {a, nodes[j], b};
+    bool node_presentj = one_valid_path(pp, k1, k2, 3, N); 
+    ansp[i] = nodes[j] * node_presentj;
+    n_common_cases += node_presentj;
+  }
+  
+  // The nodes properly indexed
+  SEXP ans1 = PROTECT(allocVector(INTSXP, n_common_cases));
+  int * restrict ans1p = INTEGER(ans1);
+  for (R_xlen_t i = 0, k = 0, j = r_a; j < r_b; ++j, ++i) {
+    ans1p[k] = ansp[i];
+    k += (ansp[i] > 0);
+  }
+  
+  UNPROTECT(2);
+  return ans1;
 }
 
 
