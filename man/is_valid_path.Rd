@@ -18,10 +18,14 @@ common_contacts(a, b, Edges, len = 3L)
 \item{Edges}{A list of two integer vectors, giving each edge of the graph.}
 
 \item{a, b}{Scalar integers. The origin and destination of a path.}
+
+\item{len}{For \code{common_contacts}, the length of the path to consider.}
 }
 \value{
 If a path from \code{orig} to \code{dest} exists, \code{is_valid_path}
 returns \code{TRUE}.
+
+\code{common_contacts} returns the nodes that are between the nodes.
 }
 \description{
 Path Between Nodes From List of Edges
