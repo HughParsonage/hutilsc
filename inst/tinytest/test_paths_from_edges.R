@@ -51,16 +51,16 @@ if (requireNamespace("withr", quietly = TRUE)) {
 # Common contacts
 EdgesCC <- 
   rbind(data.table(x = 1L, y = 2:11),
-        data.table(x = 2:11, y = 13L)) %>%
-  setkey(x, y)
+        data.table(x = 2:11, y = 13L))
+setkey(EdgesCC, x, y)
 
 expect_equal(common_contacts(1L, 13L, EdgesCC, len = 3L),
              2:11)
 
 EdgesCD <- 
   rbind(data.table(x = 1L, y = 2:11),
-        data.table(x = 2:11, y = c(13L, 15L))) %>%
-  setkey(x, y)
+        data.table(x = 2:11, y = c(13L, 15L)))
+setkey(EdgesCD, x, y)
 expect_equal(common_contacts(1L, 13L, EdgesCD, len = 3L), 
              seq.int(2L, 10L, by = 2L))
 
