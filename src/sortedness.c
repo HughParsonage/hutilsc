@@ -119,3 +119,102 @@ SEXP do_is_sorted(SEXP x, SEXP nThread) {
   return ScalarLogical((bool)o);
 }
 
+SEXP do_unique_sorted(SEXP x) {
+  R_xlen_t N = xlength(x);
+  R_xlen_t N128 = N > 128 ? 128 : N;
+  R_xlen_t n_unique = 1, n_unique_128 = 1;
+  if (TYPEOF(x) == NILSXP || N <= 1) {
+    return x;
+  }
+  if (TYPEOF(x) == INTSXP) {
+    const int * xp = INTEGER(x);
+    
+    int * mans = malloc(sizeof(int) * N);
+    if (mans == NULL) {
+      free(mans);
+      return R_NilValue;
+    }
+    mans[0] = xp[0];
+    R_xlen_t j = 1;
+    for (R_xlen_t i = 1; i < N; ++i) {
+      // i -- index of original
+      // j -- index of new allocation
+      bool new_element = xp[i - 1] != xp[i];
+      n_unique += new_element;
+      mans[j] = xp[i];
+      j += new_element; // increment if new
+    }
+    SEXP ans = PROTECT(allocVector(INTSXP, j));
+    int * restrict ansp = INTEGER(ans);
+    for (R_xlen_t k = 0; k < j; ++k) {
+      ansp[k] = mans[k];
+    }
+    free(mans);
+    UNPROTECT(1);
+    return ans;
+  }
+  return x;
+}
+
+
+
+int dig(int x, int d, int b) {
+  const int digtens[9] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
+  int M = digtens[d];
+  return (x % M) / (M / 10);
+}
+
+SEXP do_counting_sort(SEXP xo, SEXP base) {
+  R_xlen_t N = xlength(xo);
+  const int b = 10;
+  
+  const int * xop = INTEGER(xo);
+  SEXP x = PROTECT(allocVector(INTSXP, N));
+  int * xp = INTEGER(x);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    if (xop[i] < 0 || xop[i] > 9) {
+      xp[i] = 0;
+    }
+    xp[i] = xop[i];
+  }
+  
+  int count[10];
+  for (int c = 0; c < 10; ++c) {
+    count[c] = 0;
+  }
+  
+  unsigned int * xd = malloc(sizeof(int) * N);
+  if (xd == NULL) {
+    free(xd);
+    error("xd not allocate.");
+  }
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int xdi = dig(xp[i], 1, b);
+    xd[i] = xdi;
+    count[xdi] += 1;
+  }
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int xdi = xd[i];
+    count[xdi] += 1;
+  }
+  count[1] += count[0];
+  for (R_xlen_t i = 0; i < N; ++i) {
+    unsigned int xdi = (unsigned int)xd[i];
+    int pos = count[xdi] - 1;
+    ansp[pos] = xp[i];
+    --count[xdi];
+  }
+  for (R_xlen_t i = 0; i < N; ++i) {
+    xp[i] = ansp[i];
+  }
+  free(xd);
+  UNPROTECT(2);
+  return x;
+}
+
+
+
+

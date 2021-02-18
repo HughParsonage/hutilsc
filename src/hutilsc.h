@@ -53,5 +53,11 @@ int linear_find(const int * k1, const int a, const int N);
 int linear_find_from(const int * k1, const int a, int from, const int N);
 void radix_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
 void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
+
+// maxmin
+int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy);
+
+// sortedness
+bool sorted_int(const int * xp, R_xlen_t N, int nThreads);
   
 #endif

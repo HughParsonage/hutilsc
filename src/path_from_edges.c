@@ -6,6 +6,20 @@ struct Node {
   struct Node *right;
 };
 
+inline int max0(int x) {
+  return (x > 0) ? x : 0;
+}
+
+int Maxi(const int * xp, int N) {
+  int o = 1;
+  for (int i = 0; i < N; ++i) {
+    int xpi = xp[i];
+    o = xpi > o ? xpi : o;
+  }
+  return o;
+}
+
+
 SEXP do_ensure_leq(SEXP K1, SEXP K2) {
   if (TYPEOF(K1) != TYPEOF(K2)) {
     error("(ensure_leq): typeof differ.");
@@ -81,10 +95,21 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
       Rprintf("color = %d\n", color);
     }
     if (ansp[i]) {
+      int anspi = anspi;
       R_xlen_t RR[2] = {-1, -1};
       radix_find_range(k2[i], k1, RR, N);
       for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
-        ansp[j] = ansp[i]; // color by existing coloring
+        int anspj = ansp[j];
+        if (anspj && anspj < anspi) {
+          // current color is wrong and must be corrected
+          for (R_xlen_t ii = 0; ii < i; ++ii) {
+            if (ansp[ii] == anspi) {
+              ansp[ii] = anspj;
+            }
+          }
+          anspi = anspj;
+        }
+        ansp[j] = anspi; // color by existing coloring
       }
       continue; // already colored
     }
@@ -302,8 +327,6 @@ SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
   const int len = asInteger(Len);
-  
-  
   R_xlen_t UN = xlength(Nodes);
   const int * nodes = INTEGER(Nodes);
   
@@ -313,7 +336,6 @@ SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len
   SEXP ans = PROTECT(allocVector(INTSXP, r_b - r_a));
   int * restrict ansp = INTEGER(ans);
   R_xlen_t n_common_cases = 0;
-  
   
   for (R_xlen_t i = 0, j = r_a; j < r_b; ++j, ++i) {
     int pp[3] = {a, nodes[j], b};
@@ -332,6 +354,274 @@ SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len
   
   UNPROTECT(2);
   return ans1;
+}
+
+SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
+  R_xlen_t N = xlength(K1);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  R_xlen_t UN = xlength(Nodes);
+  const int * nodes = INTEGER(Nodes);
+  if (!sorted_int(k1, N, 1)) {
+    error("k1 is not sorted.");
+  }
+  if (!sorted_int(nodes, UN, 1)) {
+    error("nodes is not sorted.");
+  }
+  const bool ret_nOutlets = asLogical(return_nOutlets);
+  
+  // # nocov start
+  int * n_outlets = malloc(sizeof(int) * N);
+  if (n_outlets == NULL) {
+    free(n_outlets);
+    error("Unable to allocate n_outlets.");
+  }
+  R_xlen_t * R0_outlets = malloc(sizeof(R_xlen_t) * N);
+  if (R0_outlets == NULL) {
+    free(R0_outlets);
+    error("Unable to allocate R0_outlets");
+  }
+  R_xlen_t * R1_outlets = malloc(sizeof(R_xlen_t) * N);
+  if (R1_outlets == NULL) {
+    free(R1_outlets);
+    error("Unable to allocate R1_outlets");
+  }
+  // # nocov end
+  
+  // Number of elements in result (number of len3 paths effectively)
+  R_xlen_t AN = 0;
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int k2i = k2[i];
+    R_xlen_t R[2] = {-1, -1};
+    radix_find_range(k2i, k1, R, N);
+    R0_outlets[i] = R[0];
+    R1_outlets[i] = R[1];
+    int n_outletsi = R[1] - R[0];
+    n_outletsi = n_outletsi < 0 ? 0 : (n_outletsi + 1);
+    n_outlets[i] = n_outletsi;
+    AN += n_outletsi;
+  }
+  
+  if (ret_nOutlets) {
+    SEXP ans = PROTECT(allocVector(INTSXP, N));
+    int * restrict ansp = INTEGER(ans);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      ansp[i] = n_outlets[i];
+    }
+    free(n_outlets);
+    free(R0_outlets);
+    free(R1_outlets);
+    UNPROTECT(1);
+    return ans;
+  }
+  
+  if (AN < 1) {
+    // no elements to speak of
+    return R_NilValue;
+  }
+  
+  SEXP ans1 = PROTECT(allocVector(INTSXP, AN));
+  SEXP ans2 = PROTECT(allocVector(INTSXP, AN));
+  SEXP ans3 = PROTECT(allocVector(INTSXP, AN));
+  int * restrict ans1p = INTEGER(ans1);
+  int * restrict ans2p = INTEGER(ans2);
+  int * restrict ans3p = INTEGER(ans3);
+  
+  // k is the index of the output vectors (0 <= k < AN)
+  R_xlen_t k = 0;
+  
+  // Loop through N elements, though the output vectors will be
+  // length AN. Idea is to insert n_outlets[i] at each key
+  // k1i, k2i.  If it's zero, no successor; otherwise, the number
+  // of paths emanate from the node k2i along this edge. 
+  // ans1p and ans2p are just the parent edge, though repeated
+  // for convenience.
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int n_outletsi = n_outlets[i];
+    if (n_outletsi) {
+      R_xlen_t R0i = R0_outlets[i];
+      R_xlen_t R1i = R1_outlets[i];
+      for (int j = 0; j < n_outletsi; ++j, ++k) {
+#if false
+        if (k >= AN || (R0i + j) >= N) {
+          Rprintf("k = %d, R0i = %d, AN = %d\n", k, R0i, AN);
+          free(n_outlets);
+          free(R0_outlets);
+          free(R1_outlets);
+          UNPROTECT(3);
+          error("Out of range");
+        }
+#endif
+        ans1p[k] = k1[i];
+        ans2p[k] = k2[i];
+        ans3p[k] = k2[R0i + j];
+      }
+    }
+  }
+  free(n_outlets);
+  free(R0_outlets);
+  free(R1_outlets);
+  
+  SEXP ans = PROTECT(allocVector(VECSXP, 3));
+  SET_VECTOR_ELT(ans, 0, ans1);
+  SET_VECTOR_ELT(ans, 1, ans2);
+  SET_VECTOR_ELT(ans, 2, ans3);
+  UNPROTECT(4);
+  return ans;
+}
+
+
+SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
+  if (TYPEOF(Len3Paths) != VECSXP || xlength(Len3Paths) < 3) {
+    error("Internal error(len4_paths): TYPEOF(Len3Paths) != VECSXP");
+  }
+  SEXP V0 = VECTOR_ELT(Len3Paths, 0);
+  SEXP V1 = VECTOR_ELT(Len3Paths, 1);
+  SEXP V2 = VECTOR_ELT(Len3Paths, 2);
+  if (TYPEOF(V0) != INTSXP ||
+      TYPEOF(V1) != INTSXP ||
+      TYPEOF(V2) != INTSXP) {
+    return R_NilValue;
+  }
+  
+  R_xlen_t N = xlength(V0);
+  if (N != xlength(V0) || N != xlength(V1) || N != xlength(V2)) {
+    return R_NilValue;
+  }
+  
+  R_xlen_t M = xlength(K1);
+  if (M != xlength(K2)) {
+    return R_NilValue;
+  }
+  
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  
+  const int * v0 = INTEGER(V0);
+  const int * v1 = INTEGER(V1);
+  const int * v2 = INTEGER(V2);
+  
+  // # nocov start
+  R_xlen_t * R0_outlets = malloc(sizeof(R_xlen_t) * N);
+  if (R0_outlets == NULL) {
+    free(R0_outlets);
+    error("Unable to allocate R0_outlets");
+  }
+  R_xlen_t * R1_outlets = malloc(sizeof(R_xlen_t) * N);
+  if (R1_outlets == NULL) {
+    free(R1_outlets);
+    error("Unable to allocate R1_outlets");
+  }
+  // # nocov end
+  
+  // Number of elements in result (number of len3 paths effectively)
+  R_xlen_t AN = 0;
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int k2i = v2[i];
+    R_xlen_t R[2] = {-1, -1};
+    radix_find_range(k2i, k1, R, M);
+    R0_outlets[i] = R[0];
+    R1_outlets[i] = R[1];
+    R_xlen_t n_outletsi = R[1] - R[0];
+    n_outletsi = n_outletsi < 0 ? 0 : (n_outletsi + 1);
+    AN += n_outletsi;
+  }
+  if (AN > INT_MAX) {
+    free(R0_outlets);
+    free(R1_outlets);
+    error("AN > INT_MAX in len4_paths");
+  }
+  
+  R_xlen_t k = 0;
+  
+  SEXP ans0 = PROTECT(allocVector(INTSXP, AN));
+  SEXP ans1 = PROTECT(allocVector(INTSXP, AN));
+  SEXP ans2 = PROTECT(allocVector(INTSXP, AN));
+  SEXP ans3 = PROTECT(allocVector(INTSXP, AN));
+  int * restrict ans0p = INTEGER(ans0);
+  int * restrict ans1p = INTEGER(ans1);
+  int * restrict ans2p = INTEGER(ans2);
+  int * restrict ans3p = INTEGER(ans3);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    R_xlen_t R0 = R0_outlets[i];
+    R_xlen_t R1 = R1_outlets[i];
+    if (R1 >= R0) {
+      R_xlen_t n_outletsi = R1 - R0 + 1;
+      for (R_xlen_t j = 0; j < n_outletsi; ++j, ++k) {
+        ans0p[k] = v0[i];
+        ans1p[k] = v1[i];
+        ans2p[k] = v2[i];
+        ans3p[k] = k2[R0 + j];
+      }
+    }
+  }
+  free(R0_outlets);
+  free(R1_outlets);
+  SEXP ans = PROTECT(allocVector(VECSXP, 4));
+  SET_VECTOR_ELT(ans, 0, ans0);
+  SET_VECTOR_ELT(ans, 1, ans1);
+  SET_VECTOR_ELT(ans, 2, ans2);
+  SET_VECTOR_ELT(ans, 3, ans3);
+  UNPROTECT(5);
+  return ans;
+}
+
+
+// 
+void fuse2(const int * xp, const int * yp, int * zp, int N) {
+  int M = Maxi(xp, N);
+  int M1 = M + 1;
+  // avoid malloc problems by asserting that M1 can never be -1
+  if (M1 > 1e9 || M1 < 1) {
+    return;
+  }
+  // original color --> new color map
+  int * tbl = malloc(sizeof(int) * M1);
+  if (tbl == NULL) {
+    return;
+  }
+  for (int i = 0; i <= M; ++i) {
+    tbl[i] = i;
+  }
+  for (int i = N - 1; i >= 0; --i) {
+    int ypi = yp[i];
+    int xpi = xp[i];
+    if (xpi != ypi) {
+      int t = tbl[xpi];
+      tbl[xpi] = ypi < t ? ypi : t;
+    }
+  }
+  for (int j = 0; j < N; ++j) {
+    zp[j] = tbl[xp[j]];
+  }
+  free(tbl);
+}
+
+SEXP do_fuse2(SEXP x, SEXP y) {
+  R_xlen_t N = xlength(x);
+  if (xlength(y) != N || N > INT_MAX || TYPEOF(x) != INTSXP || TYPEOF(y) != INTSXP) {
+    error("Lengths.");
+  }
+  const int * xp = INTEGER(x);
+  const int * yp = INTEGER(y);
+  int * zp = malloc(sizeof(int) * N);
+  if (zp == NULL) {
+    free(zp);
+    return R_NilValue;
+  }
+  fuse2(xp, yp, zp, (int)N);
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  for (int i = 0; i < N; ++i) {
+    ansp[i] = zp[i];
+  }
+  free(zp);
+  UNPROTECT(1);
+  return ans;
 }
 
 
@@ -370,6 +660,28 @@ SEXP do_fuse1(SEXP Color, SEXP K1, SEXP K2) {
   UNPROTECT(1);
   return ans;
 }
+
+SEXP do_validate_colors(SEXP K1, SEXP K2, SEXP Color) {
+  R_xlen_t N = xlength(Color);
+  if (N != xlength(K1) || N != xlength(K2) || N <= 1) {
+    error("Lengths differ.");
+  }
+  const int * color = INTEGER(Color);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int k1i = k1[i];
+    int k2i = k2[i];
+    int ci = color[i];
+    int r = radix_find(k1, k2i, i, N, N);
+    if (k1[r] == k2i && ci != color[r]) {
+      Rprintf("k1i = %d, k2i = %d, r = %d, ci = %d, color[r] = %d\n", k1i, k2i, r, ci, color[r]);
+      return ScalarInteger(i + 1);
+    }
+  }
+  return ScalarInteger(0);
+}
+
 
 
 
