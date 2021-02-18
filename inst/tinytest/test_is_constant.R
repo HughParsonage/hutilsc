@@ -1,3 +1,4 @@
+library(hutilsc)
 xl <- logical(5)
 xi <- integer(5)
 xd <- double(5)

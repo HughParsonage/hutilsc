@@ -18,5 +18,11 @@ is_sorted <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
   .Call("do_is_sorted", x, nThread, PACKAGE = packageName())
 }
 
+unique_sorted <- function(x) {
+  .Call("do_unique_sorted", x, PACKAGE = packageName())
+}
 
+counting_sort <- function(x) {
+  .Call("do_counting_sort", x, 128L, PACKAGE = packageName())
+}
 

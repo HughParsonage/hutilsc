@@ -1,5 +1,50 @@
 #include "hutilsc.h"
 
+int maxii(int x, int y) {
+  return (x >= y) ? x : y;
+}
+
+int maxX(const int * x, R_xlen_t N, bool sx) {
+  if (N == 0) {
+    return INT_MIN;
+  }
+  if (sx) {
+    return x[N - 1];
+  }
+  int max_x = x[0];
+  for (R_xlen_t i = 1; i < N; ++i) {
+    max_x = maxii(max_x, x[i]);
+  }
+  return max_x;
+}
+
+
+
+int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy) {
+  if (Nx == 0) {
+    
+  }
+  if (sx & sy) {
+    return maxii(x[Nx - 1], y[Ny - 1]);
+  }
+  if (sx) {
+    int max_xy = x[Nx - 1];
+    for (R_xlen_t i = 0; i < Ny; ++i) {
+      max_xy = maxii(max_xy, y[i]);
+    }
+    return max_xy;
+  }
+  if (sy) {
+    int max_xy = y[Nx - 1];
+    for (R_xlen_t i = 0; i < Nx; ++i) {
+      max_xy = maxii(max_xy, x[i]);
+    }
+    return max_xy;
+  }
+  return maxii(maxX(x, Nx, sx), maxX(y, Ny, sy));
+}
+
+
 SEXP do_minmax(SEXP x, SEXP emptyResult, SEXP nThread) {
   R_xlen_t N = xlength(x);
   if (N == 0) {

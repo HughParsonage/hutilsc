@@ -35,6 +35,27 @@ int radix_find(const int * k1p, const int a, int x0, int x1, int N) {
   return radix_find(k1p, a, x0, m, N);
 }
 
+int radix_detect(int a, const int * k1p, int x0, int x1) {
+  if (k1p[x0] == a) {
+    return x0;
+  }
+  int w = x1 - x0;
+  if (w < 16) {
+    for (int i = x0; i < x1; ++i) {
+      if (k1p[i] == a) {
+        return i + 1;
+      }
+    }
+    return 0;
+  }
+  int m = x0 + (w >> 1);
+  if (k1p[m] < a) {
+    return radix_detect(a, k1p, m, x1);
+  } else {
+    return radix_detect(a, k1p, x0, m + 1);
+  }
+}
+
 SEXP do_test_radix_find(SEXP a, SEXP tbl, SEXP X0) {
   R_xlen_t N = xlength(tbl);
   const int aa = asInteger(a);
@@ -116,6 +137,43 @@ void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N) {
   R[0] = R0;
   R[1] = R1;
 }
+
+SEXP n_sin(SEXP x, SEXP tbl, SEXP xsorted) {
+  R_xlen_t M = xlength(tbl);
+  R_xlen_t N = xlength(x);
+  
+  const int * xp = INTEGER(x);
+  const int * tp = INTEGER(tbl);
+  
+  int n = 0;
+  int xr = 0;
+  
+  R_xlen_t i = 0;
+  int tpj = tp[0];
+  while (i < N && xp[i] < tpj) {
+    ++i;
+  }
+  
+  for (; i < N; ++i) {
+    
+    int xi = xp[i];
+    for (R_xlen_t j = xr; j < M; ++j) {
+      tpj = tp[j];
+      
+      // need to keep incrementing for duplicated entires in x
+      if (xi == tpj) {
+        while (i < N && xp[i] == tpj) {
+          ++n;
+          ++i;
+        }
+        break;
+      }
+    }
+  }
+  return ScalarInteger(n);
+}
+
+
 
 
 

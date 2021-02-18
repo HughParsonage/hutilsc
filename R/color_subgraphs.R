@@ -42,11 +42,28 @@ color_subgraphs <- function(DT, new_col = "color", verbose = getOption("hutilsc.
   }
   
   # Now we need to account for endpoints
-  DT[, "color_tmp" := min(color), by = c(key(DT)[2])]
+  DT[, "min_color" := min(color), by = c(key(DT)[2])]
+  DT[, "min_color" := pmin(color, .SD[["min_color"]])]
 
-  DT[, (new_col) := .Call("touch_up_graph", .SD[[1]], .SD[[2]], .SD[[3]], .SD[[4]]), 
-     .SDcols = c(new_col, key(DT)[1], key(DT)[2], "color_tmp")]
+  
+  DT[, (new_col) := fuse2(.SD[[new_col]], .SD[["min_color"]])]
   
   DT[]
 }
 
+fuse2 <- function(x, y) {
+  .Call("do_fuse2", x, y)
+}
+
+validate_colors <- function(DT, color = "color") {
+  stopifnot(is.data.table(DT), haskey(DT), 
+            length(key(DT)) >= 2L)
+  
+  stopifnot(is.integer(k1 <- .subset2(DT, key(DT)[1])),
+            is.integer(k2 <- .subset2(DT, key(DT)[2])))
+  
+  stopifnot(hasName(DT, color), 
+            is.integer(c <- .subset2(DT, color)))
+  
+  .Call("do_validate_colors", k1, k2, c)
+}

@@ -10,4 +10,6 @@ test_radix_find_range <- function(x, tbl) {
   .Call("do_test_radix_find_range", x, tbl, PACKAGE = packageName())
 }
 
-
+sum_in <- function(x, tbl, sorted = FALSE) {
+  .Call("n_sin", x, tbl, sorted, PACKAGE = packageName())
+}
