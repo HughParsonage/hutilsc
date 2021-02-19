@@ -77,8 +77,10 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
     int k2i0 = k2[i0];
     R_xlen_t RR[2] = {-1, -1};
     radix_find_range(k2i0, k1, RR, N);
-    for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
-      ansp[j] = 1;
+    if (RR[0] <= RR[1]) {
+      for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
+        ansp[j] = 1;
+      }
     }
     ++i0;
   }
@@ -96,18 +98,20 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
       int anspi = anspi;
       R_xlen_t RR[2] = {-1, -1};
       radix_find_range(k2[i], k1, RR, N);
-      for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
-        int anspj = ansp[j];
-        if (anspj && anspj < anspi) {
-          // current color is wrong and must be corrected
-          for (R_xlen_t ii = 0; ii < i; ++ii) {
-            if (ansp[ii] == anspi) {
-              ansp[ii] = anspj;
+      if (RR[0] <= RR[1]) {
+        for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
+          int anspj = ansp[j];
+          if (anspj && anspj < anspi) {
+            // current color is wrong and must be corrected
+            for (R_xlen_t ii = 0; ii < i; ++ii) {
+              if (ansp[ii] == anspi) {
+                ansp[ii] = anspj;
+              }
             }
+            anspi = anspj;
           }
-          anspi = anspj;
+          ansp[j] = anspi; // color by existing coloring
         }
-        ansp[j] = anspi; // color by existing coloring
       }
       continue; // already colored
     }
@@ -117,8 +121,10 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
     ansp[i] = color;
     R_xlen_t RR[2] = {-1, -1};
     radix_find_range(k2[i], k1, RR, N);
-    for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
-      ansp[j] = color;
+    if (RR[0] <= RR[1]) {
+      for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
+        ansp[j] = color;
+      }
     }
     
     // Now do the same for the contiguous group
@@ -128,8 +134,10 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
       }
       ansp[ii] = color;
       radix_find_range(k2[ii], k1, RR, N);
-      for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
-        ansp[j] = color;
+      if (RR[0] <= RR[1]) {
+        for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
+          ansp[j] = color;
+        }
       }
     }
   }
