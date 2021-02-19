@@ -46,7 +46,9 @@ color_subgraphs <- function(DT, new_col = "color", verbose = getOption("hutilsc.
   new_min_color <- pmin(color, .subset2(DT, "min_color"))
 
   ans <- fuse2(new_min_color, color)
-  
+  if (verbose) {
+    cat("ans done\n")
+  }
   DT[, (new_col) := NULL]
   set(DT, j = new_col, value = ans)
   
