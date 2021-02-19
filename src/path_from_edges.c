@@ -19,7 +19,6 @@ int Maxi(const int * xp, int N) {
   return o;
 }
 
-
 SEXP do_ensure_leq(SEXP K1, SEXP K2) {
   if (TYPEOF(K1) != TYPEOF(K2)) {
     error("(ensure_leq): typeof differ.");
@@ -141,6 +140,7 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
       }
     }
   }
+  Rprintf("\n143 ");
   UNPROTECT(1);
   return ans;
 }
@@ -175,7 +175,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
     maxColor = (maxColor < color[i]) ? color[i] : maxColor;
   }
   int nColors = maxColor < maxMinColor ? maxMinColor : maxColor;
-  Rprintf("170");
+  Rprintf("170 ");
   int * old_color = malloc(sizeof(int) * nColors);
   if (old_color == NULL) {
     return R_NilValue;
@@ -188,7 +188,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
     old_color[j] = j + 1;
     new_color[j] = j + 1;
   }
-  Rprintf("183");
+  Rprintf("183 ");
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
   
@@ -201,7 +201,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
       new_color[color_req_changing - 1] = corrected_color;
     }
   }
-  Rprintf("196");
+  Rprintf("196 ");
   for (R_xlen_t i = 0; i < N; ++i) {
     int colori = color[i];
     ansp[i] = needs_changing[i] ? new_color[colori - 1] : colori;
@@ -209,7 +209,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
   free(needs_changing);
   free(old_color);
   free(new_color);
-  Rprintf("204");
+  Rprintf("204 ");
   UNPROTECT(1);
   return ans;
 }
@@ -608,7 +608,7 @@ void fuse2(const int * xp, const int * yp, int * zp, int N) {
   for (int j = 0; j < N; ++j) {
     Rprintf(" j = %d,", j);
     int xpj = xp[j];
-    Rprintf("xpj = %d,", xpj);
+    Rprintf("xpj = %d,\n", xpj);
     zp[j] = tbl[xp[j]];
   }
   free(tbl);
