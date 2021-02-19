@@ -43,7 +43,7 @@ color_subgraphs <- function(DT, new_col = "color", verbose = getOption("hutilsc.
   
   # Now we need to account for endpoints
   DT[, "min_color" := min(color), by = c(key(DT)[2])]
-  new_min_color <- pmin(color, .subset2(DT, new_col))
+  new_min_color <- pmin(color, .subset2(DT, "min_color"))
 
   ans <- fuse2(new_min_color, color)
   
