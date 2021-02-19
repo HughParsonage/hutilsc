@@ -635,8 +635,6 @@ SEXP do_fuse1(SEXP Color, SEXP K1, SEXP K2) {
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
   
-  
-  
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
   
