@@ -571,7 +571,7 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
 void fuse2(const int * xp, const int * yp, int * zp, int N) {
   int M = Maxi(xp, N);
   int M1 = M + 1;
-  Rprintf("M1 = %d", M1);
+  Rprintf("\nM1 = %d\n", M1);
   // avoid malloc problems by asserting that M1 can never be -1
   if (M1 > 1e9 || M1 < 1) {
     return;
@@ -584,7 +584,7 @@ void fuse2(const int * xp, const int * yp, int * zp, int N) {
   for (int i = 0; i <= M; ++i) {
     tbl[i] = i;
   }
-  Rprintf("588");
+  Rprintf("588\n");
   for (int i = N - 1; i >= 0; --i) {
     
     int ypi = yp[i];
@@ -598,6 +598,9 @@ void fuse2(const int * xp, const int * yp, int * zp, int N) {
     }
   }
   for (int j = 0; j < N; ++j) {
+    Rprintf(" j = %d,", j);
+    int xpj = xp[j];
+    Rprintf("xpj = %d,", xpj);
     zp[j] = tbl[xp[j]];
   }
   free(tbl);
@@ -616,6 +619,11 @@ SEXP do_fuse2(SEXP x, SEXP y) {
     return R_NilValue;
   }
   fuse2(xp, yp, zp, (int)N);
+  
+  if (N > 2) {
+    Rprintf("zp[0] = %d", zp[0]);
+    Rprintf("zp[1] = %d", zp[1]);
+  }
   
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
