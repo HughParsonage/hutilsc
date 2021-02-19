@@ -48,7 +48,7 @@ color_subgraphs <- function(DT, new_col = "color", verbose = getOption("hutilsc.
   ans <- fuse2(new_min_color, color)
   
   DT[, (new_col) := NULL]
-  set(DT, j = new_col, value = color)
+  set(DT, j = new_col, value = ans)
   
   DT[]
 }
