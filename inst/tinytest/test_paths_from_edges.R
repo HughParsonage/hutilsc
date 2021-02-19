@@ -1,5 +1,5 @@
 
-
+options(hutilsc.verbose = TRUE)
 library(data.table)
 ..Edges <- function() {
   ci <- function(...) as.integer(c(...))
