@@ -621,8 +621,8 @@ SEXP do_fuse2(SEXP x, SEXP y) {
   fuse2(xp, yp, zp, (int)N);
   
   if (N > 2) {
-    Rprintf("zp[0] = %d", zp[0]);
-    Rprintf("zp[1] = %d", zp[1]);
+    Rprintf("zp[0] = %d, ", zp[0]);
+    Rprintf("zp[1] = %d; ", zp[1]);
   }
   
   SEXP ans = PROTECT(allocVector(INTSXP, N));
@@ -630,6 +630,7 @@ SEXP do_fuse2(SEXP x, SEXP y) {
   for (int i = 0; i < N; ++i) {
     ansp[i] = zp[i];
   }
+  Rprintf("633:\n");
   free(zp);
   UNPROTECT(1);
   return ans;
