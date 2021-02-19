@@ -64,9 +64,7 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
   for (R_xlen_t i = 0; i < N; ++i) {
     ansp[i] = 0; // INTEGER does not initialize
   }
-  if (verb) {
-    Rprintf(".");
-  }
+  
   
   int color = 1;
   ansp[0] = 1;
@@ -89,7 +87,7 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
   }
   
   for (R_xlen_t i = 0; i < N; ++i) {
-    if (verb && ((i % 16) == 0) && i < INT_MAX) {
+    if (verb && i < INT_MAX) {
       Rprintf("i = %d,", i);
       Rprintf("ansp[i] = %d,", ansp[i]);
       Rprintf("color = %d\n", color);
@@ -125,7 +123,7 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
     
     // Now do the same for the contiguous group
     for (R_xlen_t ii = i; (ii < N) && (k1[ii] == k1i); ++ii) {
-      if (verb && ((i % 16) == 0) && i < INT_MAX) {
+      if (verb && i < INT_MAX) {
         Rprintf("ii = %d\n", ii);
       }
       ansp[ii] = color;
@@ -161,7 +159,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
   for (R_xlen_t i = 0; i < N; ++i) {
     needs_changing[i] = color[i] != mincolor[i];
   }
-  
+  Rprintf("162");
   int maxMinColor = mincolor[0];
   int maxColor = color[0];
   for (R_xlen_t i = 1; i < N; ++i) {
@@ -169,7 +167,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
     maxColor = (maxColor < color[i]) ? color[i] : maxColor;
   }
   int nColors = maxColor < maxMinColor ? maxMinColor : maxColor;
-  
+  Rprintf("170");
   int * old_color = malloc(sizeof(int) * nColors);
   if (old_color == NULL) {
     return R_NilValue;
@@ -182,7 +180,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
     old_color[j] = j + 1;
     new_color[j] = j + 1;
   }
-  
+  Rprintf("183");
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
   
@@ -195,7 +193,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
       new_color[color_req_changing - 1] = corrected_color;
     }
   }
-  
+  Rprintf("196");
   for (R_xlen_t i = 0; i < N; ++i) {
     int colori = color[i];
     ansp[i] = needs_changing[i] ? new_color[colori - 1] : colori;
@@ -203,7 +201,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
   free(needs_changing);
   free(old_color);
   free(new_color);
-  
+  Rprintf("204");
   UNPROTECT(1);
   return ans;
 }
