@@ -568,10 +568,10 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
 }
 
 
-// 
 void fuse2(const int * xp, const int * yp, int * zp, int N) {
   int M = Maxi(xp, N);
   int M1 = M + 1;
+  Rprintf("M1 = %d", M1);
   // avoid malloc problems by asserting that M1 can never be -1
   if (M1 > 1e9 || M1 < 1) {
     return;
@@ -584,9 +584,14 @@ void fuse2(const int * xp, const int * yp, int * zp, int N) {
   for (int i = 0; i <= M; ++i) {
     tbl[i] = i;
   }
+  Rprintf("588");
   for (int i = N - 1; i >= 0; --i) {
+    
     int ypi = yp[i];
     int xpi = xp[i];
+    if (N < 10) {
+      Rprintf("593: i = %d\typi = %d\txpi = %d\n", i, ypi, xpi);
+    }
     if (xpi != ypi) {
       int t = tbl[xpi];
       tbl[xpi] = ypi < t ? ypi : t;
