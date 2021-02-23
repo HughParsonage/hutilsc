@@ -36,5 +36,8 @@ expect_equal(isntSorted(x), 1L)
 expect_true(is_sorted(as.character(1:5)))
 expect_false(is_sorted(as.character(c(1:5, 5:1))))
 
+x <- c(logical(10), TRUE, NA)
+csl <- hutilsc:::counting_sort_logi(x)
+expect_equal(csl, x[order(x)])
 
 
