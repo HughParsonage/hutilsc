@@ -41,6 +41,9 @@ common_contacts <- function(a, b, Edges, len = 3L) {
   k1 <- .subset2(Edges, key(Edges)[1])
   k2 <- .subset2(Edges, key(Edges)[2])
   u <- union(k1, k2)
+  u <- u[order(u)]
+  
+  
   
   if (a > b || (a %notin% u) || (b %notin% u)) {
     return(integer(0))

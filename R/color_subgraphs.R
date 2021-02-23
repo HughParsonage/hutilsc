@@ -71,3 +71,44 @@ validate_colors <- function(DT, color = "color") {
   
   .Call("do_validate_colors", k1, k2, c)
 }
+
+color_clique <- function(DT, new_color = "clique") {
+  stopifnot(is.data.table(DT))
+  kdt <- key(DT)
+  if (length(kdt) < 2) {
+    stop("key(Edges) has length < 2")
+  }
+  k1 <- kdt[1]
+  k2 <- kdt[2]
+  
+  stopifnot(is.integer(K1 <- .subset2(DT, k1)),
+            is.integer(K2 <- .subset2(DT, k2)))
+  K1 <- .subset2(DT, k1)
+  K2 <- .subset2(DT, k2)
+  u <- union(K1, K2)  
+  u <- u[order(u)]
+  # Reverse the edges to try the reverse action
+  DTR <- DT[, .SD, .SDcols = c(kdt)]
+  setnames(DTR, rev(kdt))
+  
+  K1 <- c(.subset2(DT, k1), .subset2(DTR, k1))
+  K2 <- c(.subset2(DT, k2), .subset2(DTR, k2))
+  DT_bound <- data.table(K1, K2, key = "K1,K2")
+  
+  K1 <- .subset2(DT_bound, 1L)
+  K2 <- .subset2(DT_bound, 2L)
+  
+  vCliques <- .Call("do_clique1", 
+                    u, K1, K2, K1, K2)
+  
+  data.table(u, vCliques)
+        
+}
+
+Rev <- function(x) .Call("test_rev", x)
+
+eloop <- function(x, a, b) {
+  .Call("test_loop", x, a, b, PACKAGE = packageName())
+  
+}
+
