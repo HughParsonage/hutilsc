@@ -8,9 +8,11 @@
 */
 
 /* .Call calls */
+extern SEXP count_sort_logi(SEXP);
 extern SEXP do_and_lgl_int(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_and2s(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_classify_chars(SEXP, SEXP);
+extern SEXP do_clique1(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_color_graph(SEXP, SEXP, SEXP);
 extern SEXP do_common_contacts(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_counting_sort(SEXP, SEXP);
@@ -47,11 +49,15 @@ extern SEXP lookup2_char(SEXP);
 extern SEXP lookup4_char(SEXP);
 extern SEXP n_sin(SEXP, SEXP, SEXP);
 extern SEXP one_edge_dist(SEXP, SEXP, SEXP, SEXP);
+extern SEXP test_loop(SEXP, SEXP, SEXP);
+extern SEXP test_rev(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
+    {"count_sort_logi",          (DL_FUNC) &count_sort_logi,           1},
     {"do_and_lgl_int",           (DL_FUNC) &do_and_lgl_int,            5},
     {"do_and2s",                 (DL_FUNC) &do_and2s,                 10},
     {"do_classify_chars",        (DL_FUNC) &do_classify_chars,         2},
+    {"do_clique1",               (DL_FUNC) &do_clique1,                5},
     {"do_color_graph",           (DL_FUNC) &do_color_graph,            3},
     {"do_common_contacts",       (DL_FUNC) &do_common_contacts,        6},
     {"do_counting_sort",         (DL_FUNC) &do_counting_sort,          2},
@@ -88,6 +94,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"lookup4_char",             (DL_FUNC) &lookup4_char,              1},
     {"n_sin",                    (DL_FUNC) &n_sin,                     3},
     {"one_edge_dist",            (DL_FUNC) &one_edge_dist,             4},
+    {"test_loop",                (DL_FUNC) &test_loop,                 3},
+    {"test_rev",                 (DL_FUNC) &test_rev,                  1},
     {NULL, NULL, 0}
 };
 

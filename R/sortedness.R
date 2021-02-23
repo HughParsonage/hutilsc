@@ -26,3 +26,7 @@ counting_sort <- function(x) {
   .Call("do_counting_sort", x, 128L, PACKAGE = packageName())
 }
 
+counting_sort_logi <- function(x) {
+  .Call("count_sort_logi", x)
+}
+

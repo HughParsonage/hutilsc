@@ -121,8 +121,7 @@ SEXP do_is_sorted(SEXP x, SEXP nThread) {
 
 SEXP do_unique_sorted(SEXP x) {
   R_xlen_t N = xlength(x);
-  R_xlen_t N128 = N > 128 ? 128 : N;
-  R_xlen_t n_unique = 1, n_unique_128 = 1;
+  R_xlen_t n_unique = 1;
   if (TYPEOF(x) == NILSXP || N <= 1) {
     return x;
   }
@@ -216,5 +215,34 @@ SEXP do_counting_sort(SEXP xo, SEXP base) {
 }
 
 
-
+SEXP count_sort_logi(SEXP x) {
+  R_xlen_t N = xlength(x);
+  if (TYPEOF(x) != LGLSXP || N > INT_MAX) {
+    return R_NilValue;
+  }
+  
+  const int * xp = INTEGER(x);
+  
+  unsigned int tbl[3] = {0};
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int xpi = xp[i];
+    int j = xpi == NA_INTEGER ? 2 : xpi;
+    tbl[j] += 1;
+  }
+  SEXP ans = PROTECT(allocVector(LGLSXP, N));
+  int * restrict ansp = LOGICAL(ans);
+  R_xlen_t i = 0;
+  for (; i < tbl[0]; ++i) {
+    ansp[i] = FALSE;
+  } 
+  tbl[1] += tbl[0];
+  for (; i < tbl[1]; ++i) {
+    ansp[i] = TRUE;
+  }
+  for (; i < N; ++i) {
+    ansp[i] = NA_LOGICAL;
+  }
+  UNPROTECT(1);
+  return ans;
+}
 
