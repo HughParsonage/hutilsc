@@ -167,7 +167,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
   for (R_xlen_t i = 0; i < N; ++i) {
     needs_changing[i] = color[i] != mincolor[i];
   }
-  Rprintf("162");
+  
   int maxMinColor = mincolor[0];
   int maxColor = color[0];
   for (R_xlen_t i = 1; i < N; ++i) {
@@ -175,7 +175,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
     maxColor = (maxColor < color[i]) ? color[i] : maxColor;
   }
   int nColors = maxColor < maxMinColor ? maxMinColor : maxColor;
-  Rprintf("170 ");
+  
   int * old_color = malloc(sizeof(int) * nColors);
   if (old_color == NULL) {
     return R_NilValue;
@@ -201,7 +201,7 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
       new_color[color_req_changing - 1] = corrected_color;
     }
   }
-  Rprintf("196 ");
+  
   for (R_xlen_t i = 0; i < N; ++i) {
     int colori = color[i];
     ansp[i] = needs_changing[i] ? new_color[colori - 1] : colori;
@@ -305,14 +305,12 @@ SEXP do_reaches_between(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes) {
   
   R_xlen_t N = xlength(K1);
   const int * k1 = INTEGER(K1);
-  const int * k2 = INTEGER(K2);
   
   R_xlen_t R[2] = {-1, -1};
   radix_find_range(a, k1, R, N);
   if (R[1] < R[0]) {
     return R_NilValue;
   }
-  
   
   SEXP ans = PROTECT(allocVector(INTSXP, b));
   int * restrict ansp = INTEGER(ans);
@@ -332,7 +330,7 @@ SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len
   const int b = asInteger(bb);
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
-  const int len = asInteger(Len);
+  // const int len = asInteger(Len);
   R_xlen_t UN = xlength(Nodes);
   const int * nodes = INTEGER(Nodes);
   
@@ -448,18 +446,7 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
     int n_outletsi = n_outlets[i];
     if (n_outletsi) {
       R_xlen_t R0i = R0_outlets[i];
-      R_xlen_t R1i = R1_outlets[i];
       for (int j = 0; j < n_outletsi; ++j, ++k) {
-#if false
-        if (k >= AN || (R0i + j) >= N) {
-          Rprintf("k = %d, R0i = %d, AN = %d\n", k, R0i, AN);
-          free(n_outlets);
-          free(R0_outlets);
-          free(R1_outlets);
-          UNPROTECT(3);
-          error("Out of range");
-        }
-#endif
         ans1p[k] = k1[i];
         ans2p[k] = k2[i];
         ans3p[k] = k2[R0i + j];
@@ -579,7 +566,7 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
 void fuse2(const int * xp, const int * yp, int * zp, int N) {
   int M = Maxi(xp, N);
   int M1 = M + 1;
-  Rprintf("\nM1 = %d\n", M1);
+  //Rprintf("\nM1 = %d\n", M1);
   // avoid malloc problems by asserting that M1 can never be -1
   if (M1 > 1e9 || M1 < 1) {
     return;
@@ -592,23 +579,20 @@ void fuse2(const int * xp, const int * yp, int * zp, int N) {
   for (int i = 0; i <= M; ++i) {
     tbl[i] = i;
   }
-  Rprintf("588\n");
+  //Rprintf("588\n");
   for (int i = N - 1; i >= 0; --i) {
     
     int ypi = yp[i];
     int xpi = xp[i];
-    if (N < 10) {
-      Rprintf("593: i = %d\typi = %d\txpi = %d\n", i, ypi, xpi);
-    }
     if (xpi != ypi) {
       int t = tbl[xpi];
       tbl[xpi] = ypi < t ? ypi : t;
     }
   }
   for (int j = 0; j < N; ++j) {
-    Rprintf(" j = %d,", j);
+    //Rprintf(" j = %d,", j);
     int xpj = xp[j];
-    Rprintf("xpj = %d,\n", xpj);
+    //Rprintf("xpj = %d,\n", xpj);
     zp[j] = tbl[xp[j]];
   }
   free(tbl);
@@ -628,17 +612,12 @@ SEXP do_fuse2(SEXP x, SEXP y) {
   }
   fuse2(xp, yp, zp, (int)N);
   
-  if (N > 2) {
-    Rprintf("zp[0] = %d, ", zp[0]);
-    Rprintf("zp[1] = %d; ", zp[1]);
-  }
-  
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
   for (int i = 0; i < N; ++i) {
     ansp[i] = zp[i];
   }
-  Rprintf("633:\n");
+  //Rprintf("633:\n");
   free(zp);
   UNPROTECT(1);
   return ans;
@@ -679,6 +658,7 @@ SEXP do_fuse1(SEXP Color, SEXP K1, SEXP K2) {
   return ans;
 }
 
+
 SEXP do_validate_colors(SEXP K1, SEXP K2, SEXP Color) {
   R_xlen_t N = xlength(Color);
   if (N != xlength(K1) || N != xlength(K2) || N <= 1) {
@@ -699,6 +679,151 @@ SEXP do_validate_colors(SEXP K1, SEXP K2, SEXP Color) {
   }
   return ScalarInteger(0);
 }
+
+
+void rev(const int * x, int * y, R_xlen_t N) {
+  for (R_xlen_t i = 0; i < N; ++i) {
+    y[i] = x[(N - 1) - i];
+  }
+}
+
+SEXP test_rev(SEXP x) {
+  R_xlen_t N = xlength(x);
+  int * r = malloc(sizeof(int) * N);
+  const int * xp = INTEGER(x);
+  rev(xp, r, N);
+  SEXP out = PROTECT(allocVector(INTSXP, N));
+  int * restrict outp = INTEGER(out);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    outp[i] = r[i];
+  }
+  free(r);
+  UNPROTECT(1);
+  return out;
+}
+
+void print_vec(const int * xp, R_xlen_t N) {
+  for (R_xlen_t i = 0; i < N; ++i) {
+    Rprintf("%d,", xp[i]);
+  }
+}
+
+SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
+  // Assumes a sequential
+  R_xlen_t N = xlength(K1);
+  R_xlen_t UN = xlength(U);
+  if (TYPEOF(U) != INTSXP || 
+      TYPEOF(K1) != INTSXP ||
+      TYPEOF(K2) != INTSXP) {
+    error("Types integer.");
+  }
+  if (N != xlength(K2)) {
+    error("N != xlength(K2)");
+  }
+  const int * u = INTEGER(U);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  
+  // Prepare the start and ends of each element in U
+  int * R0 = malloc(sizeof(int) * UN);
+  if (R0 == NULL) {
+    return R_NilValue;
+  }
+  int * R1 = malloc(sizeof(int) * UN);
+  if (R1 == NULL) {
+    return R_NilValue;
+  }
+  for (R_xlen_t i = 0; i < UN; ++i) {
+    R_xlen_t R[2] = {-1, -1};
+    radix_find_range(u[i], k1, R, N);
+    R0[i] = R[0];
+    R1[i] = R[1];
+  }
+  
+  
+  
+  // color each node
+  SEXP ans = PROTECT(allocVector(INTSXP, UN));
+  int * restrict ansp = INTEGER(ans);
+  for (R_xlen_t i = 0; i < UN; ++i) {
+    ansp[i] = 0;
+  }
+  int color = 0;
+  int new_color = 1;
+  ansp[0] = 1;
+  // R_xlen_t k = 0;
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int k1i = k1[i];
+    // location of k1i within u
+    int ri = radix_find(u, k1i, 0, UN, UN);
+    if (ansp[ri]) {
+      // already done
+      color = ansp[ri];
+    } else {
+      color = ++new_color;
+    }
+    ansp[ri] = color;
+    R_xlen_t j = i;
+    while (j < N && k1[j] == k1i) {
+      int k2i = k2[j];
+      R_xlen_t R[2] = {0, 0}; // note that k1i != k2i so R[1] is never 0 unless not found
+      radix_find_range(k2i, k1, R, N);
+      for (R_xlen_t k = R[0]; k <= R[1]; ++k) {
+        
+        int kk = k2[k];
+        int rkk = radix_find(u, kk, 0, UN, UN);
+        if (u[rkk] == kk && (ansp[rkk] == 0 || ansp[rkk] > color)) {
+          ansp[rkk] = color;
+        }
+      }
+      int rj = radix_find(u, k2i, 0, UN, UN);
+      if (ansp[rj] == 0) {
+        ansp[rj] = color;
+      }
+      ++j;
+    }
+  }
+  
+  // Now the initial direction once
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int k1i = k1[i];
+    int k2i = k2[i];
+    int u1i = radix_find(u, k1i, 0, UN, UN);
+    int u2i = radix_find(u, k2i, 0, UN, UN);
+    int colori = ansp[u1i];
+    ansp[u2i] = colori;
+  }
+  free(R0);
+  free(R1);
+  
+  
+  UNPROTECT(1);
+  return ans;
+}
+
+
+SEXP test_loop(SEXP x, SEXP aa, SEXP bb) {
+  R_xlen_t N = xlength(x);
+  if (N > INT_MAX) {
+    return R_NilValue;
+  }
+  const int * xp = INTEGER(x);
+  int * R0 = malloc(sizeof(int) * N);
+  int * R1 = malloc(sizeof(int) * N);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    R_xlen_t R[2] = {-1, -1};
+    radix_find_range(xp[i], xp, R, N);
+    R0[i] = R[0];
+    R1[i] = R[1];
+  }
+  const int a = asInteger(aa);
+  const int b = asInteger(bb);
+  int o = R1[a] - R0[b];
+  free(R0);
+  free(R1);
+  return ScalarInteger(o);
+}
+
 
 
 

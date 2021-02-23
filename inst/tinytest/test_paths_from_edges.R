@@ -64,8 +64,10 @@ setkey(EdgesCD, x, y)
 expect_equal(common_contacts(1L, 13L, EdgesCD, len = 3L), 
              seq.int(2L, 10L, by = 2L))
 
-
-
+DifficultToColor <- 
+  data.table(x = c(1L, 2L, 2L, 3L, 7L), 
+             y = c(7L, 3L, 9L, 4L, 9L))
+setkey(DifficultToColor, x, y)
 
 
 
