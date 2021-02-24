@@ -87,12 +87,18 @@ color_clique <- function(DT, new_color = "clique") {
   K2 <- .subset2(DT, k2)
   u <- union(K1, K2)  
   u <- u[order(u)]
+  u_by_i <- data.table(u, i = seq_along(u))
   # Reverse the edges to try the reverse action
   DTR <- DT[, .SD, .SDcols = c(kdt)]
   setnames(DTR, rev(kdt))
   
   K1 <- c(.subset2(DT, k1), .subset2(DTR, k1))
   K2 <- c(.subset2(DT, k2), .subset2(DTR, k2))
+  
+  # Insist on sequential
+  K1 <- match(K1, u)
+  K2 <- match(K2, u)
+  
   DT_bound <- data.table(K1, K2, key = "K1,K2")
   
   K1 <- .subset2(DT_bound, 1L)

@@ -140,7 +140,6 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
       }
     }
   }
-  Rprintf("\n143 ");
   UNPROTECT(1);
   return ans;
 }
@@ -188,7 +187,6 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
     old_color[j] = j + 1;
     new_color[j] = j + 1;
   }
-  Rprintf("183 ");
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
   
@@ -209,7 +207,6 @@ SEXP touch_up_graph(SEXP Color, SEXP K1, SEXP K2, SEXP minColor) {
   free(needs_changing);
   free(old_color);
   free(new_color);
-  Rprintf("204 ");
   UNPROTECT(1);
   return ans;
 }
@@ -566,7 +563,6 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
 void fuse2(const int * xp, const int * yp, int * zp, int N) {
   int M = Maxi(xp, N);
   int M1 = M + 1;
-  //Rprintf("\nM1 = %d\n", M1);
   // avoid malloc problems by asserting that M1 can never be -1
   if (M1 > 1e9 || M1 < 1) {
     return;
@@ -617,7 +613,6 @@ SEXP do_fuse2(SEXP x, SEXP y) {
   for (int i = 0; i < N; ++i) {
     ansp[i] = zp[i];
   }
-  //Rprintf("633:\n");
   free(zp);
   UNPROTECT(1);
   return ans;
@@ -673,7 +668,6 @@ SEXP do_validate_colors(SEXP K1, SEXP K2, SEXP Color) {
     int ci = color[i];
     int r = radix_find(k1, k2i, i, N, N);
     if (k1[r] == k2i && ci != color[r]) {
-      Rprintf("k1i = %d, k2i = %d, r = %d, ci = %d, color[r] = %d\n", k1i, k2i, r, ci, color[r]);
       return ScalarInteger(i + 1);
     }
   }
@@ -703,8 +697,10 @@ SEXP test_rev(SEXP x) {
 }
 
 void print_vec(const int * xp, R_xlen_t N) {
-  for (R_xlen_t i = 0; i < N; ++i) {
-    Rprintf("%d,", xp[i]);
+  if (N < 20) {
+    for (R_xlen_t i = 0; i < N; ++i) {
+      Rprintf("%d,", xp[i]);
+    }
   }
 }
 
@@ -735,12 +731,10 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
   }
   for (R_xlen_t i = 0; i < UN; ++i) {
     R_xlen_t R[2] = {-1, -1};
-    radix_find_range(u[i], k1, R, N);
+    radix_find_range(i + 1, k1, R, N);
     R0[i] = R[0];
     R1[i] = R[1];
   }
-  
-  
   
   // color each node
   SEXP ans = PROTECT(allocVector(INTSXP, UN));
@@ -755,7 +749,7 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
   for (R_xlen_t i = 0; i < N; ++i) {
     int k1i = k1[i];
     // location of k1i within u
-    int ri = radix_find(u, k1i, 0, UN, UN);
+    int ri = k1i - 1;
     if (ansp[ri]) {
       // already done
       color = ansp[ri];
@@ -765,18 +759,19 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
     ansp[ri] = color;
     R_xlen_t j = i;
     while (j < N && k1[j] == k1i) {
+      // while loop continues each path from the same node (k1i)
       int k2i = k2[j];
-      R_xlen_t R[2] = {0, 0}; // note that k1i != k2i so R[1] is never 0 unless not found
-      radix_find_range(k2i, k1, R, N);
-      for (R_xlen_t k = R[0]; k <= R[1]; ++k) {
-        
+      int R0j = R0[k2i - 1];
+      int R1j = R1[k2i - 1];
+      for (R_xlen_t k = R0j; k <= R1j; ++k) {
         int kk = k2[k];
-        int rkk = radix_find(u, kk, 0, UN, UN);
+        int rkk = kk - 1;
         if (u[rkk] == kk && (ansp[rkk] == 0 || ansp[rkk] > color)) {
           ansp[rkk] = color;
         }
       }
-      int rj = radix_find(u, k2i, 0, UN, UN);
+      
+      int rj = k2[i] - 1;
       if (ansp[rj] == 0) {
         ansp[rj] = color;
       }
@@ -786,17 +781,25 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
   
   // Now the initial direction once
   for (R_xlen_t i = 0; i < N; ++i) {
+    
     int k1i = k1[i];
     int k2i = k2[i];
-    int u1i = radix_find(u, k1i, 0, UN, UN);
-    int u2i = radix_find(u, k2i, 0, UN, UN);
-    int colori = ansp[u1i];
-    ansp[u2i] = colori;
+    int colori = ansp[k1i - 1];
+    ansp[k2i - 1] = colori;
   }
+  
+  int cmin = ansp[0];
+  
+  for (R_xlen_t i = 1; i < UN; ++i) {
+    cmin = ansp[i] < cmin ? ansp[i] : cmin;
+  }
+  cmin--;
+  for (R_xlen_t i = 0; i < UN; ++i) {
+    ansp[i] -= cmin;
+  }
+  
   free(R0);
   free(R1);
-  
-  
   UNPROTECT(1);
   return ans;
 }
