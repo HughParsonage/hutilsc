@@ -1,5 +1,6 @@
 
-options(hutilsc.verbose = TRUE)
+options(hutilsc.verbose = FALSE)
+attach(asNamespace("hutilsc"))
 library(data.table)
 ..Edges <- function() {
   ci <- function(...) as.integer(c(...))
@@ -67,7 +68,13 @@ expect_equal(common_contacts(1L, 13L, EdgesCD, len = 3L),
 DifficultToColor <- 
   data.table(x = c(1L, 2L, 2L, 3L, 7L), 
              y = c(7L, 3L, 9L, 4L, 9L))
+
+DifficultToColor <- DifficultToColor[, lapply(.SD, function(x) match(x, sort(unique(unlist(.SD)))))]
+
 setkey(DifficultToColor, x, y)
+CliquesD2C <- color_clique(DifficultToColor)
+expect_true(is_constant(CliquesD2C[[2]]))
+
 
 
 
