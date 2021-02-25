@@ -101,11 +101,6 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
       Rprintf("ansp[i] = %d,", ansp[i]);
       Rprintf("color = %d\n", color);
     }
-    if (N == 6) {
-      Rprintf("\n");
-      print_vec(ansp, 6);
-      
-    }
     
     if (ansp[i]) {
       int anspi = ansp[i];
