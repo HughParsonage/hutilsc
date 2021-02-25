@@ -1,6 +1,7 @@
 
 options(hutilsc.verbose = FALSE)
-attach(asNamespace("hutilsc"))
+
+
 library(data.table)
 ..Edges <- function() {
   ci <- function(...) as.integer(c(...))
@@ -18,6 +19,23 @@ library(data.table)
   setkeyv(out, c("x", "y"))
   out[]
 }
+
+## Test ensure_leq
+ensure_leq <- hutilsc:::ensure_leq
+x <- c(1:5, 6:3)
+y <- c(2:5, 1:5)
+expect_identical(ensure_leq(x, y),
+                 list(pmin(x, y), pmax(x, y)))
+expect_error(ensure_leq(1:5, 1.5:5),
+             pattern = "typeof")
+expect_error(ensure_leq(1:5, 1:6), 
+             pattern = "lengths")
+x <- c(1:5, 6:3)
+y <- c(2:5, 1:5)
+xd <- c(1:5, 6:3) + 0
+yd <- c(2:5, 1:5) + 0
+expect_equal(ensure_leq(as.double(x), as.double(y)), 
+             list(pmin(xd, yd), pmax(xd, yd)))
 
 Edges <- data.table(x = 1:10, y = 2:11, key = "x,y")
 
