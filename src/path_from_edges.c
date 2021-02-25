@@ -19,6 +19,14 @@ int Maxi(const int * xp, int N) {
   return o;
 }
 
+void print_vec(const int * xp, R_xlen_t N) {
+  if (N < 20) {
+    for (R_xlen_t i = 0; i < N; ++i) {
+      Rprintf("%d,", xp[i]);
+    }
+  }
+}
+
 SEXP do_ensure_leq(SEXP K1, SEXP K2) {
   if (TYPEOF(K1) != TYPEOF(K2)) {
     error("(ensure_leq): typeof differ.");
@@ -93,6 +101,12 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
       Rprintf("ansp[i] = %d,", ansp[i]);
       Rprintf("color = %d\n", color);
     }
+    if (N == 6) {
+      Rprintf("\n");
+      print_vec(ansp, 6);
+      
+    }
+    
     if (ansp[i]) {
       int anspi = anspi;
       R_xlen_t RR[2] = {-1, -1};
@@ -694,14 +708,6 @@ SEXP test_rev(SEXP x) {
   free(r);
   UNPROTECT(1);
   return out;
-}
-
-void print_vec(const int * xp, R_xlen_t N) {
-  if (N < 20) {
-    for (R_xlen_t i = 0; i < N; ++i) {
-      Rprintf("%d,", xp[i]);
-    }
-  }
 }
 
 SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
