@@ -93,6 +93,18 @@ setkey(DifficultToColor, x, y)
 CliquesD2C <- color_clique(DifficultToColor)
 expect_true(is_constant(CliquesD2C[[2]]))
 
+## Len-n paths
+Ring <- data.table(orig = c(1:100, 1L), dest = c(2:101, 101L))
+setkey(Ring, orig, dest)
+L4_Ring101 <- len_four_paths(Ring)
+
+# 1,2,3,4 certainly exists
+expect_equal(nrow(L4_Ring101[.(1L, 2L, 3L, 4L), nomatch = 0L]), 1L)
+
+# Test both ensuring inputs are integer (where possible)
+# and absence of paths
+BiPar <- data.table(from = c(1, 3, 5, 7, 9), to = c(2, 4, 6, 8, 10), key = "from,to")
+expect_equal(length(len_three_paths(BiPar, FALSE)), 0)
 
 
 

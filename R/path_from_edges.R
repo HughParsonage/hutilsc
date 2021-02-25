@@ -51,10 +51,12 @@ common_contacts <- function(a, b, Edges, len = 3L) {
   .Call("do_common_contacts", a, b, k1, k2, u, len, PACKAGE = packageName())
 }
 
-len_three_paths <- function(Edges, return_nout = TRUE) {
+len_three_paths <- function(Edges, return_nout = FALSE) {
   stopifnot(is.data.table(Edges), length(key(Edges)) >= 2)
   k1 <- .subset2(Edges, key(Edges)[1])
   k2 <- .subset2(Edges, key(Edges)[2])
+  k1 <- ensure_integer(k1)
+  k2 <- ensure_integer(k2)
   u <- union(k1, k2)
   u <- u[order(u)]
   .Call("len3_paths", k1, k2, u, isTRUE(return_nout))
@@ -64,6 +66,8 @@ len_four_paths <- function(Edges, set_key = TRUE) {
   stopifnot(is.data.table(Edges), length(key(Edges)) >= 2)
   k1 <- .subset2(Edges, key(Edges)[1])
   k2 <- .subset2(Edges, key(Edges)[2])
+  k1 <- ensure_integer(k1)
+  k2 <- ensure_integer(k2)
   u <- union(k1, k2)
   u <- u[order(u)]
   Len3Paths <- .Call("len3_paths", k1, k2, u, FALSE)
