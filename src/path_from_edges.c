@@ -375,6 +375,7 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
       TYPEOF(Nodes) != INTSXP) {
     error("Internal error (len3_paths): input types not integer.");
   }
+  // # nocov end
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
   R_xlen_t UN = xlength(Nodes);
