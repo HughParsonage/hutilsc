@@ -42,13 +42,17 @@ Edges <- data.table(x = 1:10, y = 2:11, key = "x,y")
 DT <- data.table(x = c(1L, 1L, 2L, 4L, 8L, 9L),
                  y = c(2L, 3L, 4L, 5L, 9L, 10L))
 setkey(DT, x, y)
-color_subgraphs(DT)
-expect_equal(DT$color, c(1L, 1L, 1L, 1L, 2L, 2L), info = paste0("DT$color = ", toString(DT$color)))
+Clique_DT <- color_clique(DT)
+expect_equal(Clique_DT[[2]], 
+             c(1L, 1L, 1L, 1L, 
+               1L, 2L, 2L, 2L),
+             info = paste0("DT[[2]] = ", toString(DT[[2]])))
 
 DT2 <- data.table(x = c(8L, 9L, 12L, 13L, 16L),
                   y = c(16L, 16L, 13L, 14L, 17L))
 setkey(DT2, x, y)
-color_subgraphs(DT2, new_col = "color2")
+DT2_Cliques <- color_clique(DT2)
+expect_equal(DT2_Cliques[[1]], sort(DT2[, union(x, y)]))
 # expect_equal(DT2$color2, c(1L, 2L, 3L, 3L, 2L))
 
 expect_true(is_valid_path(c(1L, 2L), DT))
@@ -87,7 +91,8 @@ DifficultToColor <-
   data.table(x = c(1L, 2L, 2L, 3L, 7L), 
              y = c(7L, 3L, 9L, 4L, 9L))
 
-DifficultToColor <- DifficultToColor[, lapply(.SD, function(x) match(x, sort(unique(unlist(.SD)))))]
+DifficultToColor <- 
+  DifficultToColor[, lapply(.SD, function(x) match(x, sort(unique(unlist(.SD)))))]
 
 setkey(DifficultToColor, x, y)
 CliquesD2C <- color_clique(DifficultToColor)

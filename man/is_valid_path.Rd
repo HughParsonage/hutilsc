@@ -2,13 +2,10 @@
 % Please edit documentation in R/path_from_edges.R
 \name{is_valid_path}
 \alias{is_valid_path}
-\alias{which_reached_between}
 \alias{common_contacts}
 \title{Path Between Nodes From List of Edges}
 \usage{
 is_valid_path(path, Edges)
-
-which_reached_between(a, b, Edges)
 
 common_contacts(a, b, Edges, len = 3L)
 }
