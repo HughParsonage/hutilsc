@@ -1,6 +1,6 @@
 
 options(hutilsc.verbose = FALSE)
-
+color_clique <- hutilsc:::color_clique
 
 library(data.table)
 ..Edges <- function() {
@@ -94,6 +94,8 @@ CliquesD2C <- color_clique(DifficultToColor)
 expect_true(is_constant(CliquesD2C[[2]]))
 
 ## Len-n paths
+len_four_paths <- hutilsc:::len_four_paths
+len_three_paths <- hutilsc:::len_three_paths
 Ring <- data.table(orig = c(1:100, 1L), dest = c(2:101, 101L))
 setkey(Ring, orig, dest)
 L4_Ring101 <- len_four_paths(Ring)
