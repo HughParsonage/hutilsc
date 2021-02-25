@@ -369,11 +369,18 @@ SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len
 
 SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
   R_xlen_t N = xlength(K1);
+  // # nocov start
+  if (TYPEOF(K1) != INTSXP || 
+      TYPEOF(K2) != INTSXP ||
+      TYPEOF(Nodes) != INTSXP) {
+    error("Internal error (len3_paths): input types not integer.");
+  }
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
   R_xlen_t UN = xlength(Nodes);
   const int * nodes = INTEGER(Nodes);
   if (!sorted_int(k1, N, 1)) {
+    print_vec(k1, N);
     error("k1 is not sorted.");
   }
   if (!sorted_int(nodes, UN, 1)) {
@@ -428,6 +435,9 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
   }
   
   if (AN < 1) {
+    free(n_outlets);
+    free(R0_outlets);
+    free(R1_outlets);
     // no elements to speak of
     return R_NilValue;
   }
