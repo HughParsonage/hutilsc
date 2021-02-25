@@ -40,6 +40,7 @@ extern SEXP do_test_radix_find_range(SEXP, SEXP);
 extern SEXP do_unique_sorted(SEXP);
 extern SEXP do_validate_colors(SEXP, SEXP, SEXP);
 extern SEXP do_Validate3202(SEXP);
+extern SEXP do_which_isnt_int(SEXP);
 extern SEXP do_which_isnt_sorted(SEXP);
 extern SEXP do_whichminmax(SEXP);
 extern SEXP is_binary_call(SEXP);
@@ -85,6 +86,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_unique_sorted",         (DL_FUNC) &do_unique_sorted,          1},
     {"do_validate_colors",       (DL_FUNC) &do_validate_colors,        3},
     {"do_Validate3202",          (DL_FUNC) &do_Validate3202,           1},
+    {"do_which_isnt_int",        (DL_FUNC) &do_which_isnt_int,         1},
     {"do_which_isnt_sorted",     (DL_FUNC) &do_which_isnt_sorted,      1},
     {"do_whichminmax",           (DL_FUNC) &do_whichminmax,            1},
     {"is_binary_call",           (DL_FUNC) &is_binary_call,            1},
