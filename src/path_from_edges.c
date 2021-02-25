@@ -108,10 +108,10 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
     }
     
     if (ansp[i]) {
-      int anspi = anspi;
+      int anspi = ansp[i];
       R_xlen_t RR[2] = {0, -1};
       radix_find_range(k2[i], k1, RR, N);
-      if (RR[0] <= RR[1]) {
+      if (RR[0] > 0) {
         for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
           int anspj = ansp[j];
           if (anspj && anspj < anspi) {
