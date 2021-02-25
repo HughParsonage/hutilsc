@@ -3,11 +3,10 @@
 #' @param DT A \code{data.table}, whose keys represent the edges of a graph.
 #' As the graph is undirected, each edge must connect a node to a higher node.
 #' 
-#' @param new_col \code{character(1)} The new column name for the coloring.
-#' 
-#' @param verbose Whether to display verbose info.
-#' 
-#' @return \code{DT} with an extra integer column, identifying each subgraph.
+#' @return A \code{data.table} of two columns, the first being the 
+#' vertices of both columns of \code{DT} and the second being an 
+#' integer vector, showing for each vertex the \code{"clique"}
+#' to which it belongs.
 #' 
 #' @examples
 #' library(data.table)
@@ -16,63 +15,18 @@
 #' DT[, x1 := pmin(x, y)][, x2 := pmax(x, y)]
 #' DT[, x := NULL][, y := NULL]
 #' setkey(DT, x1, x2)
-#' color_subgraphs(DT)
+#' color_clique(DT)
 #' 
 #' #                       #   #  ##  ##  ##  ## 
 #' DT <- data.table(x = c(1L, 1L, 2L, 4L, 8L, 9L),
 #'                  y = c(2L, 3L, 4L, 5L, 9L, 10L))
 #' setkey(DT, x, y)
-#' color_subgraphs(DT)
+#' color_clique(DT)
 #' 
 #' 
 #' @export
 
-color_subgraphs <- function(DT, new_col = "color", verbose = getOption("hutilsc.verbose", FALSE)) {
-  stopifnot(is.data.table(DT), haskey(DT), 
-            length(key(DT)) >= 2L)
-  
-  stopifnot(is.integer(k1 <- .subset2(DT, key(DT)[1])),
-            is.integer(k2 <- .subset2(DT, key(DT)[2])))
-  
-  
-  color <- .Call("do_color_graph", k1, k2, verbose, PACKAGE = packageName())
-  set(DT, j = new_col, value = color)
-  if (verbose) {
-    print(DT)
-  }
-  
-  # Now we need to account for endpoints
-  DT[, "min_color" := min(color), by = c(key(DT)[2])]
-  new_min_color <- pmin(color, .subset2(DT, "min_color"))
-
-  ans <- fuse2(new_min_color, color)
-  if (verbose) {
-    cat("ans done\n")
-  }
-  DT[, (new_col) := NULL]
-  set(DT, j = new_col, value = ans)
-  
-  DT[]
-}
-
-fuse2 <- function(x, y) {
-  .Call("do_fuse2", x, y)
-}
-
-validate_colors <- function(DT, color = "color") {
-  stopifnot(is.data.table(DT), haskey(DT), 
-            length(key(DT)) >= 2L)
-  
-  stopifnot(is.integer(k1 <- .subset2(DT, key(DT)[1])),
-            is.integer(k2 <- .subset2(DT, key(DT)[2])))
-  
-  stopifnot(hasName(DT, color), 
-            is.integer(c <- .subset2(DT, color)))
-  
-  .Call("do_validate_colors", k1, k2, c)
-}
-
-color_clique <- function(DT, new_color = "clique") {
+color_clique <- function(DT) {
   stopifnot(is.data.table(DT))
   kdt <- key(DT)
   if (length(kdt) < 2) {
@@ -107,14 +61,21 @@ color_clique <- function(DT, new_color = "clique") {
   vCliques <- .Call("do_clique1", 
                     u, K1, K2, K1, K2)
   
-  data.table(u, vCliques)
-        
+  data.table(u, vCliques, key = "u")
 }
 
-Rev <- function(x) .Call("test_rev", x)
-
-eloop <- function(x, a, b) {
-  .Call("test_loop", x, a, b, PACKAGE = packageName())
+validate_colors <- function(DT, color = "color") {
+  stopifnot(is.data.table(DT), haskey(DT), 
+            length(key(DT)) >= 2L)
   
+  stopifnot(is.integer(k1 <- .subset2(DT, key(DT)[1])),
+            is.integer(k2 <- .subset2(DT, key(DT)[2])))
+  
+  stopifnot(hasName(DT, color), 
+            is.integer(c <- .subset2(DT, color)))
+  
+  .Call("do_validate_colors", k1, k2, c)
 }
+
+
 

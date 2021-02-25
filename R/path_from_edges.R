@@ -23,16 +23,6 @@ is_valid_path <- function(path, Edges) {
 
 #' @rdname is_valid_path
 #' @export
-which_reached_between <- function(a, b, Edges) {
-  stopifnot(is.data.table(Edges), length(key(Edges)) >= 2)
-  k1 <- .subset2(Edges, key(Edges)[1])
-  k2 <- .subset2(Edges, key(Edges)[2])
-  
-  .Call("do_reaches_between", a, b, k1, k2, PACKAGE = packageName())
-}
-
-#' @rdname is_valid_path
-#' @export
 common_contacts <- function(a, b, Edges, len = 3L) {
   if (!identical(len, 3L)) {
     .NotYetImplemented()
