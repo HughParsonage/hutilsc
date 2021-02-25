@@ -1,4 +1,5 @@
 library(hutilsc)
+ensure_integer <- hutilsc:::ensure_integer
 
 expect_true(is.integer(ensure_integer(1:5)))
 expect_true(is.integer(ensure_integer(1)))
