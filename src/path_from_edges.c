@@ -47,9 +47,10 @@ SEXP do_ensure_leq(SEXP K1, SEXP K2) {
         k2[i] = k1i;
       }
     }
+    return ScalarInteger(INTSXP);
   }
   }
-  return R_NilValue;
+  return ScalarInteger(0);
 }
 
 
