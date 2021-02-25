@@ -109,7 +109,7 @@ SEXP do_color_graph(SEXP K1, SEXP K2, SEXP Verb) {
     
     if (ansp[i]) {
       int anspi = anspi;
-      R_xlen_t RR[2] = {-1, -1};
+      R_xlen_t RR[2] = {0, -1};
       radix_find_range(k2[i], k1, RR, N);
       if (RR[0] <= RR[1]) {
         for (R_xlen_t j = RR[0]; j <= RR[1]; ++j) {
