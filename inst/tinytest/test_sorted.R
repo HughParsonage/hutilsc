@@ -40,4 +40,8 @@ x <- c(logical(10), TRUE, NA)
 csl <- hutilsc:::counting_sort_logi(x)
 expect_equal(csl, x[order(x)])
 
+x <- c(1L, 3L, 3L, 5L)
+expect_identical(unique_sorted(x), unique(x))
+
+
 
