@@ -33,12 +33,6 @@ Validate3202 <- function(x) {
 
 #' @rdname Encode3202
 #' @export
-Lookup2 <- function(x) {
-  .Call("lookup2_char", x, PACKAGE = packageName())
-}
-
-#' @rdname Encode3202
-#' @export
 Lookup4 <- function(enc) {
   .Call("lookup4_char", enc, PACKAGE = packageName())
 }
