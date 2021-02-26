@@ -4,7 +4,6 @@
 \alias{Encode3202}
 \alias{Decode3202}
 \alias{Validate3202}
-\alias{Lookup2}
 \alias{Lookup4}
 \alias{names2int}
 \title{Encode}
@@ -14,8 +13,6 @@ Encode3202(x)
 Decode3202(enc)
 
 Validate3202(x)
-
-Lookup2(x)
 
 Lookup4(enc)
 
