@@ -1,4 +1,5 @@
 library(hutilsc)
+unique_sorted <- hutilsc:::unique_sorted
 
 x <- 1:5
 expect_true(is_sorted(x))

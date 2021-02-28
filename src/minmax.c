@@ -18,6 +18,27 @@ int maxX(const int * x, R_xlen_t N, bool sx) {
   return max_x;
 }
 
+void vminmax_i(int minmax[], int xi) {
+  if (xi < minmax[0]) {
+    minmax[0] = xi;
+  } else if (xi > minmax[1]) {
+    minmax[1] = xi;
+  }
+}
+
+void Vminmax_i(int minmax[], int * x, R_xlen_t N, int nthreads) {
+  if (N == 0) {
+    minmax[0] = INT_MAX;
+    minmax[1] = INT_MIN;
+    return;
+  }
+  minmax[0] = x[0];
+  minmax[1] = x[0];
+  for (R_xlen_t i = 1; i < N; ++i) {
+    vminmax_i(minmax, x[i]);
+  }
+}
+
 
 
 int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy) {

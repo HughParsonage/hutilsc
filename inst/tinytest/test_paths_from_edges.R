@@ -42,6 +42,11 @@ Edges <- data.table(x = 1:10, y = 2:11, key = "x,y")
 DT <- data.table(x = c(1L, 1L, 2L, 4L, 8L, 9L),
                  y = c(2L, 3L, 4L, 5L, 9L, 10L))
 setkey(DT, x, y)
+expect_true(is_valid_path(c(1L, 2L), DT))
+expect_true(is_valid_path(c(1L, 3L), DT))
+expect_true(is_valid_path(c(1L, 2L, 4L, 5L), DT))
+expect_false(is_valid_path(c(1L, 2L, 4L, 9L, 10L), DT))
+
 Clique_DT <- color_clique(DT)
 expect_equal(Clique_DT[[2]], 
              c(1L, 1L, 1L, 1L, 
@@ -55,10 +60,7 @@ DT2_Cliques <- color_clique(DT2)
 expect_equal(DT2_Cliques[[1]], sort(DT2[, union(x, y)]))
 # expect_equal(DT2$color2, c(1L, 2L, 3L, 3L, 2L))
 
-expect_true(is_valid_path(c(1L, 2L), DT))
-expect_true(is_valid_path(c(1L, 3L), DT))
-expect_true(is_valid_path(c(1L, 2L, 4L, 5L), DT))
-expect_false(is_valid_path(c(1L, 2L, 4L, 9L, 10L), DT))
+
 
 if (requireNamespace("withr", quietly = TRUE)) {
   withr::with_seed(58, {
@@ -114,6 +116,25 @@ BiPar <- data.table(from = c(1, 3, 5, 7, 9), to = c(2, 4, 6, 8, 10), key = "from
 expect_equal(length(len_three_paths(BiPar, FALSE)), 0)
 
 
+TriangleEdges <- 
+  data.table(x = c(1:17),
+             y = c(2,
+                   12,
+                   2,
+                   8, 9, 10, 11,
+                   12, 13, 14, 15,
+                   13, 16, 16, 17, 18, 18))
+TriangleEdges[, y := as.integer(y)]
+setkey(TriangleEdges, x, y)
+TriangleCliques <- color_clique(TriangleEdges)
+expect_true(is_constant(TriangleCliques[[2]]))
+
+AlmostTriangle <-
+  rbind(TriangleEdges, 
+        data.table(x = 17L, y = 19L),
+        data.table(x = 100:105, y = 101:106))
+setkey(AlmostTriangle, x, y)
+color_clique(AlmostTriangle)
 
 
 

@@ -50,3 +50,4 @@ vignettes/*.pdf
 !inst/*.R
 
 tmp.R
+M3.rds
