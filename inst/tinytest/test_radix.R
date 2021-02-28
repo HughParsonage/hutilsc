@@ -1,4 +1,7 @@
 
+test_radix_find <- hutilsc:::test_radix_find
+test_radix_find_range <- hutilsc:::test_radix_find_range
+
 kilo1 <- c(-1L, 3L, 3L, 3L, 5L, 6L)
 expect_equal(hutilsc:::test_radix_find(3L, kilo1), 1L)
 expect_equal(hutilsc:::test_radix_find(max(kilo1) + 1L, kilo1), length(kilo1) - 1L)
@@ -21,4 +24,19 @@ if (requireNamespace("withr", quietly = TRUE)) {
                  which.max(kilo1_large_c == x) - 1L)
   })
 }
+
+x <- 1:101
+expect_equal(diff(sapply(x, test_radix_find, x)),
+             rep(1L, 100L))
+expect_equal(sapply(x, test_radix_find_range, x), 
+             matrix(0:100, ncol = 101, nrow = 2, byrow = TRUE))
+
+x <- 1:100
+expect_equal(diff(sapply(x, test_radix_find, x)),
+             rep(1L, 99L))
+expect_equal(sapply(x, test_radix_find_range, x), 
+             matrix(0:99, ncol = 100, nrow = 2, byrow = TRUE))
+
+x <- cumsum(1:37)
+
 

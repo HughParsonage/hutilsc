@@ -56,6 +56,7 @@ void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
 
 // maxmin
 int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy);
+void Vminmax_i(int minmax[], int * x, R_xlen_t N, int nthreads);
 
 // sortedness
 bool sorted_int(const int * xp, R_xlen_t N, int nThreads);

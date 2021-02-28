@@ -103,7 +103,7 @@ bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, 
     return false;
   }
   for (int i = 1; i < n; ++i) {
-    R_xlen_t R[2] = {-1, -1};
+    R_xlen_t R[2] = {0, -1};
     radix_find_range(a, k1, R, N);
     int p2 = pp[i];
     bool hits_next = false;
@@ -481,20 +481,25 @@ SEXP do_fuse1(SEXP Color, SEXP K1, SEXP K2) {
 }
 
 
-SEXP do_validate_colors(SEXP K1, SEXP K2, SEXP Color) {
-  R_xlen_t N = xlength(Color);
+SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
+  R_xlen_t N = xlength(K1);
+  R_xlen_t UN = xlength(Nodes);
   if (N != xlength(K1) || N != xlength(K2) || N <= 1) {
     error("Lengths differ.");
   }
-  const int * color = INTEGER(Color);
+  const int * up = INTEGER(Nodes);
+  const int * color = INTEGER(Clique);
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
   for (R_xlen_t i = 0; i < N; ++i) {
     int k1i = k1[i];
+    int r1 = radix_find(up, k1i, 0, UN, UN);
+    int c1 = color[r1];
     int k2i = k2[i];
-    int ci = color[i];
-    int r = radix_find(k1, k2i, i, N, N);
-    if (k1[r] == k2i && ci != color[r]) {
+    int r2 = radix_find(up, k2i, 0, UN, UN);
+    int c2 = color[r2];
+    if (c1 != c2) {
+      Rprintf("%d,%d,%d | %d,%d ", k1i, r1, r2, c1, c2);
       return ScalarInteger(i + 1);
     }
   }
@@ -523,7 +528,7 @@ SEXP test_rev(SEXP x) {
   return out;
 }
 
-SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
+SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
   // Assumes a sequential
   R_xlen_t N = xlength(K1);
   R_xlen_t UN = xlength(U);
@@ -538,22 +543,7 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
   const int * u = INTEGER(U);
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
-  
-  // Prepare the start and ends of each element in U
-  int * R0 = malloc(sizeof(int) * UN);
-  if (R0 == NULL) {
-    return R_NilValue;
-  }
-  int * R1 = malloc(sizeof(int) * UN);
-  if (R1 == NULL) {
-    return R_NilValue;
-  }
-  for (R_xlen_t i = 0; i < UN; ++i) {
-    R_xlen_t R[2] = {-1, -1};
-    radix_find_range(i + 1, k1, R, N);
-    R0[i] = R[0];
-    R1[i] = R[1];
-  }
+  const int * f1 = INTEGER(F1);
   
   // color each node
   SEXP ans = PROTECT(allocVector(INTSXP, UN));
@@ -561,89 +551,187 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP NK1, SEXP NK2) {
   for (R_xlen_t i = 0; i < UN; ++i) {
     ansp[i] = 0;
   }
-  int color = 0;
+  int color = 1;
   int new_color = 1;
   ansp[0] = 1;
-  // R_xlen_t k = 0;
   for (R_xlen_t i = 0; i < N; ++i) {
-    int k1i = k1[i];
-    // location of k1i within u
-    int ri = k1i - 1;
-    if (ansp[ri]) {
-      // already done
-      color = ansp[ri];
-    } else {
-      color = ++new_color;
-    }
-    ansp[ri] = color;
-    R_xlen_t j = i;
-    while (j < N && k1[j] == k1i) {
-      // while loop continues each path from the same node (k1i)
-      int k2i = k2[j];
-      int R0j = R0[k2i - 1];
-      int R1j = R1[k2i - 1];
-      for (R_xlen_t k = R0j; k <= R1j; ++k) {
-        int kk = k2[k];
-        int rkk = kk - 1;
-        if (u[rkk] == kk && (ansp[rkk] == 0 || ansp[rkk] > color)) {
-          ansp[rkk] = color;
-        }
-      }
-      
-      int rj = k2[i] - 1;
-      if (ansp[rj] == 0) {
-        ansp[rj] = color;
-      }
-      ++j;
-    }
-  }
-  
-  // Now the initial direction once
-  for (R_xlen_t i = 0; i < N; ++i) {
-    
     int k1i = k1[i];
     int k2i = k2[i];
-    int colori = ansp[k1i - 1];
-    ansp[k2i - 1] = colori;
+    int p1i = k1i - 1;
+    int p2i = k2i - 1;
+    int p1fi = f1[p2i];
+    if (ansp[p1i] == 0) {
+      if (ansp[p2i] != 0) {
+        ansp[p1i] = ansp[p2i];
+      } else {
+        ++color;
+        ansp[p1i] = color;
+        ansp[p2i] = color;
+      }
+    } else {
+      color = ansp[p1i];
+      ansp[p2i] = color;
+    }
   }
   
-  int cmin = ansp[0];
   
-  for (R_xlen_t i = 1; i < UN; ++i) {
-    cmin = ansp[i] < cmin ? ansp[i] : cmin;
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
+  R_xlen_t N = xlength(K1);
+  R_xlen_t UN = xlength(U);
+  if (TYPEOF(U) != INTSXP || 
+      TYPEOF(C) != INTSXP ||
+      TYPEOF(K1) != INTSXP ||
+      TYPEOF(K2) != INTSXP) {
+    error("Types integer.");
   }
-  cmin--;
+  if (N != xlength(K2) || UN != xlength(C)) {
+    error("N != xlength(K2)");
+  }
+  const int * u = INTEGER(U);
+  const int * c = INTEGER(C);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  
+  int min_c = 1; // always
+  int max_c = 1;
   for (R_xlen_t i = 0; i < UN; ++i) {
-    ansp[i] -= cmin;
+    max_c = (c[i] < max_c) ? max_c : c[i];
+  }
+  int n_out = max_c - min_c + 1;
+  SEXP ans = PROTECT(allocVector(INTSXP, n_out));
+  int * restrict ansp = INTEGER(ans);
+  
+  // First assume that all colors are correctly entered
+  for (R_xlen_t i = 0; i < n_out; ++i) {
+    ansp[i] = i + 1;
   }
   
-  free(R0);
-  free(R1);
+  // goal is to go through each color and 
+  // if the colors are distinct at any edge
+  // record the minimum color alongside the violating color
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int k1i = k1[i];
+    int k2i = k2[i];
+    
+    // the color of a node ui is c[u[i] - 1]
+    // (since u is sequential)
+    int c1i = c[k1i - 1];
+    int c2i = c[k2i - 1];
+    if (c1i == c2i) {
+      // all is well
+      continue;
+    }
+    
+    int min_colori = c1i < c2i ? c1i : c2i;
+    int max_colori = c1i > c2i ? c1i : c2i;
+    for (R_xlen_t ii = 0; ii < N; ++ii) {
+      if (ansp[ii] == max_colori) {
+        ansp[ii] = min_colori;
+      }
+    } 
+  }
   UNPROTECT(1);
   return ans;
 }
 
 
-SEXP test_loop(SEXP x, SEXP aa, SEXP bb) {
+// given a sequence, i_1, i_2, i_3
+// return the 1, 2, 3
+SEXP do_enseq(SEXP x) {
   R_xlen_t N = xlength(x);
-  if (N > INT_MAX) {
+  if (TYPEOF(x) != INTSXP || N == 0) {
     return R_NilValue;
   }
-  const int * xp = INTEGER(x);
-  int * R0 = malloc(sizeof(int) * N);
-  int * R1 = malloc(sizeof(int) * N);
-  for (R_xlen_t i = 0; i < N; ++i) {
-    R_xlen_t R[2] = {-1, -1};
-    radix_find_range(xp[i], xp, R, N);
-    R0[i] = R[0];
-    R1[i] = R[1];
+  int * xp = INTEGER(x);
+  int xminmax[2] = {xp[0], xp[0]};
+  Vminmax_i(xminmax, xp, N, 1);
+  // the minimum is present
+  if (xminmax[1] - xminmax[0] > INT_MAX) {
+    warning("(do_enseq)Large range.");
+    return R_NilValue;
   }
-  const int a = asInteger(aa);
-  const int b = asInteger(bb);
-  int o = R1[a] - R0[b];
-  free(R0);
-  free(R1);
-  return ScalarInteger(o);
+  
+  // We need the first entry in the sequence to be 1
+  if (xminmax[0] < 1) {
+    warning("(do_enseq): xminmax[0] = %d < 1", xminmax[0]);
+    return R_NilValue;
+  }
+  unsigned int n_range = xminmax[1] - xminmax[0] + 1;
+  unsigned int dmin_from_1 = xminmax[0] - 1U;
+  Rprintf("n_range = %u\n", n_range);
+  Rprintf("dmin_from_1 = %u\n", dmin_from_1);
+  
+  // work out how many integers to subtract off
+  // e.g. 1, 3, 4, 5, 7
+  // want 1, 2, 3, 4, 5
+  //      0, 1, 1, 1, 2
+  // cumsum
+  
+  // First, detect the gaps (technically gaps[i] == 1 means 'no gap')
+  unsigned char * gaps = calloc(n_range, sizeof(char));
+  if (gaps == NULL) {
+    warning("gaps could not be allocated");
+    return R_NilValue;
+  }
+  
+  // Our x is basically a flawed ans, so we allocate the result here to
+  // allow ourselves to refer to ansp mostly
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int xi = xp[i];
+    ansp[i] = xi - dmin_from_1; // ensure it starts at 1;
+    int pi = ansp[i] - 1;
+    gaps[pi] |= 1; // opposite
+  }
+  
+  
+  unsigned int * necessary_cumsum = malloc(sizeof(int) * n_range);
+  if (necessary_cumsum == NULL) {
+    free(gaps);
+    free(necessary_cumsum);
+    UNPROTECT(1);
+    return R_NilValue;
+  }
+  Rprintf("nc\n");
+  necessary_cumsum[0] = 0U; // already established
+  for (R_xlen_t i = 1; i < n_range; ++i) {
+    necessary_cumsum[i] = necessary_cumsum[i - 1] + (1 - gaps[i]);
+  }
+  for (R_xlen_t i = 0; i < n_range; ++i) {
+    if (n_range < 100) {
+      Rprintf("nc[%d] = %u,\n", i, necessary_cumsum[i]);
+    }
+  }
+  
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int xi = ansp[i];
+    if (xi == NA_INTEGER || xi <= 0) {
+      Rprintf("i = %d was NA", i);
+    }
+    if (xi >= n_range + 1) {
+      Rprintf("xi >= n_range at %d\n", i);
+      continue;
+    }
+    int sub = necessary_cumsum[xi - 1];
+    if (sub > ansp[i] || sub < 0) {
+      Rprintf("sub = %d | ansp[i] = %d", sub, ansp[i]);
+    }
+    ansp[i] -= sub;
+  }
+  Rprintf("loop complete\n");
+  free(necessary_cumsum);
+  free(gaps);
+  UNPROTECT(1);
+  return ans;
+  
 }
 
 

@@ -1,15 +1,34 @@
 
 
-test_radix_find <- function(x, tbl, x0 = 0L) {
-  stopifnot(is.integer(x), length(x) == 1, !is.unsorted(tbl))
+test_radix_find <- function(x, tbl, x0 = 0L, check_sorted = TRUE) {
+  stopifnot(is.integer(x), length(x) == 1L, is.integer(tbl))
+  if (isTRUE(check_sorted)) {
+    stopifnot(!is.unsorted(tbl))
+  }
   .Call("do_test_radix_find", x, tbl, x0, PACKAGE = packageName())
 }
 
-test_radix_find_range <- function(x, tbl) {
-  stopifnot(is.integer(x), length(x) == 1, !is.unsorted(tbl))
+test_radix_find_range <- function(x, tbl, check_sorted = TRUE) {
+  stopifnot(is.integer(x), length(x) == 1, is.integer(tbl))
+  if (isTRUE(check_sorted)) {
+    stopifnot(!is.unsorted(tbl))
+  }
   .Call("do_test_radix_find_range", x, tbl, PACKAGE = packageName())
 }
 
 sum_in <- function(x, tbl, sorted = FALSE) {
   .Call("n_sin", x, tbl, sorted, PACKAGE = packageName())
+}
+
+find_ftc <- function(x, tbl, return_logical = TRUE, nThread = 10L) {
+  .Call("do_find_ftc", x, tbl, nThread, isTRUE(return_logical), PACKAGE = packageName())
+}
+
+test_find_first <- function(x, k1, k2, u = NULL) {
+  if (is.null(u)) {
+    u <- union(k1, k2)
+    u <- u[order(u)]
+  }
+  stopifnot(is.integer(x), is.integer(k1), is.integer(u)) 
+  .Call("do_test_find_first", x, k1, u, PACKAGE = packageName())
 }

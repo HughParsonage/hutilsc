@@ -11,4 +11,4 @@ ensure_leq <- function(k1, k2) {
   
 }
 
-
+enseq <- function(x) .Call("do_enseq", x)

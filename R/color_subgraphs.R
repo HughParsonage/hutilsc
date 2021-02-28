@@ -41,41 +41,60 @@ color_clique <- function(DT) {
   K2 <- .subset2(DT, k2)
   u <- union(K1, K2)  
   u <- u[order(u)]
-  u_by_i <- data.table(u, i = seq_along(u))
-  # Reverse the edges to try the reverse action
-  DTR <- DT[, .SD, .SDcols = c(kdt)]
-  setnames(DTR, rev(kdt))
-  
-  K1 <- c(.subset2(DT, k1), .subset2(DTR, k1))
-  K2 <- c(.subset2(DT, k2), .subset2(DTR, k2))
   
   # Insist on sequential
   K1 <- match(K1, u)
   K2 <- match(K2, u)
+  F1 <- match(u, K1, nomatch = 0L)
   
-  DT_bound <- data.table(K1, K2, key = "K1,K2")
+  C <- .Call("do_clique1", u, K1, K2, F1, PACKAGE = packageName())
+  cat(".")
+  fuse3_ans <- .Call("do_fuse3", u, C, K1, K2, PACKAGE = packageName())
+  cat("|")
+  C3 <- fuse3_ans[C]
+  n_iter <- 0L
+  while (n_iter < length(u) && 
+         !identical(fuse3_ans, seq_along(fuse3_ans))) {
+    cat("n_iter = ", n_iter, "\n", sep = "")
+    n_iter <- n_iter + 1L
+    cat(".")
+    fuse3_ans <- .Call("do_fuse3", u, C3, K1, K2, PACKAGE = packageName())
+    cat("|")
+    C3 <- fuse3_ans[C3]
+    # saveRDS(list(u, C3, K1, K2), "tmp.rds")
+    C3 <- enseq(C3)
+  }
+  cat("here?")
   
-  K1 <- .subset2(DT_bound, 1L)
-  K2 <- .subset2(DT_bound, 2L)
-  
-  vCliques <- .Call("do_clique1", 
-                    u, K1, K2, K1, K2)
-  
-  data.table(u, vCliques, key = "u")
+  # data.table(Node = u, C = C, Clique3 = C3, key = "Node")
+  data.table(Node = u, Clique = C3)
 }
 
-validate_colors <- function(DT, color = "color") {
-  stopifnot(is.data.table(DT), haskey(DT), 
-            length(key(DT)) >= 2L)
+validate_cliques <- function(Edges, Cliques, 
+                             nodes = names(Cliques)[1], 
+                             clique = names(Cliques)[2]) {
+  stopifnot(is.data.table(Edges),
+            haskey(Edges), 
+            length(key(Edges)) >= 2L)
   
-  stopifnot(is.integer(k1 <- .subset2(DT, key(DT)[1])),
-            is.integer(k2 <- .subset2(DT, key(DT)[2])))
+  stopifnot(is.integer(k1 <- .subset2(Edges, key(Edges)[1])),
+            is.integer(k2 <- .subset2(Edges, key(Edges)[2])))
   
-  stopifnot(hasName(DT, color), 
-            is.integer(c <- .subset2(DT, color)))
+  stopifnot(hasName(Cliques, nodes), 
+            hasName(Cliques, clique),
+            is.integer(u <- .subset2(Cliques, nodes)),
+            is.integer(c <- .subset2(Cliques, clique)))
   
-  .Call("do_validate_colors", k1, k2, c)
+  .Call("do_validate_clique", k1, k2, u, c, PACKAGE = packageName())
 }
 
-
+fuse3 <- function(Cliques, Edges) {
+  U <- .subset2(Cliques, 1)
+  C <- .subset2(Cliques, 2)
+  K1 <- .subset2(Edges, 1L)
+  K2 <- .subset2(Edges, 2L)
+  
+  fuse3_ans <- .Call("do_fuse3", U, C, K1, K2, PACKAGE = packageName())
+  Cliques[, "Fuse3" := fuse3_ans[C]]
+}
 
