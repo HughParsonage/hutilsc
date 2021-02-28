@@ -639,6 +639,7 @@ SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
   return ans;
 }
 
+static bool venseq = false;
 
 // given a sequence, i_1, i_2, i_3
 // return the 1, 2, 3
@@ -663,8 +664,10 @@ SEXP do_enseq(SEXP x) {
   }
   unsigned int n_range = xminmax[1] - xminmax[0] + 1;
   unsigned int dmin_from_1 = xminmax[0] - 1U;
-  Rprintf("n_range = %u\n", n_range);
-  Rprintf("dmin_from_1 = %u\n", dmin_from_1);
+  if (venseq) {
+    Rprintf("n_range = %u\n", n_range);
+    Rprintf("dmin_from_1 = %u\n", dmin_from_1);
+  }
   
   // work out how many integers to subtract off
   // e.g. 1, 3, 4, 5, 7
@@ -704,34 +707,37 @@ SEXP do_enseq(SEXP x) {
   for (R_xlen_t i = 1; i < n_range; ++i) {
     necessary_cumsum[i] = necessary_cumsum[i - 1] + (1 - gaps[i]);
   }
-  for (R_xlen_t i = 0; i < n_range; ++i) {
-    if (n_range < 100) {
-      Rprintf("nc[%d] = %u,\n", i, necessary_cumsum[i]);
+  if (venseq) {
+    for (R_xlen_t i = 0; i < n_range; ++i) {
+      if (n_range < 100) {
+        Rprintf("nc[%d] = %u,\n", i, necessary_cumsum[i]);
+      }
     }
   }
   
   
   for (R_xlen_t i = 0; i < N; ++i) {
     int xi = ansp[i];
-    if (xi == NA_INTEGER || xi <= 0) {
+    if (venseq && (xi == NA_INTEGER || xi <= 0)) {
       Rprintf("i = %d was NA", i);
     }
-    if (xi >= n_range + 1) {
+    if (venseq && xi >= n_range + 1) {
       Rprintf("xi >= n_range at %d\n", i);
       continue;
     }
     int sub = necessary_cumsum[xi - 1];
-    if (sub > ansp[i] || sub < 0) {
+    if (venseq && (sub > ansp[i] || sub < 0)) {
       Rprintf("sub = %d | ansp[i] = %d", sub, ansp[i]);
     }
     ansp[i] -= sub;
   }
-  Rprintf("loop complete\n");
+  if (venseq) {
+    Rprintf("loop complete\n");
+  }
   free(necessary_cumsum);
   free(gaps);
   UNPROTECT(1);
   return ans;
-  
 }
 
 
