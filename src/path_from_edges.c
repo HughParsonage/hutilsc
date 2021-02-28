@@ -416,7 +416,7 @@ void fuse2(const int * xp, const int * yp, int * zp, int N) {
     //Rprintf(" j = %d,", j);
     int xpj = xp[j];
     //Rprintf("xpj = %d,\n", xpj);
-    zp[j] = tbl[xp[j]];
+    zp[j] = tbl[xpj];
   }
   free(tbl);
 }
@@ -540,10 +540,10 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
   if (N != xlength(K2)) {
     error("N != xlength(K2)");
   }
-  const int * u = INTEGER(U);
+  // const int * u = INTEGER(U);
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
-  const int * f1 = INTEGER(F1);
+  // const int * f1 = INTEGER(F1);
   
   // color each node
   SEXP ans = PROTECT(allocVector(INTSXP, UN));
@@ -552,14 +552,14 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
     ansp[i] = 0;
   }
   int color = 1;
-  int new_color = 1;
+  // int new_color = 1;
   ansp[0] = 1;
   for (R_xlen_t i = 0; i < N; ++i) {
     int k1i = k1[i];
     int k2i = k2[i];
     int p1i = k1i - 1;
     int p2i = k2i - 1;
-    int p1fi = f1[p2i];
+    
     if (ansp[p1i] == 0) {
       if (ansp[p2i] != 0) {
         ansp[p1i] = ansp[p2i];
@@ -591,7 +591,7 @@ SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
   if (N != xlength(K2) || UN != xlength(C)) {
     error("N != xlength(K2)");
   }
-  const int * u = INTEGER(U);
+  // const int * u = INTEGER(U);
   const int * c = INTEGER(C);
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);

@@ -218,7 +218,7 @@ SEXP do_find_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
     int ti = tp[i];
     unsigned int tci = i;
     // Ensure it's never zero!
-    full_table[ti - min_tb] = (unsigned char)((i & 255U) + 1U);
+    full_table[ti - min_tb] = (unsigned char)((tci & 255U) + 1U);
   }
   
   SEXP ans = PROTECT(allocVector(return_lgl ? LGLSXP : INTSXP, N));
@@ -244,7 +244,6 @@ unsigned int find_first(int x, // value to search in k
                         unsigned int NK, // number of elements of kp,
                         const int * up) {
   unsigned int mink = kminmax[0];
-  unsigned int maxk = kminmax[0];
   unsigned int p = x - mink;
   if (p >= NK) {
     return 0U;
