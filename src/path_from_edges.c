@@ -338,100 +338,6 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
 }
 
 
-void fuse2(const int * xp, const int * yp, int * zp, int N) {
-  int M = Maxi(xp, N);
-  int M1 = M + 1;
-  // avoid malloc problems by asserting that M1 can never be -1
-  if (M1 > 1e9 || M1 < 1) {
-    return;
-  }
-  // original color --> new color map
-  int * tbl = malloc(sizeof(int) * M1);
-  if (tbl == NULL) {
-    return;
-  }
-  for (int i = 0; i <= M; ++i) {
-    tbl[i] = i;
-  }
-  //Rprintf("588\n");
-  for (int i = N - 1; i >= 0; --i) {
-    
-    int ypi = yp[i];
-    int xpi = xp[i];
-    if (xpi != ypi) {
-      int t = tbl[xpi];
-      tbl[xpi] = ypi < t ? ypi : t;
-    }
-  }
-  for (int j = 0; j < N; ++j) {
-    //Rprintf(" j = %d,", j);
-    int xpj = xp[j];
-    //Rprintf("xpj = %d,\n", xpj);
-    zp[j] = tbl[xpj];
-  }
-  free(tbl);
-}
-
-SEXP do_fuse2(SEXP x, SEXP y) {
-  R_xlen_t N = xlength(x);
-  if (xlength(y) != N || N > INT_MAX || TYPEOF(x) != INTSXP || TYPEOF(y) != INTSXP) {
-    error("Lengths.");
-  }
-  const int * xp = INTEGER(x);
-  const int * yp = INTEGER(y);
-  int * zp = malloc(sizeof(int) * N);
-  if (zp == NULL) {
-    free(zp);
-    return R_NilValue;
-  }
-  fuse2(xp, yp, zp, (int)N);
-  
-  SEXP ans = PROTECT(allocVector(INTSXP, N));
-  int * restrict ansp = INTEGER(ans);
-  for (int i = 0; i < N; ++i) {
-    ansp[i] = zp[i];
-  }
-  free(zp);
-  UNPROTECT(1);
-  return ans;
-}
-
-
-SEXP do_fuse1(SEXP Color, SEXP K1, SEXP K2) {
-  // fuse numbers
-  R_xlen_t N = xlength(Color);
-  if (N != xlength(K1) || N != xlength(K2) || N <= 1) {
-    error("Lengths differ.");
-  }
-  const int * color = INTEGER(Color);
-  const int * k1 = INTEGER(K1);
-  const int * k2 = INTEGER(K2);
-  
-  SEXP ans = PROTECT(allocVector(INTSXP, N));
-  int * restrict ansp = INTEGER(ans);
-  
-  int true_color = color[0];
-  // start from 1 because the 1st entry is always true.
-  for (R_xlen_t i = 1; i < N; ++i) {
-    int colori = color[i];
-    if (colori == true_color) {
-      ansp[i] = colori;
-      continue;
-    }
-    if (k2[i - 1] == k2[i] || k1[i - 1] == k1[i]) {
-      // color is wrong and should be true color
-      ansp[i] = true_color;
-      continue;
-    }
-    ansp[i] = colori;
-    true_color = colori;
-    
-  }
-  UNPROTECT(1);
-  return ans;
-}
-
-
 SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
   R_xlen_t N = xlength(K1);
   R_xlen_t UN = xlength(Nodes);
@@ -653,7 +559,9 @@ SEXP do_enseq(SEXP x) {
     UNPROTECT(1);
     return R_NilValue;
   }
-  Rprintf("nc\n");
+  if (venseq) {
+    Rprintf("nc\n");
+  }
   necessary_cumsum[0] = 0U; // already established
   for (R_xlen_t i = 1; i < n_range; ++i) {
     necessary_cumsum[i] = necessary_cumsum[i - 1] + (1 - gaps[i]);
