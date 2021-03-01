@@ -1,10 +1,10 @@
 #include "hutilsc.h"
 
-int count_bits(int v) {
-  v = v - ((v >> 1) & 0x55555555);                    // reuse input as temporary
-  v = (v & 0x33333333) + ((v >> 2) & 0x33333333);     // temp
-  int c = (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24; // count
-  return c;
+unsigned int count_bits(int vi) {
+  unsigned int v = vi;
+  v = v - ((v >> 1U) & 0x55555555);                    // reuse input as temporary
+  v = (v & 0x33333333) + ((v >> 2U) & 0x33333333);     // temp
+  return (((v + (v >> 4U)) & 0xF0F0F0F) * 0x1010101) >> 24U; // count
 }
 
 int sumpack1(int x) {
