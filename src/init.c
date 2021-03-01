@@ -49,7 +49,6 @@ extern SEXP len3_paths(SEXP, SEXP, SEXP, SEXP);
 extern SEXP len4_paths(SEXP, SEXP, SEXP);
 extern SEXP lookup4_char(SEXP);
 extern SEXP n_sin(SEXP, SEXP, SEXP);
-extern SEXP one_edge_dist(SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
     {"count_sort_logi",          (DL_FUNC) &count_sort_logi,           1},
@@ -93,7 +92,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"len4_paths",               (DL_FUNC) &len4_paths,                3},
     {"lookup4_char",             (DL_FUNC) &lookup4_char,              1},
     {"n_sin",                    (DL_FUNC) &n_sin,                     3},
-    {"one_edge_dist",            (DL_FUNC) &one_edge_dist,             4},
     {NULL, NULL, 0}
 };
 
