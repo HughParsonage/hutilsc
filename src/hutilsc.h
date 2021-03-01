@@ -30,6 +30,16 @@
 #define OP_BO 9
 #define OP_BC 10
 
+extern int tens[10];
+
+// character
+bool all_digits_4_12(const char * xi);
+bool all_digits(const char * xi, size_t nchari);
+int char2int(const char * x, int s);
+int nth_digit_of(int x, int n);
+unsigned char nth_char(int x, int n);
+char digit2char(int d);
+
 
 #define return_false do {                                      \
             SEXP ans = PROTECT(allocVector(LGLSXP, 1));        \
