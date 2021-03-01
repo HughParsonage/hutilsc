@@ -131,6 +131,8 @@ setkey(TriangleEdges, x, y)
 TriangleCliques <- color_clique(TriangleEdges)
 expect_true(is_constant(TriangleCliques[[2]]))
 expect_true(!validate_cliques(TriangleEdges, Cliques = TriangleCliques))
+Random <- copy(TriangleCliques)[, (names(TriangleCliques)[2]) := .I]
+expect_false(!validate_cliques(TriangleEdges, Random))
 
 AlmostTriangle <-
   rbind(TriangleEdges, 

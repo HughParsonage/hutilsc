@@ -46,6 +46,19 @@ int ipow10(int n) {
   return tens[j];
 }
 
+int n_digits0(unsigned int x) {
+  if (x >= 1000000000U) return 10;
+  if (x >= 100000000U)  return 9;
+  if (x >= 10000000U)   return 8;
+  if (x >= 1000000U)    return 7;
+  if (x >= 100000U)     return 6;
+  if (x >= 10000U)      return 5;
+  if (x >= 1000U)       return 4;
+  if (x >= 100U)        return 3;
+  if (x >= 10U)         return 2;
+  return 1;
+} 
+
 int nth_digit_of(int x, int n) {
   if (n >= 10) {
     return (x / 1000000000);

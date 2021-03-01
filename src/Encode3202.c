@@ -112,54 +112,6 @@ char* dig3202(int i, char b[]) {
   return b;
 }
 
-int n_digits0(unsigned int x) {
-  if (x >= 1000000000U) return 10;
-  if (x >= 100000000U)  return 9;
-  if (x >= 10000000U)   return 8;
-  if (x >= 1000000U)    return 7;
-  if (x >= 100000U)     return 6;
-  if (x >= 10000U)      return 5;
-  if (x >= 1000U)       return 4;
-  if (x >= 100U)        return 3;
-  if (x >= 10U)         return 2;
-  return 1;
-} 
-
-
-
-SEXP Decode003202(SEXP x) {
-  R_xlen_t N = xlength(x);
-  if (TYPEOF(x) != INTSXP) {
-    error("x is not a integer.");
-  }
-  const int *xp = INTEGER(x);
-  SEXP ans = PROTECT(allocVector(STRSXP, N));
-  for (R_xlen_t i = 0; i < N; ++i) {
-    bool posi = xp[i] > 0;
-    int xpi = posi ? xp[i] : (xp[i] + 1e9);
-    char digits[13];
-    
-    digits[0] = posi ? '3' : '0';
-    digits[1] = posi ? '2' : '0';
-    digits[2] = posi ? '0' : '0';
-    digits[3] = posi ? '2' : '0';
-    digits[4] = nth_char(xpi, 8);
-    digits[5] = nth_char(xpi, 7);
-    digits[6] = nth_char(xpi, 6);
-    digits[7] = nth_char(xpi, 5);
-    digits[8] = nth_char(xpi, 4);
-    digits[9] = nth_char(xpi, 3);
-    digits[10] = nth_char(xpi, 2);
-    digits[11] = nth_char(xpi, 1);
-    digits[12] = '\0';
-    char *oip = digits;
-    const char *coip = oip;
-    SET_STRING_ELT(ans, i, mkCharCE(coip, CE_UTF8));
-  }
-  
-  UNPROTECT(1);
-  return ans;
-}
 
 SEXP do_Decode3202(SEXP x) {
   R_xlen_t N = xlength(x);

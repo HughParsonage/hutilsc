@@ -365,27 +365,6 @@ SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
 }
 
 
-void rev(const int * x, int * y, R_xlen_t N) {
-  for (R_xlen_t i = 0; i < N; ++i) {
-    y[i] = x[(N - 1) - i];
-  }
-}
-
-SEXP test_rev(SEXP x) {
-  R_xlen_t N = xlength(x);
-  int * r = malloc(sizeof(int) * N);
-  const int * xp = INTEGER(x);
-  rev(xp, r, N);
-  SEXP out = PROTECT(allocVector(INTSXP, N));
-  int * restrict outp = INTEGER(out);
-  for (R_xlen_t i = 0; i < N; ++i) {
-    outp[i] = r[i];
-  }
-  free(r);
-  UNPROTECT(1);
-  return out;
-}
-
 SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
   // Assumes a sequential
   R_xlen_t N = xlength(K1);
@@ -510,6 +489,7 @@ SEXP do_enseq(SEXP x) {
   int xminmax[2] = {xp[0], xp[0]};
   Vminmax_i(xminmax, xp, N, 1);
   // the minimum is present
+  // # nocov start
   if (xminmax[1] - xminmax[0] > INT_MAX) {
     warning("(do_enseq)Large range.");
     return R_NilValue;
@@ -526,6 +506,7 @@ SEXP do_enseq(SEXP x) {
     Rprintf("n_range = %u\n", n_range); // # nocov
     Rprintf("dmin_from_1 = %u\n", dmin_from_1); // # nocov
   }
+  // # nocov end
   
   // work out how many integers to subtract off
   // e.g. 1, 3, 4, 5, 7
@@ -590,7 +571,7 @@ SEXP do_enseq(SEXP x) {
     }
     if (venseq && xi >= n_range + 1) {
       Rprintf("xi >= n_range at %d\n", i); // # nocov
-      continue;
+      continue; // # nocov
     }
     int sub = necessary_cumsum[xi - 1];
     if (venseq && (sub > ansp[i] || sub < 0)) {
