@@ -3,7 +3,7 @@
 
 SEXP do_which_isnt_int(SEXP x) {
   if (TYPEOF(x) != REALSXP) {
-    error("Internal error(do_ensure_int): TYPEOF(x) != REALSXP");
+    error("Internal error(do_ensure_int): TYPEOF(x) != REALSXP"); // # nocov
   }
   R_xlen_t N = xlength(x);
   const double * xp = REAL(x);

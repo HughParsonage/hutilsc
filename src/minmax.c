@@ -235,16 +235,17 @@ SEXP do_whichminmax(SEXP x) {
     ansp[0] = wmin;
     ansp[1] = wmax;
   }
-  if (ansp[0] > INT_MAX || ansp[1] > INT_MAX) {
+  int INT_MAX_m1 = INT_MAX - 1;
+  if (ansp[0] > INT_MAX_m1 || ansp[1] > INT_MAX_m1) {
     SEXP ans = PROTECT(allocVector(REALSXP, 2));
-    REAL(ans)[0] = ansp[0];
-    REAL(ans)[1] = ansp[1];
+    REAL(ans)[0] = ansp[0] + 1;
+    REAL(ans)[1] = ansp[1] + 1;
     UNPROTECT(1);
     return ans;
   } else {
     SEXP ans = PROTECT(allocVector(INTSXP, 2));
-    INTEGER(ans)[0] = ansp[0];
-    INTEGER(ans)[1] = ansp[1];
+    INTEGER(ans)[0] = ansp[0] + 1;
+    INTEGER(ans)[1] = ansp[1] + 1;
     UNPROTECT(1);
     return ans;
   }
