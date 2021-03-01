@@ -1,100 +1,8 @@
 #include "hutilsc.h"
 
-const int tens[9] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
 
-int char12_to_int(const char * x) {
-  int o = 0;
-  int ten = 1;
-  for (int i = 11; i >= 4; --i) {
-    o += ten * (x[i] - '0');
-    ten *= 10;
-  }
-  return o;
-}
 
-int char2int(const char * x, int s) {
-  int o = 0;
-  int ten = 1;
-  for (int i = s - 1; i >= 0; --i) {
-    o += ten * (x[i] - '0');
-    ten *= 10;
-  }
-  return o;
-}
 
-bool all_digits_4_12(const char * xi) {
-  for (int j = 4; j < 12; ++j) {
-    char xj = xi[j];
-    if (xj < '0' || xj > '9') {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool all_digits(const char * xi, size_t nchari) {
-  for (size_t j = 0; j < nchari; ++j) {
-    if (xi[j] < '0' || xi[j] > '9') {
-      return false;
-    }
-  }
-  return true;
-}
-
-int ipow10(int n) {
-  int o = 1;
-  if (n > 0 && n <= 9) {
-    for (int i = 0; i < n; ++i) {
-      o *= 10;
-    }
-  }
-  return o;
-}
-
-int nth_digit_of(int x, int n) {
-  if (n >= 10) {
-    return (x / 1000000000);
-  }
-  if (n) {
-    int M = ipow10(n);
-    return (x % M) / (M / 10);
-  } else {
-    return (x % 10);
-  }
-}
-
-char digit2char(int d) {
-  switch(d) {
-  case 0: 
-    return '0';
-  case 1: 
-    return '1';
-  case 2: 
-    return '2';
-  case 3: 
-    return '3';
-  case 4: 
-    return '4';
-  case 5: 
-    return '5';
-  case 6: 
-    return '6';
-  case 7: 
-    return '7';
-  case 8: 
-    return '8';
-  case 9: 
-    return '9';
-  }
-  return '0';
-}
-
-char nth_digit(int x, int n) {
-  // 123456 <- ans
-  // 012345 <- d
-  int d = nth_digit_of(x, n);
-  return digit2char(d);
-}
 
 SEXP do_Validate3202(SEXP x) {
   R_xlen_t N = xlength(x);
@@ -103,6 +11,9 @@ SEXP do_Validate3202(SEXP x) {
     error("x is not a character.");
   }
   for (R_xlen_t i = 0; i < N; ++i) {
+    if (STRING_ELT(x, i) == NA_STRING) {
+      continue;
+    }
     const char * xi = CHAR(STRING_ELT(x, i));
     size_t nchari = strlen(xi);
     if (nchari > 10) {
@@ -232,14 +143,14 @@ SEXP Decode003202(SEXP x) {
     digits[1] = posi ? '2' : '0';
     digits[2] = posi ? '0' : '0';
     digits[3] = posi ? '2' : '0';
-    digits[4] = nth_digit(xpi, 8);
-    digits[5] = nth_digit(xpi, 7);
-    digits[6] = nth_digit(xpi, 6);
-    digits[7] = nth_digit(xpi, 5);
-    digits[8] = nth_digit(xpi, 4);
-    digits[9] = nth_digit(xpi, 3);
-    digits[10] = nth_digit(xpi, 2);
-    digits[11] = nth_digit(xpi, 1);
+    digits[4] = nth_char(xpi, 8);
+    digits[5] = nth_char(xpi, 7);
+    digits[6] = nth_char(xpi, 6);
+    digits[7] = nth_char(xpi, 5);
+    digits[8] = nth_char(xpi, 4);
+    digits[9] = nth_char(xpi, 3);
+    digits[10] = nth_char(xpi, 2);
+    digits[11] = nth_char(xpi, 1);
     digits[12] = '\0';
     char *oip = digits;
     const char *coip = oip;
