@@ -7,14 +7,14 @@ unsigned int count_bits(int vi) {
   return (((v + (v >> 4U)) & 0xF0F0F0F) * 0x1010101) >> 24U; // count
 }
 
-int sumpack1(int x) {
-  int o = 0;
-  while (x > 0) {
-    x >>= 1;
-    o += x & 1;
-  }
-  return o;
-}
+// int sumpack1(int x) {
+//   int o = 0;
+//   while (x > 0) {
+//     x >>= 1;
+//     o += x & 1;
+//   }
+//   return o;
+// }
 
 
 SEXP sum_raw_from_lgl(SEXP x) {

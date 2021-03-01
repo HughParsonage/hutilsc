@@ -243,11 +243,12 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
 
 SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
   if (TYPEOF(Len3Paths) != VECSXP || xlength(Len3Paths) < 3) {
-    error("Internal error(len4_paths): TYPEOF(Len3Paths) != VECSXP");
+    error("Internal error(len4_paths): TYPEOF(Len3Paths) != VECSXP"); // # nocov
   }
   SEXP V0 = VECTOR_ELT(Len3Paths, 0);
   SEXP V1 = VECTOR_ELT(Len3Paths, 1);
   SEXP V2 = VECTOR_ELT(Len3Paths, 2);
+  // # nocov start
   if (TYPEOF(V0) != INTSXP ||
       TYPEOF(V1) != INTSXP ||
       TYPEOF(V2) != INTSXP) {
@@ -256,14 +257,14 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
   
   R_xlen_t N = xlength(V0);
   if (N != xlength(V0) || N != xlength(V1) || N != xlength(V2)) {
-    return R_NilValue;
+    return R_NilValue; 
   }
   
   R_xlen_t M = xlength(K1);
   if (M != xlength(K2)) {
     return R_NilValue;
   }
-  
+  // # nocov end
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
   
@@ -280,7 +281,7 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
   R_xlen_t * R1_outlets = malloc(sizeof(R_xlen_t) * N);
   if (R1_outlets == NULL) {
     free(R1_outlets);
-    error("Unable to allocate R1_outlets");
+    error("Unable to allocate R1_outlets"); 
   }
   // # nocov end
   
@@ -342,7 +343,7 @@ SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
   R_xlen_t N = xlength(K1);
   R_xlen_t UN = xlength(Nodes);
   if (N != xlength(K1) || N != xlength(K2) || N <= 1) {
-    error("Lengths differ.");
+    error("Lengths differ."); // # nocov
   }
   const int * up = INTEGER(Nodes);
   const int * color = INTEGER(Clique);
@@ -392,10 +393,10 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
   if (TYPEOF(U) != INTSXP || 
       TYPEOF(K1) != INTSXP ||
       TYPEOF(K2) != INTSXP) {
-    error("Types integer.");
+    error("Types integer."); // # nocov
   }
   if (N != xlength(K2)) {
-    error("N != xlength(K2)");
+    error("N != xlength(K2)"); // # nocov
   }
   // const int * u = INTEGER(U);
   const int * k1 = INTEGER(K1);
@@ -443,10 +444,10 @@ SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
       TYPEOF(C) != INTSXP ||
       TYPEOF(K1) != INTSXP ||
       TYPEOF(K2) != INTSXP) {
-    error("Types integer.");
+    error("Types integer."); // # nocov
   }
   if (N != xlength(K2) || UN != xlength(C)) {
-    error("N != xlength(K2)");
+    error("N != xlength(K2)"); // # nocov
   }
   // const int * u = INTEGER(U);
   const int * c = INTEGER(C);
@@ -534,10 +535,12 @@ SEXP do_enseq(SEXP x) {
   
   // First, detect the gaps (technically gaps[i] == 1 means 'no gap')
   unsigned char * gaps = calloc(n_range, sizeof(char));
+  // # nocov start
   if (gaps == NULL) {
     warning("gaps could not be allocated");
     return R_NilValue;
   }
+  // # nocov end
   
   // Our x is basically a flawed ans, so we allocate the result here to
   // allow ourselves to refer to ansp mostly
@@ -553,12 +556,14 @@ SEXP do_enseq(SEXP x) {
   
   
   unsigned int * necessary_cumsum = malloc(sizeof(int) * n_range);
+  // # nocov start
   if (necessary_cumsum == NULL) {
     free(gaps);
     free(necessary_cumsum);
     UNPROTECT(1);
     return R_NilValue;
   }
+  // # nocov end
   if (venseq) {
     Rprintf("nc\n");
   }
@@ -566,6 +571,7 @@ SEXP do_enseq(SEXP x) {
   for (R_xlen_t i = 1; i < n_range; ++i) {
     necessary_cumsum[i] = necessary_cumsum[i - 1] + (1 - gaps[i]);
   }
+  // # nocov start
   if (venseq) {
     for (R_xlen_t i = 0; i < n_range; ++i) {
       if (n_range < 100) {
@@ -573,25 +579,25 @@ SEXP do_enseq(SEXP x) {
       }
     }
   }
-  
+  // # nocov end
   
   for (R_xlen_t i = 0; i < N; ++i) {
     int xi = ansp[i];
     if (venseq && (xi == NA_INTEGER || xi <= 0)) {
-      Rprintf("i = %d was NA", i);
+      Rprintf("i = %d was NA", i); // nocov
     }
     if (venseq && xi >= n_range + 1) {
-      Rprintf("xi >= n_range at %d\n", i);
+      Rprintf("xi >= n_range at %d\n", i); // nocov
       continue;
     }
     int sub = necessary_cumsum[xi - 1];
     if (venseq && (sub > ansp[i] || sub < 0)) {
-      Rprintf("sub = %d | ansp[i] = %d", sub, ansp[i]);
+      Rprintf("sub = %d | ansp[i] = %d", sub, ansp[i]); // nocov
     }
     ansp[i] -= sub;
   }
   if (venseq) {
-    Rprintf("loop complete\n");
+    Rprintf("loop complete\n"); // nocov
   }
   free(necessary_cumsum);
   free(gaps);
