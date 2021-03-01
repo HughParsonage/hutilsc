@@ -10,15 +10,6 @@ inline int max0(int x) {
   return (x > 0) ? x : 0;
 }
 
-int Maxi(const int * xp, int N) {
-  int o = 1;
-  for (int i = 0; i < N; ++i) {
-    int xpi = xp[i];
-    o = xpi > o ? xpi : o;
-  }
-  return o;
-}
-
 // # nocov start
 void print_vec(const int * xp, R_xlen_t N) {
   if (N < 20) {
@@ -55,47 +46,6 @@ SEXP do_ensure_leq(SEXP K1, SEXP K2) {
   return ScalarInteger(0);
 }
 
-SEXP do_path_from_edges(SEXP orig, SEXP dest, SEXP K1, SEXP K2) {
-  int N = xlength(K1);
-  const int a = asInteger(orig);
-  const int b = asInteger(dest);
-  
-  const int * k1 = INTEGER(K1);
-  const int * k2 = INTEGER(K2);
-  
-  int d1 = radix_find(k1, a, 0, N, N);
-  
-  int * path = malloc(20 * sizeof(int));
-  if (path == NULL) {
-    error("Unable to allocate.");
-  }
-  
-  int jj = d1;
-  int k = 0;
-  int destjj = k2[jj];
-  for (; k < 20; ++k) {
-    destjj = k2[jj];
-    path[k] = destjj;
-    if (destjj >= b) {
-      break;
-    }
-    jj = linear_find_from(k1, destjj, jj, N);
-  }
-  if (destjj != b) {
-    free(path);
-    return R_NilValue;
-  }
-  
-  SEXP ans = PROTECT(allocVector(INTSXP, k));
-  int * restrict ansp = INTEGER(ans);
-  for (int i = 0; i < k; ++i) {
-    ansp[i] = path[i];
-  }
-  free(path);
-  UNPROTECT(1);
-  return ans;
-}
-
 bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, R_xlen_t N) {
   int a = pp[0];
   int r = radix_find(k1, a, 0, N, N);
@@ -123,8 +73,9 @@ bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, 
 
 SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
   R_xlen_t N = xlength(K1);
-  if (TYPEOF(path) != INTSXP) {
-    return R_NilValue;
+  if (TYPEOF(path) != INTSXP || TYPEOF(K1) != INTSXP || TYPEOF(K2) != INTSXP ||
+      xlength(K2) != N) {
+    return R_NilValue; // # nocov
   }
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);

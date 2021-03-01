@@ -16,6 +16,9 @@ is_valid_path <- function(path, Edges) {
   stopifnot(is.data.table(Edges), length(key(Edges)) >= 2)
   k1 <- .subset2(Edges, key(Edges)[1])
   k2 <- .subset2(Edges, key(Edges)[2])
+  k1 <- ensure_integer(k1)
+  k2 <- ensure_integer(k2)
+  path <- ensure_integer(path)
   
   .Call("do_is_valid_path", path, k1, k2, PACKAGE = packageName())
   

@@ -46,6 +46,8 @@ expect_true(is_valid_path(c(1L, 2L), DT))
 expect_true(is_valid_path(c(1L, 3L), DT))
 expect_true(is_valid_path(c(1L, 2L, 4L, 5L), DT))
 expect_false(is_valid_path(c(1L, 2L, 4L, 9L, 10L), DT))
+expect_false(is_valid_path(c(0L, 1L, 2L, 4L), DT))  # first entry fails
+
 
 Clique_DT <- color_clique(DT)
 expect_equal(Clique_DT[[2]], 
