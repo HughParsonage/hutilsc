@@ -22,10 +22,6 @@ unique_sorted <- function(x) {
   .Call("do_unique_sorted", x, PACKAGE = packageName())
 }
 
-counting_sort <- function(x) {
-  .Call("do_counting_sort", x, 128L, PACKAGE = packageName())
-}
-
 counting_sort_logi <- function(x) {
   .Call("count_sort_logi", x)
 }

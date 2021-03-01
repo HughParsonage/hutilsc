@@ -14,7 +14,6 @@ extern SEXP do_and2s(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP)
 extern SEXP do_classify_chars(SEXP, SEXP);
 extern SEXP do_clique1(SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_common_contacts(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP do_counting_sort(SEXP, SEXP);
 extern SEXP do_CountRecordID(SEXP);
 extern SEXP do_Decode3202(SEXP);
 extern SEXP do_decodeRecordID(SEXP);
@@ -57,7 +56,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_classify_chars",        (DL_FUNC) &do_classify_chars,         2},
     {"do_clique1",               (DL_FUNC) &do_clique1,                4},
     {"do_common_contacts",       (DL_FUNC) &do_common_contacts,        6},
-    {"do_counting_sort",         (DL_FUNC) &do_counting_sort,          2},
     {"do_CountRecordID",         (DL_FUNC) &do_CountRecordID,          1},
     {"do_Decode3202",            (DL_FUNC) &do_Decode3202,             1},
     {"do_decodeRecordID",        (DL_FUNC) &do_decodeRecordID,         1},

@@ -2,13 +2,27 @@
 % Please edit documentation in R/color_subgraphs.R
 \name{color_clique}
 \alias{color_clique}
+\alias{validate_cliques}
 \title{Color subgraphs}
 \usage{
-color_clique(DT)
+color_clique(Edges)
+
+validate_cliques(
+  Edges,
+  Cliques,
+  nodes = names(Cliques)[1],
+  clique = names(Cliques)[2]
+)
 }
 \arguments{
-\item{DT}{A \code{data.table}, whose keys represent the edges of a graph.
+\item{Edges}{A \code{data.table}, whose keys represent the edges of a graph.
 As the graph is undirected, each edge must connect a node to a higher node.}
+
+\item{Cliques}{A \code{data.table} containing at least two columns,
+representing nodes in \code{Edges} and the clique of each such node.}
+
+\item{nodes, clique}{Strings, the names of the column in \code{Cliques}
+as specified.}
 }
 \value{
 A \code{data.table} of two columns, the first being the
