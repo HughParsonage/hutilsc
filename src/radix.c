@@ -282,7 +282,8 @@ SEXP do_test_find_first(SEXP x, SEXP K1, SEXP U) {
     int ui = up[i];
     
     // If we are below the current value of k1[j]
-    // then we assigned that the value of 0
+    // then ui is not present in k1 so assign
+    // zero to the lookup table
     if (ui < k1[jk1]) {
       kp[ui - uminmax[0]] = 0U;
       continue; // main loop will eventually hit k1
