@@ -202,6 +202,24 @@ void do_whichminmax_dbl(const double * x, R_xlen_t N, R_xlen_t * ansp) {
   ansp[1] = wmax;
 }
 
+void do_whichminmax_raw(const Rbyte * x, R_xlen_t N, R_xlen_t * ansp) {
+  R_xlen_t wmin = 0, wmax = 0;
+  unsigned char xmin = x[0];
+  unsigned char xmax = x[0];
+  for (R_xlen_t i = 1; i < N; ++i) {
+    unsigned char xi = x[i];
+    if (xi < xmin) {
+      xmin = xi;
+      wmin = i;
+    } else if (xi > xmax) {
+      xmax = xi;
+      wmax = i;
+    }
+  }
+  ansp[0] = wmin;
+  ansp[1] = wmax;
+}
+
 SEXP do_whichminmax(SEXP x) {
   
   R_xlen_t N = xlength(x);
@@ -217,6 +235,9 @@ SEXP do_whichminmax(SEXP x) {
   } else if (TYPEOF(x) == REALSXP) {
     const double * xp = REAL(x);
     do_whichminmax_dbl(xp, N, ansp);
+  } else if (TYPEOF(x) == RAWSXP) {
+    const Rbyte * xp = RAW(x);
+    do_whichminmax_raw(xp, N, ansp);
   } else if (TYPEOF(x) == STRSXP) {
     const char * xi0 = CHAR(STRING_ELT(x, 0));
     R_xlen_t wmin = 0, wmax = 0;
