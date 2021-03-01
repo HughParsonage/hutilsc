@@ -48,23 +48,17 @@ color_clique <- function(DT) {
   F1 <- match(u, K1, nomatch = 0L)
   
   C <- .Call("do_clique1", u, K1, K2, F1, PACKAGE = packageName())
-  cat(".")
   fuse3_ans <- .Call("do_fuse3", u, C, K1, K2, PACKAGE = packageName())
-  cat("|")
   C3 <- fuse3_ans[C]
   n_iter <- 0L
   while (n_iter < length(u) && 
          !identical(fuse3_ans, seq_along(fuse3_ans))) {
-    cat("n_iter = ", n_iter, "\n", sep = "")
     n_iter <- n_iter + 1L
-    cat(".")
     fuse3_ans <- .Call("do_fuse3", u, C3, K1, K2, PACKAGE = packageName())
-    cat("|")
     C3 <- fuse3_ans[C3]
     # saveRDS(list(u, C3, K1, K2), "tmp.rds")
     C3 <- enseq(C3)
   }
-  cat("here?")
   
   # data.table(Node = u, C = C, Clique3 = C3, key = "Node")
   data.table(Node = u, Clique = C3)

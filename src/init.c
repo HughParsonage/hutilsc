@@ -23,7 +23,6 @@ extern SEXP do_encodeRecordID(SEXP);
 extern SEXP do_enseq(SEXP);
 extern SEXP do_ensure_leq(SEXP, SEXP);
 extern SEXP do_find_ftc(SEXP, SEXP, SEXP, SEXP);
-extern SEXP do_fuse1(SEXP, SEXP, SEXP);
 extern SEXP do_fuse3(SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_haversine_distance(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_is_constant(SEXP, SEXP);
@@ -67,7 +66,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_enseq",                 (DL_FUNC) &do_enseq,                  1},
     {"do_ensure_leq",            (DL_FUNC) &do_ensure_leq,             2},
     {"do_find_ftc",              (DL_FUNC) &do_find_ftc,               4},
-    {"do_fuse1",                 (DL_FUNC) &do_fuse1,                  3},
     {"do_fuse3",                 (DL_FUNC) &do_fuse3,                  4},
     {"do_haversine_distance",    (DL_FUNC) &do_haversine_distance,     5},
     {"do_is_constant",           (DL_FUNC) &do_is_constant,            2},
