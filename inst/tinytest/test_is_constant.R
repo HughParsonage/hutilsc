@@ -17,8 +17,18 @@ expect_false(is_constant(yi))
 expect_false(is_constant(yd))
 expect_false(is_constant(yc))
 
+xcomplex <- complex(10)
+expect_true(is_constant(xcomplex))
+xcomplex <- c(xcomplex, 2)
+expect_false(is_constant(xcomplex))
 
+xraw <- raw(10)
+expect_true(is_constant(xraw))
+xraw <- c(xraw, charToRaw("b"))
+expect_false(is_constant(xraw))
 
+expect_true(is_constant(NULL))
+expect_true(is_constant(1))
 
 
 

@@ -44,5 +44,9 @@ expect_equal(csl, x[order(x)])
 x <- c(1L, 3L, 3L, 5L)
 expect_identical(unique_sorted(x), unique(x))
 
+x <- c("a", "b", "c")
+expect_equal(isntSorted(x), 0L)
+x <- c("a", "b", "a", "c")
+expect_equal(isntSorted(x), 2L)
 
 

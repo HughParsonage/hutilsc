@@ -163,58 +163,6 @@ int dig(int x, int d, int b) {
   return (x % M) / (M / 10);
 }
 
-SEXP do_counting_sort(SEXP xo, SEXP base) {
-  R_xlen_t N = xlength(xo);
-  const int b = 10;
-  
-  const int * xop = INTEGER(xo);
-  SEXP x = PROTECT(allocVector(INTSXP, N));
-  int * xp = INTEGER(x);
-  for (R_xlen_t i = 0; i < N; ++i) {
-    if (xop[i] < 0 || xop[i] > 9) {
-      xp[i] = 0;
-    }
-    xp[i] = xop[i];
-  }
-  
-  int count[10];
-  for (int c = 0; c < 10; ++c) {
-    count[c] = 0;
-  }
-  
-  unsigned int * xd = malloc(sizeof(int) * N);
-  if (xd == NULL) {
-    free(xd);
-    error("xd not allocate.");
-  }
-  SEXP ans = PROTECT(allocVector(INTSXP, N));
-  int * restrict ansp = INTEGER(ans);
-  
-  for (R_xlen_t i = 0; i < N; ++i) {
-    int xdi = dig(xp[i], 1, b);
-    xd[i] = xdi;
-    count[xdi] += 1;
-  }
-  for (R_xlen_t i = 0; i < N; ++i) {
-    int xdi = xd[i];
-    count[xdi] += 1;
-  }
-  count[1] += count[0];
-  for (R_xlen_t i = 0; i < N; ++i) {
-    unsigned int xdi = (unsigned int)xd[i];
-    int pos = count[xdi] - 1;
-    ansp[pos] = xp[i];
-    --count[xdi];
-  }
-  for (R_xlen_t i = 0; i < N; ++i) {
-    xp[i] = ansp[i];
-  }
-  free(xd);
-  UNPROTECT(2);
-  return x;
-}
-
-
 SEXP count_sort_logi(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != LGLSXP || N > INT_MAX) {

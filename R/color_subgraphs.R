@@ -1,7 +1,13 @@
 #' Color subgraphs
 #' 
-#' @param DT A \code{data.table}, whose keys represent the edges of a graph.
+#' @param Edges A \code{data.table}, whose keys represent the edges of a graph.
 #' As the graph is undirected, each edge must connect a node to a higher node.
+#' 
+#' @param Cliques A \code{data.table} containing at least two columns,
+#' representing nodes in \code{Edges} and the clique of each such node.
+#' 
+#' @param nodes,clique Strings, the names of the column in \code{Cliques}
+#' as specified.
 #' 
 #' @return A \code{data.table} of two columns, the first being the 
 #' vertices of both columns of \code{DT} and the second being an 
@@ -26,11 +32,12 @@
 #' 
 #' @export
 
-color_clique <- function(DT) {
+color_clique <- function(Edges) {
+  DT <- Edges
   stopifnot(is.data.table(DT))
   kdt <- key(DT)
   if (length(kdt) < 2) {
-    stop("key(Edges) has length < 2")
+    stop("key(Edges) has length < 2") # nocov
   }
   k1 <- kdt[1]
   k2 <- kdt[2]
@@ -64,6 +71,8 @@ color_clique <- function(DT) {
   data.table(Node = u, Clique = C3)
 }
 
+#' @rdname color_clique
+#' @export 
 validate_cliques <- function(Edges, Cliques, 
                              nodes = names(Cliques)[1], 
                              clique = names(Cliques)[2]) {
@@ -82,13 +91,5 @@ validate_cliques <- function(Edges, Cliques,
   .Call("do_validate_clique", k1, k2, u, c, PACKAGE = packageName())
 }
 
-fuse3 <- function(Cliques, Edges) {
-  U <- .subset2(Cliques, 1)
-  C <- .subset2(Cliques, 2)
-  K1 <- .subset2(Edges, 1L)
-  K2 <- .subset2(Edges, 2L)
-  
-  fuse3_ans <- .Call("do_fuse3", U, C, K1, K2, PACKAGE = packageName())
-  Cliques[, "Fuse3" := fuse3_ans[C]]
-}
+
 
