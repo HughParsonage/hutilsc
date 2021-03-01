@@ -40,6 +40,7 @@ int char12_to_int(const char * x);
 int nth_digit_of(int x, int n);
 unsigned char nth_char(int x, int n);
 char digit2char(int d);
+int n_digits0(unsigned int x);
 
 
 #define return_false do {                                      \

@@ -14,9 +14,11 @@ expect_equal(Decode3202(Encode3202(x)), x)
 y <- c("320200000002", "420201000000")
 expect_error(Validate3202(y))
 expect_error(Validate3202("12345678901"))
+expect_error(Validate3202("a"))
 
 
 expect_equal(Lookup4(names2int("Hugh", "Parsonage")), "HuPa")
+expect_equal(Lookup4(names2int("", "")), "")
 
 tensc <- as.character(tens <- as.integer(10^(0:7)))
 expect_equal(hutilsc:::pad0(tensc, 9L),
