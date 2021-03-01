@@ -36,6 +36,7 @@ extern int tens[10];
 bool all_digits_4_12(const char * xi);
 bool all_digits(const char * xi, size_t nchari);
 int char2int(const char * x, int s);
+int char12_to_int(const char * x);
 int nth_digit_of(int x, int n);
 unsigned char nth_char(int x, int n);
 char digit2char(int d);

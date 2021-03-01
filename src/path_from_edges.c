@@ -6,6 +6,10 @@ struct Node {
   struct Node *right;
 };
 
+inline int max0(int x) {
+  return x < 0 ? 0 : x;
+}
+
 // # nocov start
 void print_vec(const int * xp, R_xlen_t N) {
   if (N < 20) {
