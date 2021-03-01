@@ -44,7 +44,7 @@ common_contacts <- function(a, b, Edges, len = 3L) {
   .Call("do_common_contacts", a, b, k1, k2, u, len, PACKAGE = packageName())
 }
 
-len_three_paths <- function(Edges, return_nout = FALSE) {
+len_three_paths <- function(Edges, set_key = TRUE) {
   stopifnot(is.data.table(Edges), length(key(Edges)) >= 2)
   k1 <- .subset2(Edges, key(Edges)[1])
   k2 <- .subset2(Edges, key(Edges)[2])
@@ -52,7 +52,17 @@ len_three_paths <- function(Edges, return_nout = FALSE) {
   k2 <- ensure_integer(k2)
   u <- union(k1, k2)
   u <- u[order(u)]
-  .Call("len3_paths", k1, k2, u, isTRUE(return_nout))
+  out <- .Call("len3_paths", k1, k2, u)
+  setDT(out)
+  if (!nrow(out)) {
+    return(data.table())
+  }
+  setnames(out, paste0("V", 1:3))
+  if (isTRUE(set_key)) {
+    keys <- names(out)[1:2]
+    setkeyv(out, keys)
+  }
+  out[]
 }
 
 len_four_paths <- function(Edges, set_key = TRUE) {
@@ -63,11 +73,11 @@ len_four_paths <- function(Edges, set_key = TRUE) {
   k2 <- ensure_integer(k2)
   u <- union(k1, k2)
   u <- u[order(u)]
-  Len3Paths <- .Call("len3_paths", k1, k2, u, FALSE)
+  Len3Paths <- .Call("len3_paths", k1, k2, u)
   out <- .Call("len4_paths", Len3Paths, k1, k2)
   setDT(out)
   setnames(out, paste0("V", 1:4))
-  if (set_key) {
+  if (isTRUE(set_key)) {
     keys <- names(out)[1:3]
     setkeyv(out, keys)
   }
