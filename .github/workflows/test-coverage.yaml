@@ -46,7 +46,7 @@ jobs:
 
       - name: Test coverage
         run: |
-          PC <- package_coverage(quiet = FALSE, clean = FALSE)
+          PC <- covr::package_coverage(quiet = FALSE, clean = FALSE)
           cat("PC complete\n")
           covr::codecov(coverage = PC)
         shell: Rscript {0}
