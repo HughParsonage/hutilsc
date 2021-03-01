@@ -20,7 +20,7 @@ expect_equal(wminmax(z), c(which.min(z), which.max(z)))
 l <- c(TRUE, FALSE)
 expect_equal(wminmax(l), c(which.min(l), which.max(l)))
 rm(x, y, z, r, l)  # need max memory for tomorrow
-if (is64bit()) {
+if (hutilsc:::is64bit()) {
   x <- raw(2^31)
   expect_equal(wminmax(x), c(1L, 1L))
 }
