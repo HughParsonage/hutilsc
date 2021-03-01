@@ -130,13 +130,19 @@ TriangleEdges[, y := as.integer(y)]
 setkey(TriangleEdges, x, y)
 TriangleCliques <- color_clique(TriangleEdges)
 expect_true(is_constant(TriangleCliques[[2]]))
+expect_true(!validate_cliques(TriangleEdges, Cliques = TriangleCliques))
 
 AlmostTriangle <-
   rbind(TriangleEdges, 
         data.table(x = 17L, y = 19L),
         data.table(x = 100:105, y = 101:106))
 setkey(AlmostTriangle, x, y)
-color_clique(AlmostTriangle)
+AlmostTriangleCliques <- color_clique(AlmostTriangle)
+expect_equal(AlmostTriangleCliques[[2]], c(rep(1:2, c(19, 7))))
+expect_equal(validate_cliques(AlmostTriangle, AlmostTriangleCliques), 0L)
+
+
+
 
 
 
