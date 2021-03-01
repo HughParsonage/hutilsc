@@ -124,7 +124,7 @@ SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len
   return ans1;
 }
 
-SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
+SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
   R_xlen_t N = xlength(K1);
   // # nocov start
   if (TYPEOF(K1) != INTSXP || 
@@ -144,7 +144,6 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
   if (!sorted_int(nodes, UN, 1)) {
     error("nodes is not sorted.");
   }
-  const bool ret_nOutlets = asLogical(return_nOutlets);
   
   // # nocov start
   int * n_outlets = malloc(sizeof(int) * N);
@@ -177,19 +176,6 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes, SEXP return_nOutlets) {
     n_outletsi = n_outletsi < 0 ? 0 : (n_outletsi + 1);
     n_outlets[i] = n_outletsi;
     AN += n_outletsi;
-  }
-  
-  if (ret_nOutlets) {
-    SEXP ans = PROTECT(allocVector(INTSXP, N));
-    int * restrict ansp = INTEGER(ans);
-    for (R_xlen_t i = 0; i < N; ++i) {
-      ansp[i] = n_outlets[i];
-    }
-    free(n_outlets);
-    free(R0_outlets);
-    free(R1_outlets);
-    UNPROTECT(1);
-    return ans;
   }
   
   if (AN < 1) {
