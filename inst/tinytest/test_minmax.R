@@ -19,9 +19,9 @@ expect_equal(wminmax(z), c(which.min(z), which.max(z)))
 # expect_equal(wminmax(r), c(which.min(r), which.max(r)))
 l <- c(TRUE, FALSE)
 expect_equal(wminmax(l), c(which.min(l), which.max(l)))
-
-x <- seq_len(2^31)
-expect_equal(wminmax(x), c(1L, length(x)))
+rm(x, y, z, r, l)  # need max memory for tomorrow
+x <- integer(2^31)
+expect_equal(wminmax(x), c(1L, 1L))
 
 
 

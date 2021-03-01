@@ -33,6 +33,7 @@ extern SEXP do_names2int(SEXP, SEXP);
 extern SEXP do_packSum(SEXP);
 extern SEXP do_pad0(SEXP, SEXP);
 extern SEXP do_pmax0(SEXP);
+extern SEXP do_sum_isna(SEXP, SEXP);
 extern SEXP do_tabula_RecordID(SEXP);
 extern SEXP do_test_find_first(SEXP, SEXP, SEXP);
 extern SEXP do_test_radix_find(SEXP, SEXP, SEXP);
@@ -76,6 +77,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_packSum",               (DL_FUNC) &do_packSum,                1},
     {"do_pad0",                  (DL_FUNC) &do_pad0,                   2},
     {"do_pmax0",                 (DL_FUNC) &do_pmax0,                  1},
+    {"do_sum_isna",              (DL_FUNC) &do_sum_isna,               2},
     {"do_tabula_RecordID",       (DL_FUNC) &do_tabula_RecordID,        1},
     {"do_test_find_first",       (DL_FUNC) &do_test_find_first,        3},
     {"do_test_radix_find",       (DL_FUNC) &do_test_radix_find,        3},
