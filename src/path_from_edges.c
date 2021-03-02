@@ -137,6 +137,7 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
   const int * k2 = INTEGER(K2);
   R_xlen_t UN = xlength(Nodes);
   const int * nodes = INTEGER(Nodes);
+  // # nocov start
   if (!sorted_int(k1, N, 1)) {
     print_vec(k1, N);
     error("k1 is not sorted.");
@@ -145,7 +146,6 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
     error("nodes is not sorted.");
   }
   
-  // # nocov start
   int * n_outlets = malloc(sizeof(int) * N);
   if (n_outlets == NULL) {
     free(n_outlets);
