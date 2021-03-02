@@ -11,6 +11,7 @@
 extern SEXP count_sort_logi(SEXP);
 extern SEXP do_and_lgl_int(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_and2s(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP do_any_or2(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_classify_chars(SEXP, SEXP);
 extern SEXP do_clique1(SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_common_contacts(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -53,6 +54,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"count_sort_logi",          (DL_FUNC) &count_sort_logi,           1},
     {"do_and_lgl_int",           (DL_FUNC) &do_and_lgl_int,            5},
     {"do_and2s",                 (DL_FUNC) &do_and2s,                 10},
+    {"do_any_or2",               (DL_FUNC) &do_any_or2,                7},
     {"do_classify_chars",        (DL_FUNC) &do_classify_chars,         2},
     {"do_clique1",               (DL_FUNC) &do_clique1,                4},
     {"do_common_contacts",       (DL_FUNC) &do_common_contacts,        6},
