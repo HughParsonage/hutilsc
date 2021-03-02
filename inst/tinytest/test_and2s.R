@@ -1,4 +1,5 @@
 
+library(data.table)
 j <- c(4L, 9L, 7L, 6L, 8L, 10L, 2L, 3L, 1L, 5L)
 k <- c(7L, 10L, 8L, 6L, 3L, 1L, 4L, 5L, 2L, 9L)
 
@@ -54,6 +55,8 @@ test_2expr <- function(irow,
                        type2 = "integer",
                        seed = 1,
                        orig_seed = get0(".Random.seed")) {
+  stopifnot(type1 %in% c("integer", "double", "character"))
+  stopifnot(type2 %in% c("integer", "double", "character"))
   force(irow)
   set.seed(seed)
   on.exit(set.seed(orig_seed))
@@ -72,16 +75,18 @@ test_2expr <- function(irow,
   identical(ANS, EXP)
 }
 
-library(data.table)
+
 Cj <- 
   CJ(n1 = c(1L, 101L), 
      n2 = c(1L, 101L),
      op1 = 1:7,
      op2 = 1:7,
      m1 = c(1L, 101L),
-     m2 = c(1L, 101L))
+     m2 = c(1L, 101L),
+     type1 = c("integer", "double"),
+     type2 = c("integer", "double"))
 Cj[, ii := .I]
-Cj[, res := test_2expr(.BY[[1]], n1, n2, op1, op2, m1, m2), by = "ii"]
+Cj[, res := test_2expr(.BY[[1]], n1, n2, op1, op2, m1, m2, type1, type2), by = "ii"]
 for (r in 1:nrow(Cj)) {
   expect_true(Cj$res[r], info = r)
 }

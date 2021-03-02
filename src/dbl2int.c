@@ -1,5 +1,31 @@
 #include "hutilsc.h"
 
+int dbl_is_int(double x) {
+  // 0 if really double
+  // 1 if NA
+  // 2 if normal int
+  if (ISNAN(x)) {
+    return 1;
+  }
+  if (x > 2147483647 || x < -2147483647) {
+    return 0;
+  }
+  int xi = (int)x;
+  if (xi != x) {
+    return 0;
+  }
+  return 2;
+}
+
+
+
+int dbl2int(double x) {
+  if (dbl_is_int(x) < 2) {
+    return NA_INTEGER;
+  }
+  return (int)x;
+}
+
 
 SEXP do_which_isnt_int(SEXP x) {
   if (TYPEOF(x) != REALSXP) {
@@ -26,3 +52,5 @@ SEXP do_which_isnt_int(SEXP x) {
   }
   return (which_not_ok < INT_MAX) ? ScalarInteger(which_not_ok) : ScalarReal(which_not_ok);
 }
+
+
