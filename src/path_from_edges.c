@@ -284,11 +284,13 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
     n_outletsi = n_outletsi < 0 ? 0 : (n_outletsi + 1);
     AN += n_outletsi;
   }
+  // # nocov start
   if (AN > INT_MAX) {
     free(R0_outlets);
     free(R1_outlets);
     error("AN > INT_MAX in len4_paths");
   }
+  // # nocov end
   
   R_xlen_t k = 0;
   
@@ -469,7 +471,7 @@ static bool venseq = false;
 SEXP do_enseq(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != INTSXP || N == 0) {
-    return R_NilValue;
+    return R_NilValue; // # nocov 
   }
   int * xp = INTEGER(x);
   int xminmax[2] = {xp[0], xp[0]};
