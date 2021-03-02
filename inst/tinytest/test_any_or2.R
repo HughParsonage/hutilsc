@@ -1,5 +1,6 @@
 
 library(data.table)
+any_or2 <- hutilsc:::any_or2
 
 test_2expr <- function(irow,
                        n1, n2, op1, op2, m1, m2, 
