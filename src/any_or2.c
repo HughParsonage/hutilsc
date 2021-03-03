@@ -271,10 +271,10 @@ static int input_types(SEXP X1, SEXP Y1,
   return 
     128 * nx1 + 
      64 * (TYPEOF(X1) == REALSXP) + 
-     32 * ny1 + 
-     16 * (TYPEOF(Y1) == REALSXP) + 
-       8 * nx2 + 
-       4 * (TYPEOF(X2) == REALSXP) + 
+     32 * nx2 + 
+     16 * (TYPEOF(X2) == REALSXP) + 
+       8 * ny1 + 
+       4 * (TYPEOF(Y1) == REALSXP) + 
        2 * ny2 + 
        1 * (TYPEOF(Y2) == REALSXP) + 
        1; // add one to make zero special
@@ -364,126 +364,194 @@ static bool xdopyd(double x, int o, double y) {
 // ii = x1 and x2 are integers
 bool any_or2_ii(SEXP X1, SEXP O1, SEXP Y1,
                 SEXP X2, SEXP O2, SEXP Y2, int nthreads) {
-  if (TYPEOF(Y1) == REALSXP && TYPEOF(Y2) == INTSXP) {
-    // don't duplicate code below just reverse order of expressions
-    return any_or2_ii(X2, O2, Y2,
-                      X1, O1, Y1, nthreads);
-  }
   R_xlen_t N = xlength(X1);
   const int o1 = asInteger(O1);
   const int o2 = asInteger(O2);
   const int * x1p = INTEGER(X1);
   const int * x2p = INTEGER(X2);
   
-  bool o = false;
-  
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == 1 &&
-      TYPEOF(Y2) == INTSXP && xlength(Y2) == 1) {
+  switch(input_types(X1, Y1, X2, Y2)) {
+  case INPUT2_IiIi: {
     const int y1 = asInteger(Y1);
     const int y2 = asInteger(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1) || 
           xiopyi(x2p[i], o2, y2)) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
   }
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == 1 &&
-      TYPEOF(Y2) == INTSXP && xlength(Y2) == N) {
+  case INPUT2_IiII: {
     const int y1 = asInteger(Y1);
     const int * y2p = INTEGER(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1) || 
           xiopyi(x2p[i], o2, y2p[i])) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
   }
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == N &&
-      TYPEOF(Y2) == INTSXP && xlength(Y2) == 1) {
+  case INPUT2_IIIi: {
     const int * y1p = INTEGER(Y1);
     const int y2 = asInteger(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1p[i]) || 
           xiopyi(x2p[i], o2, y2)) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
   }
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == N &&
-      TYPEOF(Y2) == INTSXP && xlength(Y2) == N) {
+  case INPUT2_IIII: {
     const int * y1p = INTEGER(Y1);
     const int * y2p = INTEGER(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1p[i]) || 
           xiopyi(x2p[i], o2, y2p[i])) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
+  }
+  case INPUT2_IRIR: {
+    const double * y1p = REAL(Y1);
+    const double * y2p = REAL(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1p[i]) || 
+          xiopyd(x2p[i], o2, y2p[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IrIr: {
+    const double y1 = asReal(Y1);
+    const double y2 = asReal(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) || 
+          xiopyd(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
   }
   // real rhs
   
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == 1 &&
-      TYPEOF(Y2) == REALSXP && xlength(Y2) == 1) {
+  case INPUT2_IiIr: {
     const int y1 = asInteger(Y1);
     const double y2 = asReal(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1) || 
           xiopyd(x2p[i], o2, y2)) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
   }
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == 1 &&
-      TYPEOF(Y2) == REALSXP && xlength(Y2) == N) {
+  case INPUT2_IiIR: {
     const int y1 = asInteger(Y1);
     const double * y2p = REAL(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1) || 
           xiopyd(x2p[i], o2, y2p[i])) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
   }
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == N &&
-      TYPEOF(Y2) == REALSXP && xlength(Y2) == 1) {
+  case INPUT2_IIIr: {
     const int * y1p = INTEGER(Y1);
     const double y2 = asReal(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1p[i]) || 
           xiopyd(x2p[i], o2, y2)) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
   }
-  if (TYPEOF(Y1) == INTSXP && xlength(Y1) == N &&
-      TYPEOF(Y2) == REALSXP && xlength(Y2) == N) {
+  case INPUT2_IIIR: {
     const int * y1p = INTEGER(Y1);
     const double * y2p = REAL(Y2);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(x1p[i], o1, y1p[i]) || 
           xiopyd(x2p[i], o2, y2p[i])) {
-        o = true;
-        break;
+        return true;
       }
     }
-    return o;
+    return false;
   }
-  return o;
+  
+  case INPUT2_IRII: {
+    const double * y1p = REAL(Y1);
+    const int * y2p = INTEGER(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1p[i]) ||
+          xiopyi(x2p[i], o2, y2p[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IRIi: {
+    const double * y1p = REAL(Y1);
+    const int y2 = asInteger(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1p[i]) ||
+          xiopyi(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IrII: {
+    const double y1 = asReal(Y1);
+    const int * y2p = INTEGER(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) ||
+          xiopyd(x2p[i], o2, y2p[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IrIi: {
+    const double y1 = asReal(Y1);
+    const int y2 = asInteger(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) ||
+          xiopyd(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IRIr: {
+    const double * y1p = REAL(Y1);
+    const double y2 = asReal(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1p[i]) ||
+          xiopyd(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IrIR: {
+    const double y1 = asReal(Y1);
+    const double * y2p = REAL(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) ||
+          xiopyd(x2p[i], o2, y2p[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  }
+  return false;
 }
 
 bool any_or2_id(SEXP X1, SEXP O1, SEXP Y1,
@@ -596,9 +664,88 @@ bool any_or2_id(SEXP X1, SEXP O1, SEXP Y1,
     }
     return false;
   }
+  case INPUT2_IrRr: {
+    const double y1 = asReal(Y1);
+    const double y2 = asReal(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) ||
+          xdopyd(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
   }
+  case INPUT2_IrRi: {
+    const double y1 = asReal(Y1);
+    const int y2 = asInteger(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) ||
+          xdopyi(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IrRR: {
+    const double y1 = asReal(Y1);
+    const double * y2p = REAL(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) ||
+          xdopyd(x2p[i], o2, y2p[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IRRr: {
+    const double * y1p = REAL(Y1);
+    const double y2 = asReal(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1p[i]) ||
+          xdopyd(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IRRI: {
+    const double * y1p = REAL(Y1);
+    const int * y2p = INTEGER(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1p[i]) ||
+          xdopyi(x2p[i], o2, y2p[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IRRi: {
+    const double * y1p = REAL(Y1);
+    const int y2 = asInteger(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1p[i]) ||
+          xdopyi(x2p[i], o2, y2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case INPUT2_IrRI: {
+    const double y1 = asReal(Y1);
+    const int * y2p = INTEGER(Y2);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(x1p[i], o1, y1) ||
+          xdopyi(x2p[i], o2, y2p[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  }
+  
   return false;
 }
+
 
 bool any_xoy(SEXP X, SEXP O, SEXP Y) {
   R_xlen_t N = xlength(X);
@@ -619,6 +766,26 @@ bool any_xoy(SEXP X, SEXP O, SEXP Y) {
     const int y = asInteger(Y);
     for (R_xlen_t i = 0; i < N; ++i) {
       if (xiopyi(xp[i], o, y)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (TYPEOF(X) == INTSXP && TYPEOF(Y) == REALSXP && xlength(Y) == N) {
+    const int * xp = INTEGER(X);
+    const double * yp = REAL(Y);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(xp[i], o, yp[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  if (TYPEOF(X) == INTSXP && TYPEOF(Y) == REALSXP && xlength(Y) == 1) {
+    const int * xp = INTEGER(X);
+    const double y = asReal(Y);
+    for (R_xlen_t i = 0; i < N; ++i) {
+      if (xiopyd(xp[i], o, y)) {
         return true;
       }
     }
@@ -656,6 +823,10 @@ SEXP do_any_or2(SEXP X1, SEXP O1, SEXP Y1,
   if (N == 1) {
     return R_NilValue;
   }
+  if (TYPEOF(X1) == REALSXP && TYPEOF(X2) == INTSXP) {
+    return do_any_or2(X2, O2, Y2, X1, O1, Y1, nThread);
+  }
+  
   if (xlength(Y1) != N && xlength(Y1) != 1) {
     return R_NilValue;
   }
@@ -688,6 +859,7 @@ SEXP do_any_or2(SEXP X1, SEXP O1, SEXP Y1,
       }
       return ScalarLogical(0);
     }
+    
     return R_NilValue;
   }
   if (TYPEOF(X1) == INTSXP && TYPEOF(X2) == INTSXP) {
@@ -704,7 +876,7 @@ SEXP do_any_or2(SEXP X1, SEXP O1, SEXP Y1,
     }
     bool o = false;
     o = any_or2_id(X1, O1, Y1, X2, O2, Y2);
-    
+    return ScalarLogical(o);
   }
   return R_NilValue;
 }
