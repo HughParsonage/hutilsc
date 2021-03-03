@@ -21,6 +21,7 @@ test_2expr <- function(irow,
   
   if (type1 == "double") {
     x1 <- as.double(x1)
+    x1[1:2] <- c(0.5, -0.5)
   }
   if (type2 == "double") {
     x2 <- as.double(x2)
