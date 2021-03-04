@@ -345,7 +345,7 @@ SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
     int r2 = radix_find(up, k2i, 0, UN, UN);
     int c2 = color[r2];
     if (c1 != c2) {
-      Rprintf("%d,%d,%d | %d,%d ", k1i, r1, r2, c1, c2);
+      // Rprintf("%d,%d,%d | %d,%d ", k1i, r1, r2, c1, c2);
       return ScalarInteger(i + 1);
     }
   }

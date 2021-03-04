@@ -11,6 +11,24 @@ expect_true(any_or2(x == 1.5, xd == 1))
 expect_false(any_or2(x == 1.5, x == 1.5))
 expect_false(any_or2(x == 1.5, xd == 1.5))
 
+expect_true(any_or2(x == -1L, xd > 9L))
+
+x_single <- 1L
+y_single <- 1L
+expect_true(any_or2(x_single == y_single, x > 10L))
+expect_false(any_or2(x_single != y_single, x > 10L))
+xd_single <- 1
+yd_single <- 1
+expect_true(any_or2(xd_single == yd_single, x > 10L))
+expect_true(any_or2(xd_single == y_single, x > 10L))
+expect_false(any_or2(xd_single < yd_single, x < x))
+
+theEnv <- new.env(parent = baseenv())
+assign("X1", c(0L, -5L, -2L, -1L, 3L, 6L, 2L, 7L, 8L, 1L, 4L, 9L, 5L, -3L), envir = theEnv)
+assign("X2", c(5L, 9L, 5L, 4L, 3L, 0L, 0L, 1L, 1L, -3L, 9L, 9L, 8L, -3L), envir = theEnv)
+assign("Y1", c(6L, 2L, 2L, -1L, 8L, 3L, 3L, 6L, 0L, 0L, 0L, 1L, 5L, 12L), envir = theEnv)
+assign("Y2", c(8L, 7L, 9L, 9L, 1L, 10L, 13L, 10L, 2L, 4L, 3L, 10L, 6L, 12L), envir = theEnv)
+
 ## Entire combination (Cj)
 test_2expr <- function(irow,
                        n1, n2, op1, op2, m1, m2, 
@@ -18,18 +36,32 @@ test_2expr <- function(irow,
                        typen2 = "integer",
                        typem1 = "integer",
                        typem2 = "integer",
+                       Env = theEnv,
                        seed = get0("seed_"),
                        orig_seed = get0(".Random.seed")) {
   stopifnot(typen1 %in% c("integer", "double", "character"))
   stopifnot(typen2 %in% c("integer", "double", "character"))
   force(irow)
-  set.seed(seed)
-  on.exit(set.seed(orig_seed))
-  x1 <- sample(-5:10, size = n1, replace = TRUE)
-  y1 <- sample(-5:10, size = m1, replace = TRUE)
-  x2 <- sample(-5:10, size = n2, replace = TRUE)
-  y2 <- sample(-5:10, size = m2, replace = TRUE)
   ops <- c("!=", "==", ">=", "<=", ">", "<", "%in%")
+  
+  x1 <- get("X1", envir = Env)
+  x2 <- get("X2", envir = Env)
+  y1 <- get("Y1", envir = Env)
+  y2 <- get("Y2", envir = Env)
+  
+  if (n1 == 1) {
+    x1 <- x1[1]
+  }
+  if (n2 == 1) {
+    x2 <- x2[1]
+  }
+  if (m1 == 1) {
+    y1 <- y1[1]
+  }
+  if (m2 == 1) {
+    y2 <- y2[1]
+  }
+  
   
   if (typen1 == "double") {
     x1 <- as.double(x1)
@@ -82,5 +114,47 @@ Cj[, res := test_2expr(.BY[[1]], n1, n2, op1, op2, m1, m2, typen1, typen2, typem
 for (r in 1:nrow(Cj)) {
   expect_true(Cj$res[r], info = r)
 }
+
+faire_or2_expr_out <- function(tx1 = "integer", tx2 = "integer", ty1 = "integer", ty2 = "integer",
+                               op1 = "!=", 
+                               op2 = "!=",
+                               lx1 = 1L, lx2 = 1L, ly1 = 1L, ly2 = 1L, 
+                               outcome1 = FALSE,
+                               outcome2 = FALSE) {
+  base_any_or2 <- function(expr1, expr2) any(expr1 | expr2)
+  
+  
+  
+  x1 <- seq_len(lx1) + switch(tx1, integer = 0L, double = 0)
+  x2 <- -seq_len(lx2) + switch(tx2, integer = 0L, double = 0)
+  
+  y1 <- integer(ly1) + switch(ty1, integer = 1L, double = 1)
+  y2 <- integer(ly2) + switch(ty2, integer = 1L, double = 1)
+  
+  EXP <- eval(parse(text = paste0("base_any_or2(x1 ", op1, " y1, x2 ", op2, " y2)")))
+  ACT <- eval(parse(text = paste0("any_or2(x1 ", op1, " y1, x2 ", op2, " y2)")))
+  identical(EXP, ACT)
+}
+
+CJ2 <- CJ(tx1 = c("integer", "double"),
+          ty1 = c("integer", "double"),
+          tx2 = c("integer", "double"),
+          ty2 = c("integer", "double"),
+          op1 = c("!=", "==", ">=", "<=", ">", "<", "%in%"),
+          op2 = c("!=", "==", ">=", "<=", ">", "<", "%in%"),
+          lx1 = 10L,
+          lx2 = c(1L, 10L), 
+          ly1 = c(1L, 10L), 
+          ly2 = c(1L, 10L), 
+          sorted = FALSE)
+CJ2[, ii := .I]
+CJ2[, res := faire_or2_expr_out(tx1, tx2, ty1, ty2, 
+                                op1, op2,
+                                lx1, lx2, ly1, ly2), 
+    by = "ii"]
+for (i in 1:nrow(CJ2)) {
+  expect_true(CJ2$res[i])
+}
+
 
 
