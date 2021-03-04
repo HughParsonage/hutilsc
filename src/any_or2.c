@@ -791,27 +791,6 @@ bool any_xoy(SEXP X, SEXP O, SEXP Y) {
     }
     return false;
   }
-  if (TYPEOF(X) == REALSXP && TYPEOF(Y) == INTSXP && xlength(Y) == N) {
-    const double * xp = REAL(X);
-    const int * yp = INTEGER(Y);
-    for (R_xlen_t i = 0; i < N; ++i) {
-      if (xdopyi(xp[i], o, yp[i])) {
-        return true;
-      }
-    }
-    return false;
-  }
-  if (TYPEOF(X) == REALSXP && TYPEOF(Y) == INTSXP && xlength(Y) == 1) {
-    const double * xp = REAL(X);
-    const int y = asInteger(Y);
-    for (R_xlen_t i = 0; i < N; ++i) {
-      if (xdopyi(xp[i], o, y)) {
-        return true;
-      }
-    }
-    return false;
-  }
-  
   return false;
 }
 
@@ -823,7 +802,7 @@ SEXP do_any_or2(SEXP X1, SEXP O1, SEXP Y1,
   if (N == 1) {
     return R_NilValue;
   }
-  if (TYPEOF(X1) == REALSXP && TYPEOF(X2) == INTSXP) {
+  if (TYPEOF(X1) > TYPEOF(X2)) {
     return do_any_or2(X2, O2, Y2, X1, O1, Y1, nThread);
   }
   
