@@ -46,7 +46,7 @@ extern SEXP do_which_isnt_sorted(SEXP);
 extern SEXP do_whichminmax(SEXP);
 extern SEXP is_binary_call(SEXP);
 extern SEXP len3_paths(SEXP, SEXP, SEXP);
-extern SEXP len4_paths(SEXP, SEXP, SEXP);
+extern SEXP len4_paths(SEXP, SEXP, SEXP, SEXP);
 extern SEXP lookup4_char(SEXP);
 extern SEXP n_sin(SEXP, SEXP, SEXP);
 extern SEXP test_input_types(SEXP, SEXP, SEXP, SEXP);
@@ -90,7 +90,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_whichminmax",           (DL_FUNC) &do_whichminmax,            1},
     {"is_binary_call",           (DL_FUNC) &is_binary_call,            1},
     {"len3_paths",               (DL_FUNC) &len3_paths,                3},
-    {"len4_paths",               (DL_FUNC) &len4_paths,                3},
+    {"len4_paths",               (DL_FUNC) &len4_paths,                4},
     {"lookup4_char",             (DL_FUNC) &lookup4_char,              1},
     {"n_sin",                    (DL_FUNC) &n_sin,                     3},
     {"test_input_types",         (DL_FUNC) &test_input_types,          4},
