@@ -163,13 +163,33 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
   }
   // # nocov end
   
+  int * U0 = malloc(sizeof(int) * UN);
+  if (U0 == NULL) {
+    free(U0);
+    error("Unable to allocate U0.");
+  }
+  int * U1 = malloc(sizeof(int) * UN);
+  if (U1 == NULL) {
+    free(U0);
+    free(U1);
+    error("Unable to allocate U1");
+  }
+  
+  for (int i = 0; i < UN; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  
+  ftc2(U0, U1, k1, N);
+  
   // Number of elements in result (number of len3 paths effectively)
   R_xlen_t AN = 0;
   
   for (R_xlen_t i = 0; i < N; ++i) {
     int k2i = k2[i];
     R_xlen_t R[2] = {-1, -1};
-    radix_find_range(k2i, k1, R, N);
+    R[0] = U0[k2i - 1];
+    R[1] = U1[k2i - 1];
     R0_outlets[i] = R[0];
     R1_outlets[i] = R[1];
     int n_outletsi = R[1] - R[0];
@@ -179,6 +199,8 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
   }
   
   if (AN < 1) {
+    free(U0);
+    free(U1);
     free(n_outlets);
     free(R0_outlets);
     free(R1_outlets);
@@ -214,6 +236,8 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
       }
     }
   }
+  free(U0);
+  free(U1);
   free(n_outlets);
   free(R0_outlets);
   free(R1_outlets);
@@ -227,7 +251,7 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
 }
 
 
-SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
+SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2, SEXP U) {
   if (TYPEOF(Len3Paths) != VECSXP || xlength(Len3Paths) < 3) {
     error("Internal error(len4_paths): TYPEOF(Len3Paths) != VECSXP"); // # nocov
   }
@@ -258,18 +282,53 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
   const int * v1 = INTEGER(V1);
   const int * v2 = INTEGER(V2);
   
+  if (TYPEOF(U) != INTSXP) {
+    error("TYPEOF(U) != INTSXP");
+  }
+  if (xlength(U) > INT_MAX) {
+    error("xlength(U) > INT_MAX");
+  }
+  int UN = xlength(U);
+  
   // # nocov start
+  int * U0 = malloc(sizeof(int) * UN);
+  if (U0 == NULL) {
+    free(U0);
+    error("Unable to allocate U0.");
+  }
+  int * U1 = malloc(sizeof(int) * UN);
+  if (U1 == NULL) {
+    free(U0);
+    free(U1);
+    error("Unable to allocate U1");
+  }
+  
+  for (int i = 0; i < UN; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  
   R_xlen_t * R0_outlets = malloc(sizeof(R_xlen_t) * N);
   if (R0_outlets == NULL) {
+    free(U0);
+    free(U1);
     free(R0_outlets);
+    
     error("Unable to allocate R0_outlets");
   }
   R_xlen_t * R1_outlets = malloc(sizeof(R_xlen_t) * N);
   if (R1_outlets == NULL) {
+    free(U0);
+    free(U1);
+    free(R0_outlets);
     free(R1_outlets);
     error("Unable to allocate R1_outlets"); 
   }
   // # nocov end
+  
+  ftc2(U0, U1, k1, M);
+  
+
   
   // Number of elements in result (number of len3 paths effectively)
   R_xlen_t AN = 0;
@@ -277,7 +336,8 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
   for (R_xlen_t i = 0; i < N; ++i) {
     int k2i = v2[i];
     R_xlen_t R[2] = {-1, -1};
-    radix_find_range(k2i, k1, R, M);
+    R[0] = U0[k2i - 1];
+    R[1] = U1[k2i - 1];
     R0_outlets[i] = R[0];
     R1_outlets[i] = R[1];
     R_xlen_t n_outletsi = R[1] - R[0];
@@ -286,6 +346,8 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
   }
   // # nocov start
   if (AN > INT_MAX) {
+    free(U0);
+    free(U1);
     free(R0_outlets);
     free(R1_outlets);
     error("AN > INT_MAX in len4_paths");
@@ -315,6 +377,8 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2) {
       }
     }
   }
+  free(U0);
+  free(U1);
   free(R0_outlets);
   free(R1_outlets);
   SEXP ans = PROTECT(allocVector(VECSXP, 4));

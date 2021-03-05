@@ -315,6 +315,21 @@ SEXP do_test_find_first(SEXP x, SEXP K1, SEXP U) {
 }
 
 
+// U0 -- indices of k1 such that k1[U0[i]] == i;
+void ftc2(int * U0, int * U1, const int * k1, int N) {
+  int i = 0;
+  while (i < N) {
+    int k1i = k1[i];
+    U0[k1i - 1] = i;
+    int j = i + 1;
+    while (j < N && k1[j] == k1i) {
+      ++j;
+    }
+    U1[k1i - 1] = j - 1;
+    i = j;
+  }
+}
+
 
 
 

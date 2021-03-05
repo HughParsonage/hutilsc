@@ -52,6 +52,8 @@ len_three_paths <- function(Edges, set_key = TRUE) {
   k2 <- ensure_integer(k2)
   u <- union(k1, k2)
   u <- u[order(u)]
+  k1 <- match(k1, u)
+  k2 <- match(k2, u)
   out <- .Call("len3_paths", k1, k2, u)
   setDT(out)
   if (!nrow(out)) {
@@ -73,9 +75,13 @@ len_four_paths <- function(Edges, set_key = TRUE) {
   k2 <- ensure_integer(k2)
   u <- union(k1, k2)
   u <- u[order(u)]
+  k1 <- match(k1, u)
+  k2 <- match(k2, u)
   Len3Paths <- .Call("len3_paths", k1, k2, u)
-  out <- .Call("len4_paths", Len3Paths, k1, k2)
+  out <- .Call("len4_paths", Len3Paths, k1, k2, u)
   setDT(out)
+  # Reset names to original
+  out <- out[, lapply(.SD, function(x) u[x])]
   setnames(out, paste0("V", 1:4))
   if (isTRUE(set_key)) {
     keys <- names(out)[1:3]
