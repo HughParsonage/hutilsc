@@ -1,76 +1,130 @@
 #include "hutilsc.h"
 
 
-// radix find returns the first integer in k1p that is >= a, 
-// [x0, x1) is the range that is searched
-// N is the xlength of k1p
-int pre_radix_find(const int * k1p, const int a, int x0, int x1, int N) {
-  int w = x1 - x0;
-#if DEBUG > 1
-  Rprintf("\n%d;%d,%d ", w, x0, x1);
-#endif
-  if (w < 32) {
-    for (int i = x0; i < x1; ++i) {
-      if (k1p[i] >= a) {
-        return i;
-      }
-    }
-    return x1 - 1;
-  }
-  if (k1p[x0] >= a) {
-    return x0;
-  }
-  if (k1p[x1 - 1] < a) {
-    return x1 - 1;
-  }
-  
-  int m = x0 + (w >> 1);
-  if (k1p[m] == a) {
-    return m;
-  }
-  if (k1p[m] < a) {
-#if DEBUG > 1
-    Rprintf("%d|> %d|  ", m, x1);
-#endif
-    return radix_find(k1p, a, m + 1, x1, N);
-  }
-  
-#if DEBUG > 1
-  Rprintf("|%d <|%d  ", x0, m);
-#endif
-  return radix_find(k1p, a, x0, m, N);
-}
+//' pre_radix_find prepares radix find
+//' @noRd
+//' @description Find _a_ position of an integer in a sorted array.  In particular,
+//' if `k1` contains duplicate values, there is no guarantee that the value
+//' returned will be leftmost (which is often what is sought).
+//' @param a Value to search for.
+//' @param x0,x1  Defines the interval [x0, x1) in which the search should take place.
+//' @param k1 Pointer to a sorted array in which a location of `a` is sought.
+//' @param tbl A pointer to an elementary hash table.  
+//' The value of tbl[a] returns (the position of a) + 1 in k1 or
+//' 0 if the location is unknown 
+//' UINT_MAX if a is absent.  (Idea is to eventually identify the leftmost
+//' entry for a. Hence useful to have something that will always break loops
+//' such as:
+//' for (i = 0; i = UINT_MAX; i < N)
+//' 
+//' 
+//' 
+//' 
 
-int radix_detect(int a, const int * k1p, int x0, int x1) {
-  if (k1p[x0] == a) {
-    return x0;
+unsigned int pre_radix_find(int a, unsigned int x0, unsigned int x1, const int * k1) {
+  // Try to get leftmost stuff as much as possible
+  if (k1[x0] == a) {
+    return x0 + 1;
   }
-  int w = x1 - x0;
-  if (w < 16) {
-    for (int i = x0; i < x1; ++i) {
-      if (k1p[i] == a) {
+  unsigned int w = x1 - x0;
+  if (w < 64) {
+    for (unsigned int i = x0; i < x1; ++i) {
+      if (k1[i] == a) {
         return i + 1;
       }
     }
-    return 0;
+    return UINT_MAX; // absent
   }
-  int m = x0 + (w >> 1);
-  if (k1p[m] < a) {
-    return radix_detect(a, k1p, m, x1);
+  unsigned int m = x0 + (w >> 1U);
+  unsigned int k1m = k1[m];
+  if (a == k1m) {
+    return m + 1;
+  } else if (a < k1m) {
+    return pre_radix_find(a, x0, m + 1, k1);
   } else {
-    return radix_detect(a, k1p, x0, m + 1);
+    return pre_radix_find(a, m, x1, k1);
   }
 }
 
-int radix_find(const int * k1p, const int a, int x0, int x1, int N) {
-  int o = pre_radix_find(k1p, a, x0, x1, N);
-  while (o >= 1 && k1p[o - 1] == a) {
-    --o;
+//' Find the location of the leftmost entry of a in k1
+//' Crucially, `pre_radix_find()` is the 'true' radix find
+//' but it stops whenever it finds a, not when it finds the first
+//' 
+unsigned int radix_find(int a, unsigned int x0, unsigned int x1, const int * k1, unsigned int * tbl) {
+  unsigned int prf = pre_radix_find(a, x0, x1, k1);
+  if (!prf || prf == UINT_MAX) {
+    return prf;
   }
-  
-  return o;
+  // Do this so that the subsequent while loop doesn't require two conditions
+  if (k1[0] == a) {
+    if (tbl) {
+      tbl[a] = 1U;
+    }
+    return 1U;
+  }
+  --prf; // prf is still 1-based
+  while (k1[prf] == a) {
+    --prf;
+  }
+  ++prf;
+  if (tbl) {
+    tbl[a] = prf + 1U;
+  }
+  return prf + 1U;
 }
 
+//' @noRd
+//' @param a Value to search for.
+//' @param k1 Pointer to a sorted array in which a location of `a` is sought.
+//' @param tbl A pointer to an elementary hash table.  
+//' The value of tbl[a] returns (the position of a) + 1 in k1 or
+//' 0 if the location is unknown 
+//' @param N The size of `k1`.
+//' @param R Pointer to the output.
+//' 
+//' @return Called for its side-effect:
+//' updates R so that
+//' if `a` is not present in k1:
+//' R[0] = UINT_MAX
+//' R[1] = 0;
+//' 
+//' otherwise
+//' R[0] = position (0-indexed) of first instance of `a` in k1
+//' R[1] = position (0-indexed) of last instance.
+//' 
+//' N.B: the following loop will cover the exact interval
+//' for (unsigned int i = R[0]; i <= R[1]; ++i)
+//'                               ^^  
+//'                               ^^  not <
+//' 
+//' 
+//' 
+void radix_find_range(int a, 
+                      const int * k1,
+                      unsigned int * tbl, 
+                      unsigned int N,
+                      unsigned int * R) {
+  // radix_find is 1 based
+  unsigned int R0 = radix_find(a, 0, N, k1, tbl);
+  if (R0 == UINT_MAX) {
+    R[0] = UINT_MAX;
+    R[1] = 0U;
+    return;
+  }
+  // Check the last value so that we don't have to check the bound
+  // in the while loop
+  if (k1[N - 1U] == a) {
+    R[0] = R0 - 1U;
+    R[1] = N - 1U;
+    return;
+  }
+  unsigned int R1 = R0 - 1U;
+  while (k1[R1] == a) {
+    ++R1;
+  }
+  R[0] = R0 - 1U;
+  R[1] = R1 - 1U;
+}
 
 SEXP do_test_radix_find(SEXP a, SEXP tbl, SEXP X0) {
   R_xlen_t N = xlength(tbl);
@@ -78,37 +132,16 @@ SEXP do_test_radix_find(SEXP a, SEXP tbl, SEXP X0) {
   int x0 = asInteger(X0);
   int x1 = (int)N;
   const int * kp = INTEGER(tbl);
-  int r = radix_find(kp, aa, x0, x1, x1);
-  SEXP ans = PROTECT(allocVector(INTSXP, 1));
-  INTEGER(ans)[0] = r;
-  UNPROTECT(1);
-  return ans;
-}
-
-void radix_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N) {
-  // temporary linear search
-  int R0 = 0;
-  while (R0 < N && k1[R0] != x) {
-    ++R0;
-  }
-  if (R0 == N) {
-    R[0] = N;
-    R[1] = 0;
-  } else {
-    R[0] = R0;
-    while (R0 < N && k1[R0] == x) {
-      R[1] = R0;
-      ++R0;
-    }
-  }
+  int r = radix_find(aa, x0, x1, kp, NULL);
+  return ScalarInteger(r);
 }
 
 SEXP do_test_radix_find_range(SEXP xx, SEXP K1) {
   const int x = asInteger(xx);
   const int * k1 = INTEGER(K1);
-  const R_xlen_t N = xlength(K1);
-  R_xlen_t R[2] = {0, 0};
-  radix_find_range(x, k1, R, N);
+  const unsigned int N = xlength(K1);
+  unsigned int R[2] = {0, 0};
+  radix_find_range(x, k1, NULL, N, R);
   SEXP ans = PROTECT(allocVector(N <= INT_MAX ? INTSXP : REALSXP, 2));
   if (N <= INT_MAX) {
     INTEGER(ans)[0] = R[0];

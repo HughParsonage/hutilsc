@@ -46,15 +46,15 @@ SEXP do_ensure_leq(SEXP K1, SEXP K2) {
   return ScalarInteger(0);
 }
 
-bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, R_xlen_t N) {
+bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, unsigned int N) {
   int a = pp[0];
-  int r = radix_find(k1, a, 0, N, N);
+  int r = radix_find(a, 0, N, k1, NULL);
   if (k1[r] != a) {
     return false;
   }
   for (int i = 1; i < n; ++i) {
-    R_xlen_t R[2] = {0, -1};
-    radix_find_range(a, k1, R, N);
+    unsigned int R[2] = {1U, 0U};
+    radix_find_range(a, k1, NULL, N, R);
     int p2 = pp[i];
     bool hits_next = false;
     for (R_xlen_t j = R[0]; j <= R[1]; ++j) {
@@ -72,7 +72,11 @@ bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, 
 }
 
 SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
-  R_xlen_t N = xlength(K1);
+  if (xlength(K1) >= UINT_MAX) {
+    error("xlength(K1) >= UINT_MAX"); // # nocov
+  }
+  unsigned int N = xlength(K1);
+  
   if (TYPEOF(path) != INTSXP || TYPEOF(K1) != INTSXP || TYPEOF(K2) != INTSXP ||
       xlength(K2) != N) {
     return R_NilValue; // # nocov
@@ -98,8 +102,8 @@ SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len
   R_xlen_t UN = xlength(Nodes);
   const int * nodes = INTEGER(Nodes);
   
-  int r_a = radix_find(nodes, a, 0, UN, UN);
-  int r_b = radix_find(nodes, b, 0, UN, UN);
+  int r_a = radix_find(a, 0, UN, nodes, NULL);
+  int r_b = radix_find(b, 0, UN, nodes, NULL);
   
   SEXP ans = PROTECT(allocVector(INTSXP, r_b - r_a));
   int * restrict ansp = INTEGER(ans);
@@ -403,10 +407,10 @@ SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
   const int * k2 = INTEGER(K2);
   for (R_xlen_t i = 0; i < N; ++i) {
     int k1i = k1[i];
-    int r1 = radix_find(up, k1i, 0, UN, UN);
+    int r1 = radix_find(k1i, 0, UN, up, NULL) - 1;
     int c1 = color[r1];
     int k2i = k2[i];
-    int r2 = radix_find(up, k2i, 0, UN, UN);
+    int r2 = radix_find(k2i, 0, UN, up, NULL) - 1;
     int c2 = color[r2];
     if (c1 != c2) {
       // Rprintf("%d,%d,%d | %d,%d ", k1i, r1, r2, c1, c2);
