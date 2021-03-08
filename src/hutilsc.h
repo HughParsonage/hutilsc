@@ -60,10 +60,14 @@ return ans;                                                    \
 int do_op2M(SEXP op);
 
 float ssqrt_fast(float x);
-int radix_find(const int * k1p, const int a, int x0, int x1, int N);
+unsigned int radix_find(int a, unsigned int x0, unsigned int x1, const int * k1, unsigned int * tbl);
 int linear_find(const int * k1, const int a, const int N);
 int linear_find_from(const int * k1, const int a, int from, const int N);
-void radix_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
+void radix_find_range(int a, 
+                      const int * k1,
+                      unsigned int * tbl, 
+                      unsigned int N,
+                      unsigned int * R);
 void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
 void ftc2(int * U0, int * U1, const int * k1, int N);
 
