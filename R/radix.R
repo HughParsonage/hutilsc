@@ -1,6 +1,6 @@
 
 
-test_radix_find <- function(x, tbl, x0 = 0L, check_sorted = TRUE) {
+test_radix_find <- function(x, tbl, x0 = 0L, check_sorted = TRUE, use_tp = FALSE) {
   stopifnot(is.integer(x), length(x) == 1L, is.integer(tbl))
   if (isTRUE(check_sorted)) {
     stopifnot(!is.unsorted(tbl))
@@ -8,12 +8,15 @@ test_radix_find <- function(x, tbl, x0 = 0L, check_sorted = TRUE) {
   .Call("do_test_radix_find", x, tbl, x0, PACKAGE = packageName())
 }
 
-test_radix_find_range <- function(x, tbl, check_sorted = TRUE) {
-  stopifnot(is.integer(x), length(x) == 1, is.integer(tbl))
+test_radix_find_range <- function(x, tbl, check_sorted = TRUE, use_tp = FALSE) {
+  stopifnot(is.integer(x), is.integer(tbl))
+  if (length(x) != 1 && !isTRUE(use_tp)) {
+    stop("length(x) != 1 && !isTRUE(use_tp)") # nocov
+  }
   if (isTRUE(check_sorted)) {
     stopifnot(!is.unsorted(tbl))
   }
-  .Call("do_test_radix_find_range", x, tbl, PACKAGE = packageName())
+  .Call("do_test_radix_find_range", x, tbl, isTRUE(use_tp), PACKAGE = packageName())
 }
 
 sum_in <- function(x, tbl, sorted = FALSE) {

@@ -51,6 +51,9 @@ unsigned int pre_radix_find(int a, unsigned int x0, unsigned int x1, const int *
 //' but it stops whenever it finds a, not when it finds the first
 //' 
 unsigned int radix_find(int a, unsigned int x0, unsigned int x1, const int * k1, unsigned int * tbl) {
+  if (tbl && tbl[a]) {
+    return tbl[a];
+  }
   unsigned int prf = pre_radix_find(a, x0, x1, k1);
   if (!prf || prf == UINT_MAX) {
     return prf;
@@ -136,11 +139,42 @@ SEXP do_test_radix_find(SEXP a, SEXP tbl, SEXP X0) {
   return ScalarInteger(r);
 }
 
-SEXP do_test_radix_find_range(SEXP xx, SEXP K1) {
-  const int x = asInteger(xx);
+SEXP do_test_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
+  const bool use_tp = asLogical(usetp);
   const int * k1 = INTEGER(K1);
   const unsigned int N = xlength(K1);
+  if (use_tp) {
+    R_xlen_t Nx = xlength(xx);
+    const int * xp = INTEGER(xx);
+    const int min_k = k1[0];
+    const int max_k = k1[N - 1];
+    if (min_k < 0) {
+      error("min_k < 0 (consider match on K1).");
+    }
+    
+    SEXP ans = PROTECT(allocVector(INTSXP, 2 * Nx));
+    int * restrict ansp = INTEGER(ans);
+    unsigned int * tk = calloc((max_k + 2), sizeof(int));
+    if (tk == NULL) {
+      UNPROTECT(1);
+      free(tk);
+      error("Unable to allocate tk (try use_tp = FALSE).");
+    }
+    
+    for (R_xlen_t i = 0; i < 2 * Nx; i += 2) {
+      int xi = xp[i];
+      unsigned int R[2] = {0, 0};
+      radix_find_range(xi, k1, tk, N, R);
+      ansp[i] = R[0];
+      ansp[i + 1] = R[1];
+    }
+    free(tk);
+    UNPROTECT(1);
+    return ans;
+  }
+  const int x = asInteger(xx);
   unsigned int R[2] = {0, 0};
+  
   radix_find_range(x, k1, NULL, N, R);
   SEXP ans = PROTECT(allocVector(N <= INT_MAX ? INTSXP : REALSXP, 2));
   if (N <= INT_MAX) {
@@ -256,7 +290,9 @@ SEXP do_find_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   
   SEXP ans = PROTECT(allocVector(return_lgl ? LGLSXP : INTSXP, N));
   int * restrict ansp = INTEGER(ans);
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nthread)
+#endif
   for (R_xlen_t i = 0; i < N; ++i) {
     unsigned int xi = xp[i];
     unsigned int pi = xi - min_tb;
