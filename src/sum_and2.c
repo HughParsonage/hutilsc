@@ -105,14 +105,18 @@ SEXP sum_and2_lgl_lgl(SEXP A, SEXP B, SEXP na_rm, SEXP nThread) {
     const int * bp = LOGICAL(B);
     bool ever_na = false;
     if (rm_na) {
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads) reduction(+ : o) 
+#endif
       for (R_xlen_t i = 0; i < N; ++i) {
         int api = ap[i];
         int bpi = bp[i];
         o += api & bpi;
       }
     } else {
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThreads) reduction(+ : o) reduction(|| : ever_na)
+#endif
       for (R_xlen_t i = 0; i < N; ++i) {
         int api = ap[i];
         int bpi = bp[i];

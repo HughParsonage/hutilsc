@@ -39,4 +39,20 @@ expect_equal(sapply(x, test_radix_find_range, x),
 
 x <- cumsum(1:37)
 
+find_first <- hutilsc:::test_find_first
+
+for (i in seq_len(max(x))) {
+  expect_equal(find_first(i, x, x), match(i, x, nomatch = 0L))
+}
+
+
+
+
+
+
+
+  
+
+
+
 
