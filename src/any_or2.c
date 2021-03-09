@@ -819,7 +819,6 @@ SEXP do_any_or2(SEXP X1, SEXP O1, SEXP Y1,
     return R_NilValue;
   }
   int nthreads = asInteger(nThread);
-  const int o1 = asInteger(O1);
   const int o2 = asInteger(O2);
   
   if (xlength(X2) == 1) {
