@@ -277,10 +277,12 @@ SEXP do_find_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   
   
   unsigned char * full_table = calloc(sizeof(char), n_full_table);
+  // # nocov start
   if (full_table == NULL) {
     free(full_table);
     return R_NilValue;
   }
+  // # nocov end
   
   for (R_xlen_t i = 0; i < TN; ++i) {
     int ti = tp[i];
@@ -305,29 +307,15 @@ SEXP do_find_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   return ans;
 }
 
-
-unsigned int find_first(int x, // value to search in k
-                        const int * k,  // sorted array (with duplicates) 
-                        R_xlen_t N, // length of k
-                        int * kminmax,
-                        const int * kp,  // given a value ki, kp[ki - mink] returns the position of ki in k
-                        unsigned int NK, // number of elements of kp,
-                        const int * up) {
-  unsigned int mink = kminmax[0];
-  unsigned int p = x - mink;
-  if (p >= NK) {
-    return 0U;
-  }
-  return kp[p] + 1U;
-}
-
 SEXP do_test_find_first(SEXP x, SEXP K1, SEXP U) {
+  // # nocov start
   if (TYPEOF(x) != INTSXP || TYPEOF(K1) != INTSXP || TYPEOF(U) != INTSXP) {
     return R_NilValue;
   }
   if (xlength(K1) >= INT_MAX || xlength(U) >= INT_MAX) {
     return R_NilValue;
   }
+  // # nocov end
   R_xlen_t n = xlength(x);
   int N = xlength(K1);
   int UN = xlength(U);
@@ -354,7 +342,9 @@ SEXP do_test_find_first(SEXP x, SEXP K1, SEXP U) {
     // If we are below the current value of k1[j]
     // then ui is not present in k1 so assign
     // zero to the lookup table
+    
     if (ui < k1[jk1]) {
+    
       kp[ui - uminmax[0]] = 0U;
       continue; // main loop will eventually hit k1
     }
@@ -376,7 +366,12 @@ SEXP do_test_find_first(SEXP x, SEXP K1, SEXP U) {
   int * restrict ansp = INTEGER(ans);
   for (R_xlen_t i = 0; i < n; ++i) {
     int xi = xp[i];
+    
     unsigned int xui = xi - uminmax[0];
+    if (xui >= range_of_u) { // also ensures xui > min
+      ansp[i] = 0;
+      continue;
+    }
     ansp[i] = kp[xui];
   }
   free(kp);
