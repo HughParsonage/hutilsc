@@ -46,8 +46,13 @@ expect_equal(test_radix_find_range(c(2L, 5L, 6L), x, use_tp = TRUE),
 
 find_first <- hutilsc:::test_find_first
 
+expect_equal(find_first(-1L, x, x), match(-1L, x, nomatch = 0L))
+expect_equal(find_first(max(x) + 1L, x, x), match(max(x) + 1L, x, nomatch = 0L))
+
 for (i in seq_len(max(x))) {
   expect_equal(find_first(i, x, x), match(i, x, nomatch = 0L))
+  # Test K1 proper subset of U
+  expect_equal(find_first(i, tail(x), x), match(i, tail(x), nomatch = 0L))
   expect_false(xor(hutilsc:::find_ftc(i, x, return_logical = TRUE), 
                    i %in% x))
   expect_equal(hutilsc:::find_ftc(i, x, return_logical = FALSE), 
