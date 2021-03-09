@@ -48,6 +48,10 @@ find_first <- hutilsc:::test_find_first
 
 for (i in seq_len(max(x))) {
   expect_equal(find_first(i, x, x), match(i, x, nomatch = 0L))
+  expect_false(xor(hutilsc::find_ftc(i, x, return_logical = TRUE), 
+                   i %in% x))
+  expect_equal(hutilsc::find_ftc(i, x, return_logical = FALSE), 
+               match(i, x, nomatch = 0L))
 }
 
 
