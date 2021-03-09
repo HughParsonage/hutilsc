@@ -1,49 +1,6 @@
+// Functions to record how to perform some known tasks
+
 #include "hutilsc.h"
-
-
-
-void collatz(int * seq, size_t * pp, size_t n) {
-  size_t p = *pp;
-  if (p + 4 > n) {
-    ++p;
-    return;
-  }
-  
-  Rprintf("_%d_,_%d_", (int)p, (int)n);
-  
-  if (seq[p] == 4) {
-    p++;
-    seq[p] = 2;
-    p++;
-    seq[p] = 1;
-    *pp = p;
-    return;
-  }
-  if (seq[p] == 2) {
-    p++;
-    seq[p] = 1;
-    *pp = p;
-    return;
-  }
-  if (seq[p] == 1) {
-    return;
-  }
-  if (p * 2 > n) {
-    Rprintf("\n%d req:\t", (int)(p * 2 * sizeof(int)));
-    n = p * 2;
-  }
-  int seqp = seq[p];
-  if ((seqp & 1)) {
-    // odd
-    ++p;
-    seq[p] = 3 * seqp + 1;
-    *pp = p;
-  } else {
-    ++p;
-    seq[p] = seqp / 2;
-    *pp = p;
-  }
-}
 
 
 SEXP do_collatz(SEXP ss) {
@@ -85,5 +42,52 @@ SEXP do_collatz(SEXP ss) {
   UNPROTECT(1);
   return ans;
 }
+
+
+
+SEXP do_fibonacci(SEXP nn, SEXP return_seq) {
+  int n = asInteger(nn);
+  const bool retSeq = asLogical(return_seq);
+  if (n == 1) {
+    return ScalarInteger(1);
+  }
+  if (n == 2) {
+    if (retSeq) {
+      return ScalarInteger(1);
+    }
+    SEXP ans = PROTECT(allocVector(INTSXP, 2));
+    INTEGER(ans)[0] = 1;
+    INTEGER(ans)[1] = 1;
+    UNPROTECT(1);
+    return ans;
+  }
+  if (n > 1024) {
+    return R_NilValue;
+  }
+  R_xlen_t s[n];
+  s[0] = 1;
+  s[1] = 1;
+  bool exceed_int_max = false;
+  for (R_xlen_t i = 2; i < n; ++i) {
+    s[i] = s[i - 1] + s[i - 2];
+    exceed_int_max = s[i] > INT_MAX;
+  }
+  if (exceed_int_max) {
+    SEXP ans = PROTECT(allocVector(REALSXP, n));
+    double * restrict ansp = REAL(ans);
+    for (R_xlen_t i = 0; i < n; ++i) {
+      ansp[i] = s[i];
+    }
+    UNPROTECT(1);
+    return ans;
+  } 
+  SEXP ans = PROTECT(allocVector(INTSXP, n));
+  int * restrict ansp = INTEGER(ans);
+  for (R_xlen_t i = 0; i < n; ++i) {
+    ansp[i] = s[i];
+  }
+  UNPROTECT(1);
+  return ans;
+} 
 
 
