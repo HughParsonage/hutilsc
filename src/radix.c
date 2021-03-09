@@ -161,12 +161,13 @@ SEXP do_test_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
       error("Unable to allocate tk (try use_tp = FALSE).");
     }
     
-    for (R_xlen_t i = 0; i < 2 * Nx; i += 2) {
+    for (R_xlen_t i = 0; i < Nx; ++i) {
       int xi = xp[i];
       unsigned int R[2] = {0, 0};
       radix_find_range(xi, k1, tk, N, R);
-      ansp[i] = R[0];
-      ansp[i + 1] = R[1];
+      R_xlen_t j = 2 * i; // two entries for every found element
+      ansp[j] = R[0];
+      ansp[j + 1] = R[1];
     }
     free(tk);
     UNPROTECT(1);
@@ -181,8 +182,8 @@ SEXP do_test_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
     INTEGER(ans)[0] = R[0];
     INTEGER(ans)[1] = R[1];
   } else {
-    REAL(ans)[0] = R[0];
-    REAL(ans)[1] = R[1];
+    REAL(ans)[0] = R[0]; // # nocov
+    REAL(ans)[1] = R[1]; // # nocov
   }
   UNPROTECT(1);
   return ans;
