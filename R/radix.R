@@ -19,10 +19,6 @@ test_radix_find_range <- function(x, tbl, check_sorted = TRUE, use_tp = FALSE) {
   .Call("do_test_radix_find_range", x, tbl, isTRUE(use_tp), PACKAGE = packageName())
 }
 
-sum_in <- function(x, tbl, sorted = FALSE) {
-  .Call("n_sin", x, tbl, sorted, PACKAGE = packageName())
-}
-
 find_ftc <- function(x, tbl, return_logical = TRUE, nThread = 10L) {
   .Call("do_find_ftc", x, tbl, nThread, isTRUE(return_logical), PACKAGE = packageName())
 }
