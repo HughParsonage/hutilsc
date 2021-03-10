@@ -11,7 +11,7 @@ SEXP do_collatz(SEXP ss) {
   }
   seq[0] = s;
   R_xlen_t p = 0;
-  bool exceeds_int_max = s < INT_MAX;
+  bool exceeds_int_max = s > INT_MAX;
   while (p < 1000 && seq[p] > 1) {
     int64_t seqp = seq[p];
     exceeds_int_max |= seqp > INT_MAX;
@@ -52,9 +52,6 @@ SEXP do_fibonacci(SEXP nn, SEXP return_seq) {
     return ScalarInteger(1);
   }
   if (n == 2) {
-    if (retSeq) {
-      return ScalarInteger(1);
-    }
     SEXP ans = PROTECT(allocVector(INTSXP, 2));
     INTEGER(ans)[0] = 1;
     INTEGER(ans)[1] = 1;
