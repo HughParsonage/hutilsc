@@ -39,9 +39,14 @@ expect_equal(sapply(x, test_radix_find_range, x),
 
 x <- cumsum(1:37)
 
-# test table lookups
-expect_equal(test_radix_find_range(c(2L, 5L, 6L), x, use_tp = TRUE), 
-             c(-1L, 0L, -1L, 0L, 2L, 2L))
+# test table lookups, with repeated element to make use of tp
+expect_equal(test_radix_find_range(c(2L, 5L, 6L, 6L, 1L, 1L), x, use_tp = TRUE), 
+             c(-1L, 0L,
+               -1L, 0L,
+               2L, 2L,
+               2L, 2L, 
+               0L, 0L,
+               0L, 0L))
 
 
 find_first <- hutilsc:::test_find_first

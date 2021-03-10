@@ -149,17 +149,19 @@ SEXP do_test_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
     const int min_k = k1[0];
     const int max_k = k1[N - 1];
     if (min_k < 0) {
-      error("min_k < 0 (consider match on K1).");
+      error("min_k < 0 (consider match on K1)."); // # nocov
     }
     
     SEXP ans = PROTECT(allocVector(INTSXP, 2 * Nx));
     int * restrict ansp = INTEGER(ans);
     unsigned int * tk = calloc((max_k + 2), sizeof(int));
+    // # nocov start
     if (tk == NULL) {
       UNPROTECT(1);
       free(tk);
       error("Unable to allocate tk (try use_tp = FALSE).");
     }
+    // # nocov end
     
     for (R_xlen_t i = 0; i < Nx; ++i) {
       int xi = xp[i];
@@ -193,7 +195,7 @@ SEXP do_find_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   R_xlen_t N = xlength(x);
   R_xlen_t TN = xlength(tbl);
   if (TYPEOF(x) != INTSXP || TYPEOF(tbl) != INTSXP || TYPEOF(nThreads) != INTSXP) {
-    return R_NilValue;
+    return R_NilValue; // # nocov
   }
   
   const int * tp = INTEGER(tbl);
@@ -261,8 +263,8 @@ SEXP do_test_find_first(SEXP x, SEXP K1, SEXP U) {
   // prepare table
   unsigned int * kp = calloc(range_of_u, sizeof(unsigned int));
   if (kp == NULL) {
-    free(kp);
-    return R_NilValue;
+    free(kp); // # nocov
+    return R_NilValue; // # nocov
   }
   
   unsigned int jk1 = 0; // position in k1;
