@@ -61,8 +61,6 @@ int do_op2M(SEXP op);
 
 float ssqrt_fast(float x);
 unsigned int radix_find(int a, unsigned int x0, unsigned int x1, const int * k1, unsigned int * tbl);
-int linear_find(const int * k1, const int a, const int N);
-int linear_find_from(const int * k1, const int a, int from, const int N);
 void radix_find_range(int a, 
                       const int * k1,
                       unsigned int * tbl, 
