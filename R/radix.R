@@ -31,3 +31,8 @@ test_find_first <- function(x, k1, k2, u = NULL) {
   stopifnot(is.integer(x), is.integer(k1), is.integer(u)) 
   .Call("do_test_find_first", x, k1, u, PACKAGE = packageName())
 }
+
+# bsearch <- function(a, x) {
+#   .Call("do_bsearch", a, x, PACKAGE = packageName())
+# }
+

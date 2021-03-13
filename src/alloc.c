@@ -47,7 +47,7 @@ SEXP do_collatz(SEXP ss) {
 
 SEXP do_fibonacci(SEXP nn, SEXP return_seq) {
   int n = asInteger(nn);
-  const bool retSeq = asLogical(return_seq);
+  // const bool retSeq = asLogical(return_seq);
   if (n == 1) {
     return ScalarInteger(1);
   }

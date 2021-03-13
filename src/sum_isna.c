@@ -36,3 +36,76 @@ SEXP do_sum_isna(SEXP x, SEXP nThread) {
   return o < INT_MAX ? ScalarInteger(o) : ScalarReal(o);
 }
 
+
+SEXP do_which_na(SEXP x, SEXP Not) {
+  R_xlen_t N = xlength(x);
+  if (TYPEOF(x) != INTSXP) {
+    return R_NilValue;
+  }
+  const int * xp = INTEGER(x);
+  if (N < 128) {
+    int * idx = malloc(sizeof(int) * N);
+    if (idx == NULL) {
+      free(idx);
+      return R_NilValue;
+    }
+    int k = 0;
+    int i = 0;
+    while (i < N) {
+      int isna = xp[i] == NA_INTEGER;
+      idx[k] = i + 1;
+      k += isna;
+      ++i;
+    }
+    if (k == 0) {
+      free(idx);
+      return allocVector(INTSXP, 0);
+    }
+    SEXP ans = PROTECT(allocVector(INTSXP, k));
+    int * restrict ansp = INTEGER(ans);
+    for (R_xlen_t j = 0; j < k; ++j) {
+      ansp[j] = idx[j];
+    }
+    free(idx);
+    UNPROTECT(1);
+    return ans;
+  }
+  int e = 1;
+  for (int i = 0; i < 128; ++i) {
+    e += xp[i] == NA_INTEGER;
+  }
+  if (e == 129) {
+    --e;
+  }
+  double ep = ((double)e) / 128.0;
+  R_xlen_t M = N * ep;
+  int * idx = malloc(sizeof(int) * M);
+  
+  int n_na = 0;
+  int k = 0;
+  for (R_xlen_t i = 0; i < N; ++i) {
+    bool isna = xp[i] == NA_INTEGER;
+    if (!(i & 127)) {
+      if (M <= n_na - 2) {
+        M *= 2;
+        idx = realloc(idx, M * sizeof(int));
+        if (idx == NULL) {
+          free(idx);
+          return R_NilValue;
+        }
+      }
+    }
+    idx[k] = i;
+    k += isna;
+  }
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, k));
+  int * restrict ansp = INTEGER(ans);
+  for (R_xlen_t j = 0; j < k; ++j) {
+    ansp[j] = idx[j];
+  }
+  free(idx);
+  UNPROTECT(1);
+  return ans;
+}
+

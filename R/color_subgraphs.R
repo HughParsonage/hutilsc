@@ -54,17 +54,29 @@ color_clique <- function(Edges) {
   K2 <- match(K2, u)
   F1 <- match(u, K1, nomatch = 0L)
   
+  C <- C3 <- NULL
+  cat(".")
+  saveRDS(list(u = u, C3 = C3, K1 = K1, K2 = K2), "~/tmp.rds")
   C <- .Call("do_clique1", u, K1, K2, F1, PACKAGE = packageName())
+  saveRDS(list(u = u, C3 = C3, K1 = K1, K2 = K2), "~/tmp.rds")
+  cat(".")
   fuse3_ans <- .Call("do_fuse3", u, C, K1, K2, PACKAGE = packageName())
   C3 <- fuse3_ans[C]
   n_iter <- 0L
   while (n_iter < length(u) && 
          !identical(fuse3_ans, seq_along(fuse3_ans))) {
     n_iter <- n_iter + 1L
+    Sys.sleep(1)
+    cat("\niter = ", n_iter);
+    Sys.sleep(0.01)
+    cat("packageName = ", packageName())
+    cat("<\n")
     fuse3_ans <- .Call("do_fuse3", u, C3, K1, K2, PACKAGE = packageName())
+    cat(".")
     C3 <- fuse3_ans[C3]
-    # saveRDS(list(u, C3, K1, K2), "tmp.rds")
+    saveRDS(list(u = u, C3 = C3, K1 = K1, K2 = K2), "~/tmp.rds")
     C3 <- enseq(C3)
+    cat(".")
   }
   
   # data.table(Node = u, C = C, Clique3 = C3, key = "Node")

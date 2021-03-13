@@ -532,7 +532,7 @@ SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
   return ans;
 }
 
-static bool venseq = false;
+
 
 // given a sequence, i_1, i_2, i_3
 // return the 1, 2, 3
@@ -541,6 +541,7 @@ SEXP do_enseq(SEXP x) {
   if (TYPEOF(x) != INTSXP || N == 0) {
     return R_NilValue; // # nocov 
   }
+  bool venseq = false;
   int * xp = INTEGER(x);
   int xminmax[2] = {xp[0], xp[0]};
   Vminmax_i(xminmax, xp, N, 1);
@@ -608,6 +609,12 @@ SEXP do_enseq(SEXP x) {
   
   necessary_cumsum[0] = 0U; // already established
   for (R_xlen_t i = 1; i < n_range; ++i) {
+    if (i < 5 || (n_range - i) < 5) {
+      if (venseq) {
+        Rprintf("i = %d ", i);
+        Rprintf("necessary_cumsum[i] = %d | gaps[i] = %u | ", necessary_cumsum[i - 1], gaps[i]);
+      }
+    }
     necessary_cumsum[i] = necessary_cumsum[i - 1] + (1 - gaps[i]);
   }
   // # nocov start
@@ -622,15 +629,15 @@ SEXP do_enseq(SEXP x) {
   
   for (R_xlen_t i = 0; i < N; ++i) {
     int xi = ansp[i];
-    if (venseq && (xi == NA_INTEGER || xi <= 0)) {
+    if ((xi == NA_INTEGER || xi <= 0)) {
       Rprintf("i = %d was NA", i); // #nocov
     }
-    if (venseq && xi >= n_range + 1) {
+    if (xi >= n_range + 1) {
       Rprintf("xi >= n_range at %d\n", i); // # nocov
       continue; // # nocov
     }
     int sub = necessary_cumsum[xi - 1];
-    if (venseq && (sub > ansp[i] || sub < 0)) {
+    if ((sub > ansp[i] || sub < 0)) {
       Rprintf("sub = %d | ansp[i] = %d", sub, ansp[i]); // # nocov
     }
     ansp[i] -= sub;
