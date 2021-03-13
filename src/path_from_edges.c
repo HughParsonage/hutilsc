@@ -522,7 +522,7 @@ SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
     
     int min_colori = c1i < c2i ? c1i : c2i;
     int max_colori = c1i > c2i ? c1i : c2i;
-    for (R_xlen_t ii = 0; ii < N; ++ii) {
+    for (R_xlen_t ii = 0; ii < n_out; ++ii) {
       if (ansp[ii] == max_colori) {
         ansp[ii] = min_colori;
       }

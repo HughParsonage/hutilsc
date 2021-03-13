@@ -11,4 +11,10 @@ ensure_leq <- function(k1, k2) {
   
 }
 
-enseq <- function(x) .Call("do_enseq", x, PACKAGE = packageName())
+enseq <- function(x, use = TRUE) {
+  if (use) {
+    .Call("do_enseq", x, PACKAGE = packageName())
+  } else {
+    match(x, unique(sort(x) - min(x) + 1L))
+  }
+}
