@@ -144,6 +144,16 @@ expect_equal(AlmostTriangleCliques[[2]], c(rep(1:2, c(19, 7))))
 expect_equal(validate_cliques(AlmostTriangle, AlmostTriangleCliques), 0L)
 
 
+set.seed(1)
+DT <- data.table(x = rpois(1e6) + sample(1e6),
+                 y = rpois(1e6) + sample(1e6))
+DT <- DT[, c("x", "y") := list(pmin(x, y), pmax(x, y))]
+setkey(DT, x, y)
+expect_true(is.data.table(color_clique(DT)))
+
+
+
+
 
 
 

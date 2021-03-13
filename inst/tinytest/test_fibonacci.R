@@ -17,7 +17,7 @@ fib <- function(n) {
 
 
 for (i in 1:50) {
-expect_equal(hutilsc:::fibonacci(i), 
-             fib(i), 
-             info = paste0("i = ", i))
+  expect_equal(hutilsc:::fibonacci(i), 
+               fib(i), 
+               info = paste0("i = ", i))
 }

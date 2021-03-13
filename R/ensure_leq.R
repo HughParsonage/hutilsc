@@ -1,7 +1,7 @@
 
 
 ensure_leq <- function(k1, k2) {
-  if (.Call("do_ensure_leq", k1, k2)) {
+  if (.Call("do_ensure_leq", k1, k2, PACKAGE = packageName())) {
     # Handled
     return(invisible(list(k1, k2))) 
   }
@@ -11,4 +11,4 @@ ensure_leq <- function(k1, k2) {
   
 }
 
-enseq <- function(x) .Call("do_enseq", x)
+enseq <- function(x) .Call("do_enseq", x, PACKAGE = packageName())
