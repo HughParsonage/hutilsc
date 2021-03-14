@@ -72,7 +72,15 @@ jobs:
           Rdevel CMD INSTALL hutilsc*.tar.gz
           Rdevel -q -e "xx <- c(5L, 4L, 1L); y <- rev(xx); hutilsc:::and2s(xx >= 1L, y <= 4L)"
           Rdevel -q -e "library(hutilsc); tinytest::test_all()"
+  rchk:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: r-lib/actions/run-rchk@master
+      # with:
+      #   apt: <any apt dependencies, optional>
+      #   package: <R package name, optional>
+          
           
 
 
-          
