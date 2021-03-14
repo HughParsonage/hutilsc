@@ -51,7 +51,6 @@ SEXP do_and_lgl_lgl(SEXP A, SEXP B, SEXP nThread) {
       UNPROTECT(1);
       return ans;
     } else {
-      UNPROTECT(1);
       return B;
     }
   }
@@ -62,7 +61,6 @@ SEXP do_and_lgl_lgl(SEXP A, SEXP B, SEXP nThread) {
       UNPROTECT(1);
       return ans;
     } else {
-      UNPROTECT(1);
       return A;
     }
   }
@@ -320,9 +318,10 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
       return ans;
     }
     if (a2 == NA_INTEGER && b2 == NA_INTEGER) {
-      return(do_and_int_int(x2, op2, y2, 
+      UNPROTECT(1);
+      return do_and_int_int(x2, op2, y2, 
                             x1, op1, y1,
-                            nThread));
+                            nThread);
     }
     
     if (a1 == NA_INTEGER && b1 == NA_INTEGER) {
