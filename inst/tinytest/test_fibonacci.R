@@ -16,8 +16,16 @@ fib <- function(n) {
 }
 
 
-for (i in 1:50) {
-  expect_equal(hutilsc:::fibonacci(i), 
-               fib(i), 
-               info = paste0("i = ", i))
+if (hutilsc:::is64bit()) {
+  for (i in 1:50) {
+    res <- hutilsc:::fibonacci(i)
+    exp <- fib(i)
+    expect_equal(res,
+                 exp,
+                 info = paste0("i = ", i, " :: ",
+                               "h(res) = ", head(res), ",",
+                               "t(res) = ", tail(res), ";",
+                               "h(exp) = ", head(exp), ",",
+                               "t(exp) = ", tail(exp), ""))
+  }
 }
