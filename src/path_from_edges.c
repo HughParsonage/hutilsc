@@ -665,6 +665,7 @@ void next_neighb(const int max_order,
   }
   // Search reverse
   radix_find_range(k2i, nk1, nr_star, N, R);
+
   for (unsigned int i = R[0]; i <= R[1]; ++i) {
     int k2ii = nk2[i]; 
     if (ansp[k2ii - 1] == NA_INTEGER) {
@@ -703,12 +704,12 @@ SEXP do_ego_net(SEXP vv,
   if (M < 1) {
     return R_NilValue;
   }
-  unsigned int * r_star = calloc(M, sizeof(int));
+  unsigned int * r_star = calloc(N + 2, sizeof(int));
   if (r_star == NULL) {
     free(r_star);
     return R_NilValue;
   }
-  unsigned int * nr_star = calloc(M, sizeof(int));
+  unsigned int * nr_star = calloc(N + 2, sizeof(int));
   if (nr_star == NULL) {
     free(r_star);
     free(nr_star);
