@@ -19,6 +19,7 @@ extern SEXP do_common_contacts(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_CountRecordID(SEXP);
 extern SEXP do_Decode3202(SEXP);
 extern SEXP do_decodeRecordID(SEXP);
+extern SEXP do_ego_net(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP do_Encode3202(SEXP);
 extern SEXP do_encodeRecordID(SEXP);
 extern SEXP do_enseq(SEXP);
@@ -64,6 +65,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"do_CountRecordID",         (DL_FUNC) &do_CountRecordID,          1},
     {"do_Decode3202",            (DL_FUNC) &do_Decode3202,             1},
     {"do_decodeRecordID",        (DL_FUNC) &do_decodeRecordID,         1},
+    {"do_ego_net",               (DL_FUNC) &do_ego_net,                7},
     {"do_Encode3202",            (DL_FUNC) &do_Encode3202,             1},
     {"do_encodeRecordID",        (DL_FUNC) &do_encodeRecordID,         1},
     {"do_enseq",                 (DL_FUNC) &do_enseq,                  1},
