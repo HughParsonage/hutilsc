@@ -4,3 +4,4 @@
 ^\.github$
 ^tmp\.R$
 ^M3\.rds$
+^mec\.R$

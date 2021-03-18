@@ -332,7 +332,7 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2, SEXP U) {
   
   ftc2(U0, U1, k1, M);
   
-
+  
   
   // Number of elements in result (number of len3 paths effectively)
   R_xlen_t AN = 0;
@@ -603,7 +603,7 @@ SEXP do_enseq(SEXP x) {
   for (R_xlen_t i = 1; i < n_range; ++i) {
     necessary_cumsum[i] = necessary_cumsum[i - 1] + (1 - gaps[i]);
   }
-
+  
   
   for (R_xlen_t i = 0; i < N; ++i) {
     int xi = ansp[i];
@@ -616,7 +616,193 @@ SEXP do_enseq(SEXP x) {
   return ans;
 }
 
+bool ensure_seq_len(SEXP x) {
+  R_xlen_t N = xlength(x);
+  if (N > INT_MAX || TYPEOF(x) != INTSXP) {
+    return false;
+  }
+  return 
+    (INTEGER(x)[0] == 1) &&
+      INTEGER(x)[N - 1] == N - 1;
+}
 
+
+// Take a vertex, the order of that node,
+// and a vector (ansp) that records the order from the original
+// Return 
+void next_neighb(const int max_order, 
+                 int k2i_order, 
+                 int k2i,
+                 int * ansp,  // put the order here, will be initialized to NA_INTEGER
+                 unsigned int * r_star, // locations of k2s
+                 unsigned int * nr_star, // locations of k2s
+                 R_xlen_t N,
+                 const int * k1, 
+                 const int * k2,
+                 const int * nk1, 
+                 const int * nk2) {
+  unsigned int R[2] = {0, 0};
+  radix_find_range(k2i, k1, r_star, N, R);
+  for (unsigned int i = R[0]; i <= R[1]; ++i) {
+    int k2ii = k2[i];
+    if (ansp[k2ii - 1] == NA_INTEGER) {
+      int this_order = k2i_order + 1;
+      ansp[k2ii - 1] = this_order;
+      if (this_order < max_order) {
+        next_neighb(max_order,
+                    this_order, 
+                    k2ii,
+                    ansp, 
+                    r_star,
+                    nr_star,
+                    N, 
+                    k1, 
+                    k2,
+                    nk1, 
+                    nk2);
+      }
+    }
+  }
+  // Search reverse
+  radix_find_range(k2i, nk1, nr_star, N, R);
+  for (unsigned int i = R[0]; i <= R[1]; ++i) {
+    int k2ii = nk2[i]; 
+    if (ansp[k2ii - 1] == NA_INTEGER) {
+      int this_order = k2i_order + 1;
+      ansp[k2ii - 1] = this_order;
+      if (this_order < max_order) {
+        next_neighb(max_order,
+                    this_order, 
+                    k2ii, // positive
+                    ansp, 
+                    r_star,
+                    nr_star,
+                    N, 
+                    k1, 
+                    k2,
+                    nk1, 
+                    nk2);
+      }
+    }
+  }
+}
+
+SEXP do_ego_net(SEXP vv,
+                SEXP oo,
+                SEXP K1, SEXP K2,
+                SEXP NK1, SEXP NK2,
+                SEXP nNodes) {
+  const int v = asInteger(vv);
+  const int o = asInteger(oo);
+  R_xlen_t N = xlength(K1);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int * nk1 = INTEGER(NK1);
+  const int * nk2 = INTEGER(NK2);
+  int M = asInteger(nNodes);
+  if (M < 1) {
+    return R_NilValue;
+  }
+  unsigned int * r_star = calloc(M, sizeof(int));
+  if (r_star == NULL) {
+    free(r_star);
+    return R_NilValue;
+  }
+  unsigned int * nr_star = calloc(M, sizeof(int));
+  if (nr_star == NULL) {
+    free(r_star);
+    free(nr_star);
+    return R_NilValue;
+  }
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, M));
+  int * ansp = INTEGER(ans); // don't use restrict
+  
+  // initialize with NAs
+  for (R_xlen_t j = 0; j < M; ++j) {
+    ansp[j] = NA_INTEGER;
+  }
+  
+  ansp[v - 1] = 0; // by definition, order=0 occurs at the node itself
+  
+  /*  
+   if (o <= 2) {
+   unsigned int R[2] = {0, 0};
+   radix_find_range(v, k1, r_star, N, R);
+   //
+   int d = 1; // discrete distance
+   for (unsigned int i = R[0]; i <= R[1]; ++i) {
+   int k2i = k2[i];
+   ansp[k2i - 1] = d;
+   unsigned int RR[2] = {0, 0};
+   radix_find_range(k2i, k1, r_star, N, RR);
+   for (unsigned int ii = RR[0]; ii <= RR[1]; ++ii) {
+   if (ansp[ii - 1] == NA_INTEGER) {
+   ansp[ii - 1] = d + 1;
+   }
+   }
+   }
+   int nv = -v; // radix_find_range must be sorted ascending
+   radix_find_range(nv, nk1, nr_star, N, R);
+   for (unsigned int i = R[0]; i <= R[1]; ++i) {
+   int nk2i = nk2[i];
+   int k2i = -nk2i;
+   ansp[k2i - 1] = d;
+   unsigned int RR[2] = {0, 0};
+   radix_find_range(nk2i, nk1, nr_star, N, RR);
+   for (unsigned int ii = RR[0]; ii <= RR[1]; ++ii) {
+   if (ansp[ii - 1] == NA_INTEGER) {
+   ansp[ii - 1] = d + 1;
+   }
+   }
+   }
+   } else {
+   */
+  const int max_order = o > 10 ? 10 : o;
+  unsigned int R[2] = {0, 0};
+  radix_find_range(v, k1, r_star, N, R);
+  //
+  int this_order = 1; // discrete distance
+  for (unsigned int i = R[0]; i <= R[1]; ++i) {
+    int k2i = k2[i];
+    ansp[k2i - 1] = 1;
+    next_neighb(max_order,
+                this_order, 
+                k2i,
+                ansp, 
+                r_star,
+                nr_star,
+                N, 
+                k1, 
+                k2,
+                nk1, 
+                nk2);
+  }
+  radix_find_range(v, nk1, nr_star, N, R);
+  for (unsigned int i = R[0]; i <= R[1]; ++i) {
+    int k2i = nk2[i];
+    if (ansp[k2i - 1] == NA_INTEGER) {
+      ansp[k2i - 1] = 1;
+      next_neighb(max_order,
+                  this_order, 
+                  k2i,
+                  ansp, 
+                  r_star,
+                  nr_star,
+                  N, 
+                  k1, 
+                  k2,
+                  nk1, 
+                  nk2);
+    }
+  }
+  
+  
+  free(r_star);
+  free(nr_star);
+  UNPROTECT(1);
+  return ans;
+}
 
 
 
