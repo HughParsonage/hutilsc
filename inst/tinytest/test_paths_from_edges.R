@@ -1,4 +1,6 @@
 
+library(tinytest)
+library(hutilsc)
 options(hutilsc.verbose = FALSE)
 color_clique <- hutilsc:::color_clique
 
@@ -151,7 +153,9 @@ DT <- DT[, c("x", "y") := list(pmin(x, y), pmax(x, y))]
 setkey(DT, x, y)
 expect_true(is.data.table(color_clique(DT)))
 
-
+RH_Edges <-
+  data.table(x = 1:8,
+             y = rep(seq(3L, 9L, by = 2L), each = 2L))
 
 
 

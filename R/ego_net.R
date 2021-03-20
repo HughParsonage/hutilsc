@@ -13,6 +13,9 @@
 
 ego_net <- function(v, order = 1L, Edges, u = NULL) {
   stopifnot(is.data.table(Edges), haskey(Edges), length(key(Edges)) == 2L)
+  checkmate::assert_int(v, na.ok = FALSE)
+  checkmate::assert_int(order, na.ok = FALSE)
+  
   kk <- key(Edges)
   k1 <- .subset2(Edges, kk[1])
   k2 <- .subset2(Edges, kk[2])
@@ -32,7 +35,10 @@ ego_net <- function(v, order = 1L, Edges, u = NULL) {
   # Note double negative  (reverse direction)
   nk1 <- .subset2(NEdges, "nk1")
   nk2 <- .subset2(NEdges, "nk2")
-  ans <- .Call("do_ego_net", v, order, k1u, k2u, nk1, nk2, length(uu), PACKAGE = packageName())
+  
+  ans <- .Call("do_ego_net",
+               match(v, u, nomatch = 0L),
+               order, k1u, k2u, nk1, nk2, length(uu), PACKAGE = packageName())
   if (is.null(ans)) {
     return(NULL)
   }
