@@ -49,7 +49,7 @@ SEXP do_ensure_leq(SEXP K1, SEXP K2) {
 bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, unsigned int N) {
   int a = pp[0];
   int r = radix_find(a, 0, N, k1, NULL);
-  if (k1[r] != a) {
+  if (r < 0) {
     return false;
   }
   for (int i = 1; i < n; ++i) {
@@ -169,14 +169,14 @@ SEXP len3_paths(SEXP K1, SEXP K2, SEXP Nodes) {
   
   int * U0 = malloc(sizeof(int) * UN);
   if (U0 == NULL) {
-    free(U0);
-    error("Unable to allocate U0.");
+    free(U0); // # nocov
+    error("Unable to allocate U0."); // # nocov
   }
   int * U1 = malloc(sizeof(int) * UN);
   if (U1 == NULL) {
-    free(U0);
-    free(U1);
-    error("Unable to allocate U1");
+    free(U0); // # nocov
+    free(U1); // # nocov 
+    error("Unable to allocate U1"); // # nocov
   }
   
   for (int i = 0; i < UN; ++i) {
@@ -287,10 +287,10 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2, SEXP U) {
   const int * v2 = INTEGER(V2);
   
   if (TYPEOF(U) != INTSXP) {
-    error("TYPEOF(U) != INTSXP");
+    error("TYPEOF(U) != INTSXP"); // # nocov
   }
   if (xlength(U) > INT_MAX) {
-    error("xlength(U) > INT_MAX");
+    error("xlength(U) > INT_MAX"); // # nocov
   }
   int UN = xlength(U);
   
@@ -616,16 +616,6 @@ SEXP do_enseq(SEXP x) {
   return ans;
 }
 
-bool ensure_seq_len(SEXP x) {
-  R_xlen_t N = xlength(x);
-  if (N > INT_MAX || TYPEOF(x) != INTSXP) {
-    return false;
-  }
-  return 
-    (INTEGER(x)[0] == 1) &&
-      INTEGER(x)[N - 1] == N - 1;
-}
-
 
 // Take a vertex, the order of that node,
 // and a vector (ansp) that records the order from the original
@@ -701,9 +691,10 @@ SEXP do_ego_net(SEXP vv,
   const int * nk1 = INTEGER(NK1);
   const int * nk2 = INTEGER(NK2);
   int M = asInteger(nNodes);
-  if (M < 1) {
-    return R_NilValue;
+  if (M < 1 || M < v) {
+    return R_NilValue; // # nocov
   }
+// # nocov start
   unsigned int * r_star = calloc(N + 2, sizeof(int));
   if (r_star == NULL) {
     free(r_star);
@@ -715,6 +706,7 @@ SEXP do_ego_net(SEXP vv,
     free(nr_star);
     return R_NilValue;
   }
+// # nocov end
   
   SEXP ans = PROTECT(allocVector(INTSXP, M));
   int * ansp = INTEGER(ans); // don't use restrict
@@ -726,39 +718,6 @@ SEXP do_ego_net(SEXP vv,
   
   ansp[v - 1] = 0; // by definition, order=0 occurs at the node itself
   
-  /*  
-   if (o <= 2) {
-   unsigned int R[2] = {0, 0};
-   radix_find_range(v, k1, r_star, N, R);
-   //
-   int d = 1; // discrete distance
-   for (unsigned int i = R[0]; i <= R[1]; ++i) {
-   int k2i = k2[i];
-   ansp[k2i - 1] = d;
-   unsigned int RR[2] = {0, 0};
-   radix_find_range(k2i, k1, r_star, N, RR);
-   for (unsigned int ii = RR[0]; ii <= RR[1]; ++ii) {
-   if (ansp[ii - 1] == NA_INTEGER) {
-   ansp[ii - 1] = d + 1;
-   }
-   }
-   }
-   int nv = -v; // radix_find_range must be sorted ascending
-   radix_find_range(nv, nk1, nr_star, N, R);
-   for (unsigned int i = R[0]; i <= R[1]; ++i) {
-   int nk2i = nk2[i];
-   int k2i = -nk2i;
-   ansp[k2i - 1] = d;
-   unsigned int RR[2] = {0, 0};
-   radix_find_range(nk2i, nk1, nr_star, N, RR);
-   for (unsigned int ii = RR[0]; ii <= RR[1]; ++ii) {
-   if (ansp[ii - 1] == NA_INTEGER) {
-   ansp[ii - 1] = d + 1;
-   }
-   }
-   }
-   } else {
-   */
   const int max_order = o > 10 ? 10 : o;
   unsigned int R[2] = {0, 0};
   radix_find_range(v, k1, r_star, N, R);
