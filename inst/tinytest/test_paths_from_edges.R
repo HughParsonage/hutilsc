@@ -155,7 +155,12 @@ expect_true(is.data.table(color_clique(DT)))
 
 RH_Edges <-
   data.table(x = 1:8,
-             y = rep(seq(3L, 9L, by = 2L), each = 2L))
+             y = rep(seq(3L, 9L, by = 2L), each = 2L),
+             key = "x,y")
+Ans <- ego_net(9L, order = 2L, Edges = RH_Edges)
+expect_equal(Ans[[2]], 
+             c(NA, NA, NA, NA, 2L, 2L, 1L, 1L, 0L))
+
 
 
 
