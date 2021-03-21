@@ -157,12 +157,20 @@ RH_Edges <-
   data.table(x = 1:8,
              y = rep(seq(3L, 9L, by = 2L), each = 2L),
              key = "x,y")
+expect_equal(ego_net(8L, order = 0L, Edges = RH_Edges),
+             data.table(Node = 1:9, Order = NA_integer_)[(Node == 8), Order := 0L])
 Ans <- ego_net(9L, order = 2L, Edges = RH_Edges)
 expect_equal(Ans[[2]], 
              c(NA, NA, NA, NA, 2L, 2L, 1L, 1L, 0L))
-
-
-
+Ans <- ego_net(9L, order = 4L, Edges = RH_Edges)
+expect_equal(Ans[[2]], 
+             c(4L, 4L, 3L, 3L, 2L, 2L, 1L, 1L, 0L))
+Ans <- ego_net(3L, Edges = RH_Edges)
+expect_equal(Ans[[2]], 
+             c(1L, 1L, 0L, NA, 1L, NA, NA, NA, NA))
+Ans <- ego_net(5L, order = 2L, Edges = RH_Edges)
+expect_equal(Ans[[2]], 
+             c(2L, 2L, 1L, 1L, 0L, 2L, 1L, NA, 2L))
 
 
 
