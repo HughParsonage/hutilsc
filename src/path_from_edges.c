@@ -655,7 +655,7 @@ void next_neighb(const int max_order,
   }
   // Search reverse
   radix_find_range(k2i, nk1, nr_star, N, R);
-
+  
   for (unsigned int i = R[0]; i <= R[1]; ++i) {
     int k2ii = nk2[i]; 
     if (ansp[k2ii - 1] == NA_INTEGER) {
@@ -694,7 +694,7 @@ SEXP do_ego_net(SEXP vv,
   if (M < 1 || M < v) {
     return R_NilValue; // # nocov
   }
-// # nocov start
+  // # nocov start
   unsigned int * r_star = calloc(N + 2, sizeof(int));
   if (r_star == NULL) {
     free(r_star);
@@ -706,7 +706,7 @@ SEXP do_ego_net(SEXP vv,
     free(nr_star);
     return R_NilValue;
   }
-// # nocov end
+  // # nocov end
   
   SEXP ans = PROTECT(allocVector(INTSXP, M));
   int * ansp = INTEGER(ans); // don't use restrict
@@ -717,6 +717,12 @@ SEXP do_ego_net(SEXP vv,
   }
   
   ansp[v - 1] = 0; // by definition, order=0 occurs at the node itself
+  if (o == 0) {
+    free(r_star);
+    free(nr_star);
+    UNPROTECT(1);
+    return ans;
+  }
   
   const int max_order = o > 10 ? 10 : o;
   unsigned int R[2] = {0, 0};
@@ -726,23 +732,7 @@ SEXP do_ego_net(SEXP vv,
   for (unsigned int i = R[0]; i <= R[1]; ++i) {
     int k2i = k2[i];
     ansp[k2i - 1] = 1;
-    next_neighb(max_order,
-                this_order, 
-                k2i,
-                ansp, 
-                r_star,
-                nr_star,
-                N, 
-                k1, 
-                k2,
-                nk1, 
-                nk2);
-  }
-  radix_find_range(v, nk1, nr_star, N, R);
-  for (unsigned int i = R[0]; i <= R[1]; ++i) {
-    int k2i = nk2[i];
-    if (ansp[k2i - 1] == NA_INTEGER) {
-      ansp[k2i - 1] = 1;
+    if (max_order >= 2) {
       next_neighb(max_order,
                   this_order, 
                   k2i,
@@ -754,6 +744,26 @@ SEXP do_ego_net(SEXP vv,
                   k2,
                   nk1, 
                   nk2);
+    }
+  }
+  radix_find_range(v, nk1, nr_star, N, R);
+  for (unsigned int i = R[0]; i <= R[1]; ++i) {
+    int k2i = nk2[i];
+    if (ansp[k2i - 1] == NA_INTEGER) {
+      ansp[k2i - 1] = 1;
+      if (max_order >= 2) {
+        next_neighb(max_order,
+                    this_order, 
+                    k2i,
+                    ansp, 
+                    r_star,
+                    nr_star,
+                    N, 
+                    k1, 
+                    k2,
+                    nk1, 
+                    nk2);
+      }
     }
   }
   

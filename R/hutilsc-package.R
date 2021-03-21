@@ -2,6 +2,7 @@
 #' @useDynLib hutilsc, .registration = TRUE
 #' @import data.table
 #' @importFrom checkmate vname
+#' @importFrom hutils coalesce
 #' @importFrom utils hasName
 #' @importFrom utils packageName
 

@@ -24,6 +24,9 @@ for (i in 1:100) {
   cat(".")
   ego_net(NULL, order = 6L, Edges = Edges)
 }
+u <- Edges[, union(from, to)]
+bench::system_time(sapply(u, ego_net))
+
 cat("Complete\n")
 
 

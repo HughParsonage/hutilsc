@@ -9,6 +9,11 @@
 #' of a graph.
 #' @param u Optionally, the integer vector of nodes.
 #' 
+#' @return A \code{data.table} of two columns, the first is a column
+#' of nodes, matching \code{u}, and the second is the order of the 
+#' given node relative to \code{v}, or \code{NA} if the order is larger
+#' than \code{v}.
+#' 
 #' @export
 
 ego_net <- function(v, order = 1L, Edges, u = NULL) {
@@ -26,30 +31,33 @@ ego_net <- function(v, order = 1L, Edges, u = NULL) {
   
   # Ensure we have u = 1:10
   uu <- unique(u)
-  um <- match(u, uu)
-  k1u <- match(k1, u)
-  k2u <- match(k2, u)
+  k1u <- match(k1, uu)
+  k2u <- match(k2, uu)
   
   NEdges <- data.table(nk1 = k2u, nk2 = k1u)
   setkeyv(NEdges, c("nk1", "nk2"))
   # Note double negative  (reverse direction)
   nk1 <- .subset2(NEdges, "nk1")
   nk2 <- .subset2(NEdges, "nk2")
+  vu <- match(v, uu, nomatch = 0L)
+  checkmate::check_int(vu, na.ok = FALSE)
+  checkmate::check_int(order, lower = 0L, na.ok = FALSE)
   
   ans <- .Call("do_ego_net",
-               match(v, u, nomatch = 0L),
+               vu,
                order, k1u, k2u, nk1, nk2, length(uu), PACKAGE = packageName())
   if (is.null(ans)) {
     return(NULL)
   }
-  data.table(um, u = uu[um], ans)
+  data.table(Node = uu, Order = ans)
 }
 
 
 
 basic_ego_net <- function(v, order = 4L, Edges = data.table()) {
   origEdges <- copy(Edges)
-  setnames(origEdges, key(origEdges), c("x", "y"))
+  stopifnot(length(key(Edges)) >= 2)
+  setnames(origEdges, key(origEdges)[1:2], c("x", "y"))
   vv <- v
   if (order == 0) {
     return(v)
