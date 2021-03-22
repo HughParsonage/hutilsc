@@ -17,6 +17,12 @@ of a graph.}
 
 \item{u}{Optionally, the integer vector of nodes.}
 }
+\value{
+A \code{data.table} of two columns, the first is a column
+of nodes, matching \code{u}, and the second is the order of the
+given node relative to \code{v}, or \code{NA} if the order is larger
+than \code{v}.
+}
 \description{
 Also known as the neighbourhood, though peculiar to
 social networks

@@ -171,7 +171,9 @@ expect_equal(Ans[[2]],
 Ans <- ego_net(5L, order = 2L, Edges = RH_Edges)
 expect_equal(Ans[[2]], 
              c(2L, 2L, 1L, 1L, 0L, 2L, 1L, NA, 2L))
-
+Ans <- ego_net(5L, order = 4L, Edges = RH_Edges)
+expect_equal(Ans[[2]],
+             c(2L, 2L, 1L, 1L, 0L, 2L, 1L, 3L, 2L))
 
 
 
