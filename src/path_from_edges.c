@@ -716,6 +716,16 @@ SEXP do_ego_net(SEXP vv,
     ansp[j] = NA_INTEGER;
   }
   
+  // # nocov start
+  if (v <= 0) {
+    // v == 0 or NA means never there
+    free(r_star);
+    free(nr_star);
+    UNPROTECT(1);
+    return ans;
+  }
+  // # nocov end
+  
   ansp[v - 1] = 0; // by definition, order=0 occurs at the node itself
   if (o == 0) {
     free(r_star);
