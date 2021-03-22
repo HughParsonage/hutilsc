@@ -664,7 +664,7 @@ void next_neighb(const int max_order,
       if (this_order < max_order) {
         next_neighb(max_order,
                     this_order, 
-                    k2ii, // positive
+                    k2ii,
                     ansp, 
                     r_star,
                     nr_star,
