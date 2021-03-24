@@ -31,15 +31,15 @@ ego_net <- function(v, order = 1L, Edges, u = NULL) {
   
   # Ensure we have u = 1:10
   uu <- unique(u)
-  k1u <- match(k1, uu)
-  k2u <- match(k2, uu)
+  k1u <- fmatch(k1, uu)
+  k2u <- fmatch(k2, uu)
   
   NEdges <- data.table(nk1 = k2u, nk2 = k1u)
   setkeyv(NEdges, c("nk1", "nk2"))
   # Note double negative  (reverse direction)
   nk1 <- .subset2(NEdges, "nk1")
   nk2 <- .subset2(NEdges, "nk2")
-  vu <- match(v, uu, nomatch = 0L)
+  vu <- fmatch(v, uu, nomatch = 0L)
   checkmate::check_int(vu, na.ok = FALSE)
   checkmate::check_int(order, lower = 0L, na.ok = FALSE)
   
@@ -49,12 +49,12 @@ ego_net <- function(v, order = 1L, Edges, u = NULL) {
   if (is.null(ans)) {
     return(NULL)
   }
-  data.table(Node = uu, Order = ans)
+  data.table(Node = as.integer(uu), Order = ans)
 }
 
 
 
-basic_ego_net <- function(v, order = 4L, Edges = data.table()) {
+basic_ego_net <- function(v, order = 4L, Edges = data.table(), u = NULL) {
   origEdges <- copy(Edges)
   stopifnot(length(key(Edges)) >= 2)
   setnames(origEdges, key(origEdges)[1:2], c("x", "y"))
@@ -62,18 +62,22 @@ basic_ego_net <- function(v, order = 4L, Edges = data.table()) {
   if (order == 0) {
     return(v)
   }
-  vEdges <- origEdges[(x %in% vv) | (y %in% vv)]
-  vv <- union(vEdges$x, vEdges$y)
-  origEdges[x == v, ans := 0L]
-  origEdges[(x %in% vv) | (y %in% vv), ans := coalesce(ans, 1L)] 
-  if (order >= 2) {
-    for (i in 2:order) {
-      origEdges[(x %in% vv) | (y %in% vv), ans := coalesce(ans, i)] 
-      vEdges <- origEdges[(x %in% vv) | (y %in% vv)] 
-      vv <- sort(unique(c(vv, union(vEdges$x, vEdges$y))))
-    }
+  if (is.null(u)) {
+    u <- union(.subset2(origEdges, "x"), 
+               .subset2(origEdges, "y"))
+    u <- u[order(u)]
   }
-  origEdges[]
+  Out <- data.table(Node = u, Ans = NA_integer_)
+  Out[Node == v, Ans := 0L]
+  if (order == 0) {
+    return(Out)
+  }
+  for (i in 1:order) {
+    vv <- c(vv, origEdges[(x %in% vv) | (y %in% vv), union(x, y)])
+    Out[Node %in% vv, Ans := coalesce(Ans, i)]
+  }
+  setnames(Out, "Ans", "Order")
+  Out[]
 }
 
 
