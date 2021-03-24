@@ -57,6 +57,7 @@ ego_net <- function(v, order = 1L, Edges, u = NULL) {
 basic_ego_net <- function(v, order = 4L, Edges = data.table(), u = NULL) {
   origEdges <- copy(Edges)
   stopifnot(length(key(Edges)) >= 2)
+  x <- y <- NULL
   setnames(origEdges, key(origEdges)[1:2], c("x", "y"))
   vv <- v
   if (order == 0) {
@@ -67,6 +68,7 @@ basic_ego_net <- function(v, order = 4L, Edges = data.table(), u = NULL) {
                .subset2(origEdges, "y"))
     u <- u[order(u)]
   }
+  Node <- Ans <- NULL
   Out <- data.table(Node = u, Ans = NA_integer_)
   Out[Node == v, Ans := 0L]
   if (order == 0) {
