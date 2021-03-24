@@ -14,21 +14,21 @@
 #' @export
 
 Encode3202 <- function(x) {
-  .Call("do_Encode3202", x, PACKAGE = packageName())
+  .Call("CEncode3202", x, PACKAGE = packageName())
 }
 
 #' @rdname Encode3202
 #' @export
 Decode3202 <- function(enc) {
   stopifnot(is.integer(enc))
-  .Call("do_Decode3202", enc, PACKAGE = packageName())
+  .Call("CDecode3202", enc, PACKAGE = packageName())
 }
 
 #' @rdname Encode3202
 #' @export
 Validate3202 <- function(x) {
   stopifnot(is.character(x))
-  .Call("do_Validate3202", x, PACKAGE = packageName())
+  .Call("CValidate3202", x, PACKAGE = packageName())
 }
 
 #' @rdname Encode3202
@@ -40,32 +40,32 @@ Lookup4 <- function(enc) {
 #' @rdname Encode3202
 #' @export
 names2int <- function(x, y) {
-  .Call("do_names2int", x, y, PACKAGE = packageName())
+  .Call("Cnames2int", x, y, PACKAGE = packageName())
 }
 
 CountRecordID <- function(x) {
-  .Call("do_CountRecordID", x, PACKAGE = packageName())
+  .Call("CCountRecordID", x, PACKAGE = packageName())
 }
 
 classify_chars <- function(x, n) {
-  .Call("do_classify_chars", x, n, PACKAGE = packageName())
+  .Call("Cclassify_chars", x, n, PACKAGE = packageName())
 }
 
 EncodeRecordID <- function(x) {
-  .Call("do_encodeRecordID", x, PACKAGE = packageName())
+  .Call("CencodeRecordID", x, PACKAGE = packageName())
 }
 
 DecodeRecordID <- function(x) {
-  .Call("do_decodeRecordID", x, PACKAGE = packageName())
+  .Call("CdecodeRecordID", x, PACKAGE = packageName())
 }
 
 pad0 <- function(x, w) {
   stopifnot(is.character(x), is.integer(w))
-  .Call("do_pad0", x, w, PACKAGE = packageName())
+  .Call("Cpad0", x, w, PACKAGE = packageName())
 }
 
 tabula_RecordID <- function(x) {
-  o <- .Call("do_tabula_RecordID", x, PACKAGE = packageName())
+  o <- .Call("Ctabula_RecordID", x, PACKAGE = packageName())
   as.data.table(matrix(o, ncol = 19))[, c := c(0:9, LETTERS, letters)]
 }
 

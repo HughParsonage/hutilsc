@@ -83,7 +83,7 @@ SEXP do_and_lgl_lgl(SEXP A, SEXP B, SEXP nThread) {
   return ans;
 }
 
-SEXP do_and_lgl_int(SEXP A, SEXP x2, SEXP op2, SEXP y2, SEXP nThread) {
+SEXP Cand_lgl_int(SEXP A, SEXP x2, SEXP op2, SEXP y2, SEXP nThread) {
   R_xlen_t AN = xlength(A);
   R_xlen_t xN = xlength(x2);
   R_xlen_t yN = xlength(y2);
@@ -1145,7 +1145,7 @@ SEXP test_scalar_xoy(SEXP x, SEXP o, SEXP y) {
   return_true;
 }
 
-SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
+SEXP Cand2s(SEXP x1, SEXP op1, SEXP y1,
               SEXP x2, SEXP op2, SEXP y2,
               SEXP A, SEXP B,
               SEXP nThread, 
@@ -1183,7 +1183,7 @@ SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
         // must be length > 1 so just reverse.
         ++idepth;
         SEXP new_depth = PROTECT(ScalarInteger(idepth));
-        SEXP ans = PROTECT(do_and2s(x2, op2, y2,
+        SEXP ans = PROTECT(Cand2s(x2, op2, y2,
                                     x1, op1, y1, 
                                     A, B,
                                     nThread, 
@@ -1214,7 +1214,7 @@ SEXP do_and2s(SEXP x1, SEXP op1, SEXP y1,
       
       ++idepth;
       SEXP new_depth = PROTECT(ScalarInteger(idepth));
-      SEXP ans = PROTECT(do_and2s(x1, op1, y1, 
+      SEXP ans = PROTECT(Cand2s(x1, op1, y1, 
                                   y2, op2, x2,   // y2 > 1
                                   A, B,
                                   nThread, 

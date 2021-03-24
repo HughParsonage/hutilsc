@@ -54,7 +54,7 @@ double fhaversine_dist(double olat1, double olon1, double olat2, double olon2, b
   return (double)out;
 }
 
-SEXP do_haversine_distance(SEXP olat1, SEXP olon1, 
+SEXP Chaversine_distance(SEXP olat1, SEXP olon1, 
                            SEXP olat2, SEXP olon2,
                            SEXP allow_sqrt_float) {
   R_xlen_t N = xlength(olat1);

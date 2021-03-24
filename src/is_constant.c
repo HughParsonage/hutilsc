@@ -57,7 +57,7 @@ bool is_constant_dbl(const double * x, int nThreads, const R_xlen_t N) {
 }
 
 
-SEXP do_is_constant(SEXP x, SEXP nThread) {
+SEXP Cis_constant(SEXP x, SEXP nThread) {
   R_xlen_t N = xlength(x);
   if (N < 2) {
     return_true;

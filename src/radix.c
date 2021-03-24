@@ -129,7 +129,7 @@ void radix_find_range(int a,
   R[1] = R1 - 1U;
 }
 
-SEXP do_test_radix_find(SEXP a, SEXP tbl, SEXP X0) {
+SEXP Ctest_radix_find(SEXP a, SEXP tbl, SEXP X0) {
   R_xlen_t N = xlength(tbl);
   const int aa = asInteger(a);
   int x0 = asInteger(X0);
@@ -139,7 +139,7 @@ SEXP do_test_radix_find(SEXP a, SEXP tbl, SEXP X0) {
   return ScalarInteger(r);
 }
 
-SEXP do_test_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
+SEXP Ctest_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
   const bool use_tp = asLogical(usetp);
   const int * k1 = INTEGER(K1);
   const unsigned int N = xlength(K1);
@@ -191,7 +191,7 @@ SEXP do_test_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
   return ans;
 }
 
-SEXP do_find_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
+SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   R_xlen_t N = xlength(x);
   R_xlen_t TN = xlength(tbl);
   if (TYPEOF(x) != INTSXP || TYPEOF(tbl) != INTSXP || TYPEOF(nThreads) != INTSXP) {
@@ -240,7 +240,7 @@ SEXP do_find_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   return ans;
 }
 
-SEXP do_test_find_first(SEXP x, SEXP K1, SEXP U) {
+SEXP Ctest_find_first(SEXP x, SEXP K1, SEXP U) {
   // # nocov start
   if (TYPEOF(x) != INTSXP || TYPEOF(K1) != INTSXP || TYPEOF(U) != INTSXP) {
     return R_NilValue;

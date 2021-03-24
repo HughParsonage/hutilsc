@@ -18,7 +18,7 @@ any_or2 <- function(expr1, expr2,
   y1 <- eval.parent(sexpr1[[3L]])
   y2 <- eval.parent(sexpr2[[3L]])
   
-  ans <- .Call("do_any_or2", 
+  ans <- .Call("Cany_or2", 
                x1, o1, y1, 
                x2, o2, y2, 
                nThread, 

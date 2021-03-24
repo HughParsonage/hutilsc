@@ -795,7 +795,7 @@ bool any_xoy(SEXP X, SEXP O, SEXP Y) {
 }
 
 
-SEXP do_any_or2(SEXP X1, SEXP O1, SEXP Y1,
+SEXP Cany_or2(SEXP X1, SEXP O1, SEXP Y1,
                 SEXP X2, SEXP O2, SEXP Y2,
                 SEXP nThread) {
   R_xlen_t N = xlength(X1);
@@ -803,7 +803,7 @@ SEXP do_any_or2(SEXP X1, SEXP O1, SEXP Y1,
     return R_NilValue;
   }
   if (TYPEOF(X1) > TYPEOF(X2)) {
-    return do_any_or2(X2, O2, Y2, X1, O1, Y1, nThread);
+    return Cany_or2(X2, O2, Y2, X1, O1, Y1, nThread);
   }
   
   if (xlength(Y1) != N && xlength(Y1) != 1) {

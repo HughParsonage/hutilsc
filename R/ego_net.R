@@ -43,7 +43,7 @@ ego_net <- function(v, order = 1L, Edges, u = NULL) {
   checkmate::check_int(vu, na.ok = FALSE)
   checkmate::check_int(order, lower = 0L, na.ok = FALSE)
   
-  ans <- .Call("do_ego_net",
+  ans <- .Call("Cego_net",
                vu,
                order, k1u, k2u, nk1, nk2, length(uu), PACKAGE = packageName())
   if (is.null(ans)) {

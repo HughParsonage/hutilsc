@@ -5,7 +5,7 @@ test_radix_find <- function(x, tbl, x0 = 0L, check_sorted = TRUE, use_tp = FALSE
   if (isTRUE(check_sorted)) {
     stopifnot(!is.unsorted(tbl))
   }
-  .Call("do_test_radix_find", x, tbl, x0, PACKAGE = packageName())
+  .Call("Ctest_radix_find", x, tbl, x0, PACKAGE = packageName())
 }
 
 test_radix_find_range <- function(x, tbl, check_sorted = TRUE, use_tp = FALSE) {
@@ -16,11 +16,11 @@ test_radix_find_range <- function(x, tbl, check_sorted = TRUE, use_tp = FALSE) {
   if (isTRUE(check_sorted)) {
     stopifnot(!is.unsorted(tbl))
   }
-  .Call("do_test_radix_find_range", x, tbl, isTRUE(use_tp), PACKAGE = packageName())
+  .Call("Ctest_radix_find_range", x, tbl, isTRUE(use_tp), PACKAGE = packageName())
 }
 
 find_ftc <- function(x, tbl, return_logical = TRUE, nThread = 10L) {
-  .Call("do_find_ftc", x, tbl, nThread, isTRUE(return_logical), PACKAGE = packageName())
+  .Call("Cfind_ftc", x, tbl, nThread, isTRUE(return_logical), PACKAGE = packageName())
 }
 
 test_find_first <- function(x, k1, k2, u = NULL) {
@@ -29,7 +29,7 @@ test_find_first <- function(x, k1, k2, u = NULL) {
     u <- u[order(u)]
   }
   stopifnot(is.integer(x), is.integer(k1), is.integer(u)) 
-  .Call("do_test_find_first", x, k1, u, PACKAGE = packageName())
+  .Call("Ctest_find_first", x, k1, u, PACKAGE = packageName())
 }
 
 # bsearch <- function(a, x) {

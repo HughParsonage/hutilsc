@@ -27,7 +27,7 @@ int dbl2int(double x) {
 }
 
 
-SEXP do_which_isnt_int(SEXP x) {
+SEXP Cwhich_isnt_int(SEXP x) {
   if (TYPEOF(x) != REALSXP) {
     error("Internal error(do_ensure_int): TYPEOF(x) != REALSXP"); // # nocov
   }

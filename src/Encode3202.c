@@ -4,7 +4,7 @@
 
 
 
-SEXP do_Validate3202(SEXP x) {
+SEXP CValidate3202(SEXP x) {
   R_xlen_t N = xlength(x);
   int typeofx = TYPEOF(x);
   if (typeofx != STRSXP) {
@@ -37,7 +37,7 @@ SEXP do_Validate3202(SEXP x) {
   return ans;
 }
 
-SEXP do_Encode3202(SEXP x) {
+SEXP CEncode3202(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != STRSXP) {
     error("x is not a character.");
@@ -113,7 +113,7 @@ char* dig3202(int i, char b[]) {
 }
 
 
-SEXP do_Decode3202(SEXP x) {
+SEXP CDecode3202(SEXP x) {
   R_xlen_t N = xlength(x);
   int typeofx = TYPEOF(x);
   if (typeofx != INTSXP) {
@@ -143,7 +143,7 @@ SEXP do_Decode3202(SEXP x) {
  * Now encode first two characters of each namee
  */
 
-SEXP do_names2int(SEXP n1, SEXP n2) {
+SEXP Cnames2int(SEXP n1, SEXP n2) {
   R_xlen_t N = xlength(n1);
   R_xlen_t M = xlength(n2);
   if (N != M || TYPEOF(n1) != STRSXP || TYPEOF(n2) != STRSXP) {
@@ -223,7 +223,7 @@ SEXP lookup4_char(SEXP x) {
 }
 
 
-SEXP do_pad0(SEXP x, SEXP width) {
+SEXP Cpad0(SEXP x, SEXP width) {
   R_xlen_t N = xlength(x);
   const int w = asInteger(width);
   SEXP ans = PROTECT(allocVector(STRSXP, N));
@@ -328,7 +328,7 @@ bool is_normal_AccountID(const char * x) {
   return o;
 }
 
-SEXP do_CountRecordID(SEXP x) {
+SEXP CCountRecordID(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != STRSXP) {
     return R_NilValue;
@@ -369,7 +369,7 @@ SEXP do_CountRecordID(SEXP x) {
   return ans;
 }
 
-SEXP do_classify_chars(SEXP x, SEXP MaxNchar) {
+SEXP Cclassify_chars(SEXP x, SEXP MaxNchar) {
   R_xlen_t N = xlength(x);
   const int mn = asInteger(MaxNchar);
   SEXP ans = PROTECT(allocVector(INTSXP, mn * 256));
@@ -434,7 +434,7 @@ unsigned int alphnum2uint(char x) {
 }
 
 
-SEXP do_tabula_RecordID(SEXP x) {
+SEXP Ctabula_RecordID(SEXP x) {
   if (TYPEOF(x) != STRSXP) {
     return R_NilValue;
   }
@@ -476,7 +476,7 @@ SEXP do_tabula_RecordID(SEXP x) {
 }
 
 
-SEXP do_encodeRecordID(SEXP x) {
+SEXP CencodeRecordID(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != STRSXP) {
     error("x is not a character.");
@@ -531,7 +531,7 @@ SEXP do_encodeRecordID(SEXP x) {
 
 
 
-SEXP do_decodeRecordID(SEXP x) {
+SEXP CdecodeRecordID(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != INTSXP) {
     error("TYPEOF(x) != INTSXP");

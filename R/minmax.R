@@ -10,11 +10,11 @@
 #' @export
 
 minmax <- function(x, empty_result = NULL, nThread = getOption("hutilsc.nThread", 1L)) {
-  .Call("do_minmax", x, empty_result, nThread, PACKAGE = packageName())
+  .Call("Cminmax", x, empty_result, nThread, PACKAGE = packageName())
 }
 
 #' @rdname minmax
 #' @export
 wminmax <- function(x) {
-  .Call("do_whichminmax", x, PACKAGE = packageName()) 
+  .Call("Cwhichminmax", x, PACKAGE = packageName()) 
 }

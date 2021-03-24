@@ -8,18 +8,18 @@
 
 isntSorted <- function(x) {
   if (is.atomic(x)) {
-    .Call("do_which_isnt_sorted", x, PACKAGE = packageName())
+    .Call("Cwhich_isnt_sorted", x, PACKAGE = packageName())
   }
 }
 
 #' @rdname sorted
 #' @export
 is_sorted <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
-  .Call("do_is_sorted", x, nThread, PACKAGE = packageName())
+  .Call("Cis_sorted", x, nThread, PACKAGE = packageName())
 }
 
 unique_sorted <- function(x) {
-  .Call("do_unique_sorted", x, PACKAGE = packageName())
+  .Call("Cunique_sorted", x, PACKAGE = packageName())
 }
 
 counting_sort_logi <- function(x) {

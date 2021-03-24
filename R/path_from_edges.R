@@ -20,7 +20,7 @@ is_valid_path <- function(path, Edges) {
   k2 <- ensure_integer(k2)
   path <- ensure_integer(path)
   
-  .Call("do_is_valid_path", path, k1, k2, PACKAGE = packageName())
+  .Call("Cis_valid_path", path, k1, k2, PACKAGE = packageName())
   
 }
 
@@ -41,7 +41,7 @@ common_contacts <- function(a, b, Edges, len = 3L) {
   if (a > b || (a %notin% u) || (b %notin% u)) {
     return(integer(0))
   }
-  .Call("do_common_contacts", a, b, k1, k2, u, len, PACKAGE = packageName())
+  .Call("Ccommon_contacts", a, b, k1, k2, u, len, PACKAGE = packageName())
 }
 
 len_three_paths <- function(Edges, set_key = TRUE) {

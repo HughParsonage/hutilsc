@@ -2,9 +2,9 @@
 
 
 fibonacci <- function(n) {
-  .Call("do_fibonacci", n, TRUE, PACKAGE = packageName())
+  .Call("Cfibonacci", n, TRUE, PACKAGE = packageName())
 }
 
 collatz <- function(s) {
-  .Call("do_collatz", s, PACKAGE = packageName())
+  .Call("Ccollatz", s, PACKAGE = packageName())
 }

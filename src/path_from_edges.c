@@ -20,7 +20,7 @@ void print_vec(const int * xp, R_xlen_t N) {
 }
 // # nocov end
 
-SEXP do_ensure_leq(SEXP K1, SEXP K2) {
+SEXP Censure_leq(SEXP K1, SEXP K2) {
   if (TYPEOF(K1) != TYPEOF(K2)) {
     error("(ensure_leq): typeof differ.");
   }
@@ -71,7 +71,7 @@ bool one_valid_path(const int * pp, const int * k1, const int *k2, const int n, 
   return true;
 }
 
-SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
+SEXP Cis_valid_path(SEXP path, SEXP K1, SEXP K2) {
   if (xlength(K1) >= UINT_MAX) {
     error("xlength(K1) >= UINT_MAX"); // # nocov
   }
@@ -92,7 +92,7 @@ SEXP do_is_valid_path(SEXP path, SEXP K1, SEXP K2) {
 }
 
 
-SEXP do_common_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len) {
+SEXP Ccommon_contacts(SEXP aa, SEXP bb, SEXP K1, SEXP K2, SEXP Nodes, SEXP Len) {
   R_xlen_t N = xlength(K1);
   const int a = asInteger(aa);
   const int b = asInteger(bb);
@@ -395,7 +395,7 @@ SEXP len4_paths(SEXP Len3Paths, SEXP K1, SEXP K2, SEXP U) {
 }
 
 
-SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
+SEXP Cvalidate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
   R_xlen_t N = xlength(K1);
   R_xlen_t UN = xlength(Nodes);
   if (N != xlength(K1) || N != xlength(K2) || N <= 1) {
@@ -421,7 +421,7 @@ SEXP do_validate_clique(SEXP K1, SEXP K2, SEXP Nodes, SEXP Clique) {
 }
 
 
-SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
+SEXP Cclique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
   // Assumes a sequential
   R_xlen_t N = xlength(K1);
   R_xlen_t UN = xlength(U);
@@ -472,7 +472,7 @@ SEXP do_clique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
   return ans;
 }
 
-SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
+SEXP Cfuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
   R_xlen_t N = xlength(K1);
   R_xlen_t UN = xlength(U);
   if (TYPEOF(U) != INTSXP || 
@@ -536,7 +536,7 @@ SEXP do_fuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
 
 // given a sequence, i_1, i_2, i_3
 // return the 1, 2, 3
-SEXP do_enseq(SEXP x) {
+SEXP Censeq(SEXP x) {
   R_xlen_t N = xlength(x);
   if (TYPEOF(x) != INTSXP || N == 0) {
     return R_NilValue; // # nocov 
@@ -548,13 +548,13 @@ SEXP do_enseq(SEXP x) {
   // the minimum is present
   // # nocov start
   if (xminmax[1] - xminmax[0] > INT_MAX) {
-    warning("(do_enseq)Large range.");
+    warning("(Censeq)Large range.");
     return R_NilValue;
   }
   
   // We need the first entry in the sequence to be 1
   if (xminmax[0] < 1) {
-    warning("(do_enseq): xminmax[0] = %d < 1", xminmax[0]);
+    warning("(Censeq): xminmax[0] = %d < 1", xminmax[0]);
     return R_NilValue;
   }
   unsigned int n_range = xminmax[1] - xminmax[0] + 1;
@@ -678,7 +678,7 @@ void next_neighb(const int max_order,
   }
 }
 
-SEXP do_ego_net(SEXP vv,
+SEXP Cego_net(SEXP vv,
                 SEXP oo,
                 SEXP K1, SEXP K2,
                 SEXP NK1, SEXP NK2,

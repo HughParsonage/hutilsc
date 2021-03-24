@@ -81,12 +81,12 @@ bool sorted_str(SEXP x, R_xlen_t N, int nThreads) {
 }
 
 
-SEXP do_which_isnt_sorted(SEXP x) {
+SEXP Cwhich_isnt_sorted(SEXP x) {
   R_xlen_t o = which_isnt_sorted(x);
   return o <= INT_MAX ? ScalarInteger(o) : ScalarReal(o);
 }
 
-SEXP do_is_sorted(SEXP x, SEXP nThread) {
+SEXP Cis_sorted(SEXP x, SEXP nThread) {
   int nThreads = asInteger(nThread);
   R_xlen_t N = xlength(x);
   if (N <= 1) {
@@ -119,7 +119,7 @@ SEXP do_is_sorted(SEXP x, SEXP nThread) {
   return ScalarLogical((bool)o);
 }
 
-SEXP do_unique_sorted(SEXP x) {
+SEXP Cunique_sorted(SEXP x) {
   R_xlen_t N = xlength(x);
   R_xlen_t n_unique = 1;
   if (TYPEOF(x) == NILSXP || N <= 1) {

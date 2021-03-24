@@ -5,5 +5,5 @@
 #' @export
 
 is_constant <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
-  .Call("do_is_constant", x, nThread, PACKAGE = packageName())
+  .Call("Cis_constant", x, nThread, PACKAGE = packageName())
 }

@@ -3,7 +3,7 @@
 #include "hutilsc.h"
 
 
-SEXP do_collatz(SEXP ss) {
+SEXP Ccollatz(SEXP ss) {
   int64_t s = asInteger(ss);
   int64_t * seq = malloc(1000 * sizeof(int64_t));
   if (seq == NULL) {
@@ -45,7 +45,7 @@ SEXP do_collatz(SEXP ss) {
 
 
 
-SEXP do_fibonacci(SEXP nn, SEXP return_seq) {
+SEXP Cfibonacci(SEXP nn, SEXP return_seq) {
   int n = asInteger(nn);
   // const bool retSeq = asLogical(return_seq);
   if (n == 1) {

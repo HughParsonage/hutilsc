@@ -9,7 +9,7 @@ and2s <- function(exp1, exp2, nThread = 1L) {
       op2c <- as.character(sexp2[[1L]]) 
       x2 <- eval.parent(sexp2[[2L]])
       y2 <- eval.parent(sexp2[[3L]])
-      ans <- .Call("do_and_lgl_int", exp1, x2, op2c, y2, nThread, PACKAGE = packageName())
+      ans <- .Call("Cand_lgl_int", exp1, x2, op2c, y2, nThread, PACKAGE = packageName())
     }
   } else if (is.call(sexp1) && is.call(sexp1)) {
     if (length(sexp1) == 3L && length(sexp2) == 3L) {
@@ -22,7 +22,7 @@ and2s <- function(exp1, exp2, nThread = 1L) {
       x2 <- eval.parent(sexp2[[2L]])
       y2 <- eval.parent(sexp2[[3L]])
       ans <-
-        .Call("do_and2s", 
+        .Call("Cand2s", 
               x1, op1, y1,
               x2, op2, y2, 
               NULL, NULL,

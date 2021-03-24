@@ -55,14 +55,14 @@ color_clique <- function(Edges) {
   F1 <- match(u, K1, nomatch = 0L)
   
   C <- C3 <- NULL
-  C <- .Call("do_clique1", u, K1, K2, F1, PACKAGE = packageName())
-  fuse3_ans <- .Call("do_fuse3", u, C, K1, K2, PACKAGE = packageName())
+  C <- .Call("Cclique1", u, K1, K2, F1, PACKAGE = packageName())
+  fuse3_ans <- .Call("Cfuse3", u, C, K1, K2, PACKAGE = packageName())
   C3 <- fuse3_ans[C]
   n_iter <- 0L
   while (n_iter < length(u) && 
          !identical(fuse3_ans, seq_along(fuse3_ans))) {
     n_iter <- n_iter + 1L
-    fuse3_ans <- .Call("do_fuse3", u, C3, K1, K2, PACKAGE = packageName())
+    fuse3_ans <- .Call("Cfuse3", u, C3, K1, K2, PACKAGE = packageName())
     C3 <- fuse3_ans[C3]
     C3 <- enseq(C3)
   }
@@ -88,7 +88,7 @@ validate_cliques <- function(Edges, Cliques,
             is.integer(u <- .subset2(Cliques, nodes)),
             is.integer(c <- .subset2(Cliques, clique)))
   
-  .Call("do_validate_clique", k1, k2, u, c, PACKAGE = packageName())
+  .Call("Cvalidate_clique", k1, k2, u, c, PACKAGE = packageName())
 }
 
 

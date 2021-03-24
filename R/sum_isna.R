@@ -5,5 +5,5 @@
 #' @export
 
 sum_isna <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
-  .Call("do_sum_isna", x, nThread, PACKAGE = packageName())
+  .Call("Csum_isna", x, nThread, PACKAGE = packageName())
 }

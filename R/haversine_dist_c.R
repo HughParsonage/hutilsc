@@ -11,6 +11,6 @@
 #' @export
 
 haversine_dist_c <- function(lat1, lon1, lat2, lon2, use_float = TRUE) {
-  .Call("do_haversine_distance", 
+  .Call("Chaversine_distance", 
         lat1, lon1, lat2, lon2, isTRUE(use_float))
 }

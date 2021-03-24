@@ -1,4 +1,4 @@
 
 
-pmax0 <- function(x) .Call("do_pmax0", x, PACKAGE = packageName())
+pmax0 <- function(x) .Call("Cpmax0", x, PACKAGE = packageName())
 

@@ -20,7 +20,7 @@ R_xlen_t sum_isna_tin(const int * xp, R_xlen_t N, int nThreads) {
   return o; 
 }
 
-SEXP do_sum_isna(SEXP x, SEXP nThread) {
+SEXP Csum_isna(SEXP x, SEXP nThread) {
   int nThreads = asInteger(nThread);
   if (TYPEOF(x) != INTSXP) {
     return R_NilValue; // # nocov

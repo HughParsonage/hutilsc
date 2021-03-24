@@ -1,5 +1,5 @@
 
 
 EncodeRecordID <- function(x) {
-  .Call("do_encodeRecordID", x, PACKAGE = packageName())
+  .Call("CencodeRecordID", x, PACKAGE = packageName())
 }

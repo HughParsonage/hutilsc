@@ -66,7 +66,7 @@ int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool 
 }
 
 
-SEXP do_minmax(SEXP x, SEXP emptyResult, SEXP nThread) {
+SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread) {
   R_xlen_t N = xlength(x);
   if (N == 0) {
     return emptyResult;
@@ -140,7 +140,7 @@ SEXP do_minmax(SEXP x, SEXP emptyResult, SEXP nThread) {
   return R_NilValue;
 }
 
-void do_whichminmax_lgl(const int * x, R_xlen_t N,
+void Cwhichminmax_lgl(const int * x, R_xlen_t N,
                         R_xlen_t * ansp) {
   R_xlen_t wmin = 0;
   R_xlen_t wmax = 0;
@@ -166,7 +166,7 @@ void do_whichminmax_lgl(const int * x, R_xlen_t N,
   ansp[1] = wmax;
 }
 
-void do_whichminmax_int(const int x[], R_xlen_t N, R_xlen_t * ansp) {
+void Cwhichminmax_int(const int x[], R_xlen_t N, R_xlen_t * ansp) {
   R_xlen_t wmin = 0, wmax = 0;
   int xmin = x[0];
   int xmax = x[0];
@@ -184,7 +184,7 @@ void do_whichminmax_int(const int x[], R_xlen_t N, R_xlen_t * ansp) {
   ansp[1] = wmax;
 }
 
-void do_whichminmax_dbl(const double * x, R_xlen_t N, R_xlen_t * ansp) {
+void Cwhichminmax_dbl(const double * x, R_xlen_t N, R_xlen_t * ansp) {
   R_xlen_t wmin = 0, wmax = 0;
   double xmin = x[0];
   double xmax = x[0];
@@ -202,7 +202,7 @@ void do_whichminmax_dbl(const double * x, R_xlen_t N, R_xlen_t * ansp) {
   ansp[1] = wmax;
 }
 
-void do_whichminmax_raw(const Rbyte * x, R_xlen_t N, R_xlen_t * ansp) {
+void Cwhichminmax_raw(const Rbyte * x, R_xlen_t N, R_xlen_t * ansp) {
   R_xlen_t wmin = 0, wmax = 0;
   unsigned char xmin = x[0];
   unsigned char xmax = x[0];
@@ -220,7 +220,7 @@ void do_whichminmax_raw(const Rbyte * x, R_xlen_t N, R_xlen_t * ansp) {
   ansp[1] = wmax;
 }
 
-SEXP do_whichminmax(SEXP x) {
+SEXP Cwhichminmax(SEXP x) {
   
   R_xlen_t N = xlength(x);
   // Choose N - 1 since we want the minimum that satisfies.
@@ -228,16 +228,16 @@ SEXP do_whichminmax(SEXP x) {
   
   if (TYPEOF(x) == LGLSXP) {
     const int * xp = INTEGER(x);
-    do_whichminmax_lgl(xp, N, ansp);
+    Cwhichminmax_lgl(xp, N, ansp);
   } else if (TYPEOF(x) == INTSXP) {
     const int * xp = INTEGER(x);
-    do_whichminmax_int(xp, N, ansp);
+    Cwhichminmax_int(xp, N, ansp);
   } else if (TYPEOF(x) == REALSXP) {
     const double * xp = REAL(x);
-    do_whichminmax_dbl(xp, N, ansp);
+    Cwhichminmax_dbl(xp, N, ansp);
   } else if (TYPEOF(x) == RAWSXP) {
     const Rbyte * xp = RAW(x);
-    do_whichminmax_raw(xp, N, ansp);
+    Cwhichminmax_raw(xp, N, ansp);
   } else if (TYPEOF(x) == STRSXP) {
     const char * xi0 = CHAR(STRING_ELT(x, 0));
     R_xlen_t wmin = 0, wmax = 0;

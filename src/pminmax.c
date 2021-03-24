@@ -4,7 +4,7 @@ int pmax0_int_(int x) {
   return (x > 0) ? x : 0;
 }
 
-SEXP do_pmax0_int(SEXP x) {
+SEXP Cpmax0_int(SEXP x) {
   R_xlen_t N = xlength(x);
   const int *xp = INTEGER(x);
   SEXP ans = PROTECT(allocVector(INTSXP, N));
@@ -16,7 +16,7 @@ SEXP do_pmax0_int(SEXP x) {
   return ans;
 }
 
-SEXP do_pmax0_dbl(SEXP x) {
+SEXP Cpmax0_dbl(SEXP x) {
   R_xlen_t N = xlength(x);
   const double *xp = REAL(x);
   SEXP ans = PROTECT(allocVector(REALSXP, N));
@@ -28,13 +28,13 @@ SEXP do_pmax0_dbl(SEXP x) {
   return ans;
 }
 
-SEXP do_pmax0(SEXP x) {
+SEXP Cpmax0(SEXP x) {
   switch(TYPEOF(x)) {
   case INTSXP:
-    return do_pmax0_int(x);
+    return Cpmax0_int(x);
     break;
   case REALSXP:
-    return do_pmax0_dbl(x);
+    return Cpmax0_dbl(x);
   }
   error("Invalid typeof(x)");
   return x;

@@ -6,7 +6,7 @@ ensure_integer <- function(x, on_failure = c("error", "warn")) {
   }
   if (is.double(x)) {
     # 0 if all ok, otherwise position
-    int_status <- .Call("do_which_isnt_int", x, PACKAGE = packageName())
+    int_status <- .Call("Cwhich_isnt_int", x, PACKAGE = packageName())
     if (int_status) {
       switch(on_failure[1],
              error = stop("`", vname(x), "` was not integerish at position ", 
