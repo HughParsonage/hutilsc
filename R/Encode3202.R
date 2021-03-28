@@ -69,3 +69,35 @@ tabula_RecordID <- function(x) {
   as.data.table(matrix(o, ncol = 19))[, c := c(0:9, LETTERS, letters)]
 }
 
+determine_const_width_alnum_encoding <- function(x, n = nchar(first(x))) {
+  .Call("Cdetermine_const_width_alnum_encoding", 
+        x, n, PACKAGE = packageName())
+}
+
+validate_const_width_alnum_encoding <- function(x, cipher, check_for_na = TRUE) {
+  stopifnot(is.character(x), is.character(cipher))
+  if (isTRUE(check_for_na) && anyNA(x)) {
+    return(which.max(is.na(x)))
+  }
+  .Call("Cvalidate_encoding", x, cipher, PACKAGE = packageName())
+}
+
+my_nchar <- function(x, m = 0L) .Call("Cnchar", x, m, PACKAGE = packageName())
+
+Encode_const_width_alnum <- function(x, cipher = NULL, n = nchar(x[1]), check_for_na = FALSE) {
+  if (is.null(cipher)) {
+    cipher <- determine_const_width_alnum_encoding(x)
+    n <- length(cipher)
+  } else {
+    validate_const_width_alnum_encoding(x, cipher, check_for_na = check_for_na)
+  }
+  .Call("Calphnum_enc", x, cipher, PACKAGE = packageName())
+}
+
+Decode_const_width_alnum <- function(e, cipher) {
+  if (v <- validate_const_width_alnum_encoding(e, cipher, check_for_na = TRUE)) {
+    stop("Invalid cipher due to ", e[v], " at position ", v)
+  }
+  .Call("Calphnum_dec", e, cipher, PACKAGE = packageName())
+}
+

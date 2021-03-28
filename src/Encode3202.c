@@ -558,7 +558,7 @@ SEXP CdecodeRecordID(SEXP x) {
       SET_STRING_ELT(ans, i, mkCharCE(oi, CE_UTF8));
       continue;
     }
-      
+    
     unsigned int ei = xp[i]; // encoded
     char xi[19];
     xi[0] = '5';
@@ -596,6 +596,264 @@ SEXP CdecodeRecordID(SEXP x) {
     xi[18] = '\0';
     const char * ansi = xi;
     SET_STRING_ELT(ans, i, mkCharCE(ansi, CE_UTF8));
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+// Encoding mechanism:
+//  0 = strlen required
+// 
+
+SEXP Cdetermine_const_width_alnum_encoding(SEXP x, SEXP MaxNchar) {
+  if (TYPEOF(x) != STRSXP || TYPEOF(MaxNchar) != INTSXP) {
+    error("Internal error(Cdetermine_const_width_alnum_encoding): wrong types.");
+  }
+  // Return a list whose length is the number of characters
+  // required (const width)
+  // For each element, the corresponding character entry:
+  // 0-61 integer => all entries have the same char 0-9A-Za-z
+  // 62   integer => all alnum [0-9A-Za-z]
+  // 63   integer => only digits
+  // a    string  => the characters so encoded
+  R_xlen_t N = xlength(x);
+  const unsigned int max_nchar = asInteger(MaxNchar);
+  bool any_nchar_ge = false;
+  bool any_nchar_le = false;
+  // tbl[62*j + k] is 1 if string[k] is present at position j
+  unsigned char * tbl = calloc(max_nchar * 62, sizeof(char));
+  if (tbl == NULL) {
+    error("(Cdetermine_const_width_alnum_encoding): Unable to allocate tbl.");
+  }
+  for (R_xlen_t i = 0; i < N; ++i) {
+    if (STRING_ELT(x, i) == NA_STRING) {
+      continue;
+    }
+    const char * xi = CHAR(STRING_ELT(x, i));
+    unsigned int strleni = strlen(xi);
+    unsigned int base_tbl_j = 0;
+    if (strleni == max_nchar) {
+      for (unsigned int c = 0; c < max_nchar; ++c) {
+        unsigned int tbl_i_a = alphnum2uint(xi[c]);
+        tbl[base_tbl_j + tbl_i_a] = 1;
+        base_tbl_j += 62U;
+      }
+    } else if (strleni < max_nchar) {
+      any_nchar_le = true;
+    } else {
+      any_nchar_ge = true;
+    }
+  }
+  if (any_nchar_le) {
+    warning("Some elements had strings narrower than max_nchar.");
+  }
+  if (any_nchar_ge) {
+    warning("Some elements had strings wider than max_nchar.");
+  }
+  
+  SEXP ans = PROTECT(allocVector(STRSXP, max_nchar));
+  int c = 0;
+  char string[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  
+  for (int j = 0; j < max_nchar; ++j) {
+    unsigned int the_len = 1; // 1 for null terminator
+    // the_len is the number of unique characters at position j throughout x
+    for (unsigned int cc = 0; cc < 62; ++cc) {
+      the_len += tbl[62 * j + cc];
+    }
+    char ansi[the_len];
+    
+    int k = 0; // position of ansi
+    for (int cc = 0; cc < 62; ++cc, ++c) {
+      unsigned char tbl_cc = tbl[62 * j + cc];
+      if (tbl_cc) {
+        ansi[k] = string[cc];
+        ++k;
+      }
+    }
+    ansi[the_len - 1] = '\0';
+    const char * ansic = (const char *) ansi;
+    SET_STRING_ELT(ans, j, mkCharCE(ansic, CE_UTF8));
+  }
+  
+  free(tbl);
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP Cvalidate_encoding(SEXP x, SEXP ee) {
+  if (TYPEOF(x) != STRSXP || TYPEOF(ee) != STRSXP || xlength(ee) >= INT_MAX) {
+    error("Internal error(Cvalidate_encoding): wrong input types.");
+  }
+  R_xlen_t N = xlength(x);
+  const int max_nchar = xlength(ee);
+  // check:
+  // each element of x has max_nchar elements;
+  // each element has only the characters described at each position
+  // (it's okay if not all characters are there)
+  // Return 1-based index if invalid, 0 otherwise
+  
+  // Reconstruct tbl from elements
+  unsigned char * tbl = calloc(max_nchar * 62, sizeof(char));
+  if (tbl == NULL) {
+    error("(Cvalidate_encoding): Unable to allocate tbl.");
+  }
+  
+  // memoize
+  // alphnum2uint
+  unsigned int malphnum2uint[256] = {0};
+  char string[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  for (int i = 0; i < 62; ++i) {
+    char si = string[i];
+    unsigned int ui = alphnum2uint(si);
+    unsigned char sui = (unsigned char)si;
+    malphnum2uint[sui] = ui;
+  }
+  
+  for (int j = 0; j < max_nchar; ++j) {
+    // populate tbl
+    // It is not faster if some positions are constant or unrestricted
+    // to special these cases [malphnum2uint is too heroic]
+    
+    const char * ee_j = CHAR(STRING_ELT(ee, j));
+    unsigned int strlenj = strlen(ee_j);
+    
+    for (int k = 0; k < strlenj; ++k) {
+      // ee_j matches
+      unsigned int ee_jk = ee_j[k];
+      unsigned int dig = malphnum2uint[ee_jk];
+      tbl[62 * j + dig] = 1;
+    }
+  }
+  R_xlen_t o = 0;
+  for (R_xlen_t i = 0; i < N; ++i) {
+    // Don't check for NA -- faster to check at R level.
+    const char * xi = CHAR(STRING_ELT(x, i));
+    if (strlen(xi) != max_nchar) {
+      o = i + 1;
+      break;
+    }
+    
+    for (unsigned int j = 0; j < max_nchar; ++j) {
+      // any non alphanum character is valid
+      unsigned char xij = xi[j];
+      unsigned int k = malphnum2uint[xij];
+      unsigned int tk = 62U * j + k;
+      if (!tbl[tk]) {
+        // if table hasn't been populated, then this character should not 
+        // be present.
+        o = i + 1;
+      }
+    }
+    
+    if (o) {
+      break;
+    }
+  }
+  free(tbl);
+  return o < INT_MAX ? ScalarInteger(o) : ScalarReal(o);
+}
+
+SEXP Calphnum_enc(SEXP x, SEXP ee) {
+  if (TYPEOF(x) != STRSXP || TYPEOF(ee) != STRSXP || xlength(ee) >= INT_MAX) {
+    error("Internal error(Calphnum_enc): wrong input types.");
+  }
+  R_xlen_t N = xlength(x);
+  const int max_nchar = xlength(ee);
+  
+  // constant columns can be ignored
+  bool char_non_const[max_nchar];
+  int non_const = 0;
+  for (int j = 0; j < max_nchar; ++j) {
+    unsigned int j_len = length(STRING_ELT(ee, j));
+    bool j_const = j_len != 1;
+    char_non_const[j] = j_const;
+    non_const += j_const;
+  }
+  unsigned int * J = malloc(sizeof(int) * non_const);
+  if (J == NULL) {
+    error("(Calphnum_enc)Unable to allocate J.");
+  }
+  for (int j = 0, k = 0; j < max_nchar; ++j) {
+    J[k] = j;
+    k += char_non_const[j];
+  }
+  
+  // V[256 * j + i] = increment
+  unsigned int * V = calloc(256 * non_const, sizeof(int));
+  if (V == NULL) {
+    error("(Calphnum_enc)Unable to allocate V.");
+  }
+  for (unsigned int k = 0, b = 1; k < non_const; ++k) {
+    int j = J[k];
+    const unsigned int ejn = length(STRING_ELT(ee, j));
+    const char * ej = CHAR(STRING_ELT(ee, j));
+    // loop through the string of ee[j] and assign V that value
+    for (unsigned int c = 0; c < ejn; ++c) {
+      unsigned char ejc = ej[c];
+      unsigned int ejci = (unsigned int)ejc;
+      V[256 * k + ejci] = c * b;
+    }
+    b *= ejn;
+  }
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    const char * xi = CHAR(STRING_ELT(x, i));
+    unsigned int oi = 0;
+    for (int k = 0; k < non_const; ++k) {
+      unsigned int j = J[k]; 
+      unsigned char xij = xi[j];
+      unsigned int xiji = (unsigned int)xij;
+      oi += V[256 * k + xiji];
+    }
+    ansp[i] = (int)oi;
+  }
+  free(J);
+  free(V);
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP Cnchar(SEXP x, SEXP mm) {
+  const int m = asInteger(mm);
+  R_xlen_t N = xlength(x);
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  switch(m) {
+  case 0:
+    for (R_xlen_t i = 0; i < N; ++i) {
+      const char * xi = CHAR(STRING_ELT(x, i));
+      unsigned int len = strlen(xi);
+      ansp[i] = (int)len;
+    }
+    break;
+  case 1:
+    for (R_xlen_t i = 0; i < N; ++i) {
+      ansp[i] = length(STRING_ELT(x, i));
+    }
+    break;
+  case 2:
+    for (R_xlen_t i = 0; i < N; ++i) {
+      const char * xi = CHAR(STRING_ELT(x, i));
+      int len = 0;
+      while (xi[len] != '\0') {
+        ++len;
+      }
+      ansp[i] = len;
+    }
+    break;
+  case 3:
+    for (R_xlen_t i = 0; i < N; ++i) {
+      SEXP sxi = STRING_ELT(x, i);
+      if (sxi == NA_STRING) {
+        ansp[i] = NA_INTEGER;
+        continue;
+      }
+      ansp[i] = length(sxi);
+    }
+    break;
   }
   UNPROTECT(1);
   return ans;
