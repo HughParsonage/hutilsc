@@ -8,6 +8,7 @@
 */
 
 /* .Call calls */
+extern SEXP Calphnum_dec(SEXP, SEXP);
 extern SEXP Calphnum_enc(SEXP, SEXP);
 extern SEXP Cand_lgl_int(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cand2s(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -25,6 +26,7 @@ extern SEXP CEncode3202(SEXP);
 extern SEXP CencodeRecordID(SEXP);
 extern SEXP Censeq(SEXP);
 extern SEXP Censure_leq(SEXP, SEXP);
+extern SEXP CEnsureEquichar(SEXP);
 extern SEXP Cfibonacci(SEXP, SEXP);
 extern SEXP Cfind_ftc(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cfuse3(SEXP, SEXP, SEXP, SEXP);
@@ -34,7 +36,7 @@ extern SEXP Cis_sorted(SEXP, SEXP);
 extern SEXP Cis_valid_path(SEXP, SEXP, SEXP);
 extern SEXP Cminmax(SEXP, SEXP, SEXP);
 extern SEXP Cnames2int(SEXP, SEXP);
-extern SEXP Cnchar(SEXP, SEXP);
+extern SEXP Cnchar(SEXP);
 extern SEXP count_sort_logi(SEXP);
 extern SEXP CpackSum(SEXP);
 extern SEXP Cpad0(SEXP, SEXP);
@@ -58,6 +60,7 @@ extern SEXP lookup4_char(SEXP);
 extern SEXP test_input_types(SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
+    {"Calphnum_dec",                          (DL_FUNC) &Calphnum_dec,                           2},
     {"Calphnum_enc",                          (DL_FUNC) &Calphnum_enc,                           2},
     {"Cand_lgl_int",                          (DL_FUNC) &Cand_lgl_int,                           5},
     {"Cand2s",                                (DL_FUNC) &Cand2s,                                10},
@@ -75,6 +78,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"CencodeRecordID",                       (DL_FUNC) &CencodeRecordID,                        1},
     {"Censeq",                                (DL_FUNC) &Censeq,                                 1},
     {"Censure_leq",                           (DL_FUNC) &Censure_leq,                            2},
+    {"CEnsureEquichar",                       (DL_FUNC) &CEnsureEquichar,                        1},
     {"Cfibonacci",                            (DL_FUNC) &Cfibonacci,                             2},
     {"Cfind_ftc",                             (DL_FUNC) &Cfind_ftc,                              4},
     {"Cfuse3",                                (DL_FUNC) &Cfuse3,                                 4},
@@ -84,7 +88,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cis_valid_path",                        (DL_FUNC) &Cis_valid_path,                         3},
     {"Cminmax",                               (DL_FUNC) &Cminmax,                                3},
     {"Cnames2int",                            (DL_FUNC) &Cnames2int,                             2},
-    {"Cnchar",                                (DL_FUNC) &Cnchar,                                 2},
+    {"Cnchar",                                (DL_FUNC) &Cnchar,                                 1},
     {"count_sort_logi",                       (DL_FUNC) &count_sort_logi,                        1},
     {"CpackSum",                              (DL_FUNC) &CpackSum,                               1},
     {"Cpad0",                                 (DL_FUNC) &Cpad0,                                  2},

@@ -4,6 +4,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 SEXP CValidate3202(SEXP x) {
   R_xlen_t N = xlength(x);
   int typeofx = TYPEOF(x);
@@ -217,33 +249,6 @@ SEXP lookup4_char(SEXP x) {
     char *oip = oc;
     const char *coip = oip;
     SET_STRING_ELT(ans, i, mkCharCE(coip, CE_UTF8));
-  }
-  UNPROTECT(1);
-  return ans;
-}
-
-
-SEXP Cpad0(SEXP x, SEXP width) {
-  R_xlen_t N = xlength(x);
-  const int w = asInteger(width);
-  SEXP ans = PROTECT(allocVector(STRSXP, N));
-  for (R_xlen_t i = 0; i < N; ++i) {
-    const char * xi = CHAR(STRING_ELT(x, i));
-    int strleni = strlen(xi);
-    if (strleni >= w) {
-      SET_STRING_ELT(ans, i, mkCharCE(xi, CE_UTF8));
-      continue;
-    }
-    int z = w - strleni;
-    char * acp = malloc(w * sizeof(char));
-    for (int c = 0; c < z; ++c) {
-      acp[c] = '0';
-    }
-    for (int c = z; c <= w; ++c) {
-      acp[c] = xi[c - z];
-    }
-    const char * cacp = (const char *)acp;
-    SET_STRING_ELT(ans, i, mkCharCE(cacp, CE_UTF8));
   }
   UNPROTECT(1);
   return ans;
@@ -609,15 +614,37 @@ SEXP Cdetermine_const_width_alnum_encoding(SEXP x, SEXP MaxNchar) {
   if (TYPEOF(x) != STRSXP || TYPEOF(MaxNchar) != INTSXP) {
     error("Internal error(Cdetermine_const_width_alnum_encoding): wrong types.");
   }
-  // Return a list whose length is the number of characters
-  // required (const width)
-  // For each element, the corresponding character entry:
-  // 0-61 integer => all entries have the same char 0-9A-Za-z
-  // 62   integer => all alnum [0-9A-Za-z]
-  // 63   integer => only digits
-  // a    string  => the characters so encoded
   R_xlen_t N = xlength(x);
-  const unsigned int max_nchar = asInteger(MaxNchar);
+  if (N == 0) {
+    return R_NilValue;
+  }
+  int max_nchar_tmp = 1;
+  R_xlen_t first_non_na = 0;
+  if (TYPEOF(MaxNchar) != INTSXP) {
+    if (TYPEOF(MaxNchar) == NILSXP) {
+      // User has requested max_nchar to be based of first non-NA string
+      max_nchar_tmp = length(STRING_ELT(x, first_non_na));
+      while (first_non_na < N &&
+             max_nchar_tmp == 2 && 
+             STRING_ELT(x, first_non_na) == NA_STRING) {
+        ++first_non_na;
+        max_nchar_tmp = length(STRING_ELT(x, first_non_na));
+      }
+      if (first_non_na == N) {
+        error("`n = NULL`, but x is full of NA.");
+      }
+    } else if (TYPEOF(MaxNchar) == REALSXP) {
+      max_nchar_tmp = (unsigned int)asReal(MaxNchar);
+    } else {
+      error("MaxNChar wrong type.");
+    }
+  } else {
+    max_nchar_tmp = asInteger(MaxNchar);
+  }
+  const int max_nchar = max_nchar_tmp;
+  if (max_nchar < 0) {
+    error("max_nchar is negative (possible NA).");
+  }
   bool any_nchar_ge = false;
   bool any_nchar_le = false;
   // tbl[62*j + k] is 1 if string[k] is present at position j
@@ -816,45 +843,74 @@ SEXP Calphnum_enc(SEXP x, SEXP ee) {
   return ans;
 }
 
-SEXP Cnchar(SEXP x, SEXP mm) {
-  const int m = asInteger(mm);
-  R_xlen_t N = xlength(x);
-  SEXP ans = PROTECT(allocVector(INTSXP, N));
-  int * restrict ansp = INTEGER(ans);
-  switch(m) {
-  case 0:
-    for (R_xlen_t i = 0; i < N; ++i) {
-      const char * xi = CHAR(STRING_ELT(x, i));
-      unsigned int len = strlen(xi);
-      ansp[i] = (int)len;
-    }
-    break;
-  case 1:
-    for (R_xlen_t i = 0; i < N; ++i) {
-      ansp[i] = length(STRING_ELT(x, i));
-    }
-    break;
-  case 2:
-    for (R_xlen_t i = 0; i < N; ++i) {
-      const char * xi = CHAR(STRING_ELT(x, i));
-      int len = 0;
-      while (xi[len] != '\0') {
-        ++len;
-      }
-      ansp[i] = len;
-    }
-    break;
-  case 3:
-    for (R_xlen_t i = 0; i < N; ++i) {
-      SEXP sxi = STRING_ELT(x, i);
-      if (sxi == NA_STRING) {
-        ansp[i] = NA_INTEGER;
-        continue;
-      }
-      ansp[i] = length(sxi);
-    }
-    break;
+SEXP Calphnum_dec(SEXP x, SEXP ee) {
+  if (TYPEOF(x) != INTSXP || TYPEOF(ee) != STRSXP || xlength(x) >= INT_MAX) {
+    error("Internal error(Calphnum_dec): bad types.");
   }
+  int max_nchar = xlength(ee);
+  R_xlen_t N = xlength(x);
+  
+  bool char_non_const[max_nchar];
+  unsigned int lens[max_nchar];
+  int non_const = 0;
+  for (int j = 0; j < max_nchar; ++j) {
+    unsigned int j_len = length(STRING_ELT(ee, j));
+    lens[j] = j_len;
+    bool j_const = j_len != 1;
+    char_non_const[j] = j_const;
+    non_const += j_const;
+  }
+  SEXP ans = PROTECT(allocVector(STRSXP, N));
+  
+  unsigned int * J = malloc(sizeof(int) * non_const);
+  if (J == NULL) {
+    error("(Calphnum_dec)Unable to allocate J.");
+  }
+  for (int j = 0, k = 0; j < max_nchar; ++j) {
+    J[k] = j;
+    k += char_non_const[j];
+  }
+  const int * xp = INTEGER(x);
+  int max_nchar1 = max_nchar + 1;
+  
+  char default_c[max_nchar1];
+  for (int j = 0; j < max_nchar; ++j) {
+    default_c[j] = CHAR(STRING_ELT(ee, j))[0];
+  }
+  default_c[max_nchar] = '\0';
+  
+  unsigned char C[max_nchar][62];
+  for (int j = 0; j < max_nchar; ++j) {
+    SEXP eej = STRING_ELT(ee, j);
+    int len = length(eej);
+    for (int i = 0; i < 62; ++i) {
+      if (i < len) {
+      C[j][i] = CHAR(STRING_ELT(ee, j))[i];
+      } else {
+        C[j][i] = '0';
+      }
+    }
+  }
+  
+  
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    unsigned int xi = (unsigned int)xp[i];
+    char oi[max_nchar1];
+    memcpy(oi, default_c, sizeof(oi));
+    for (unsigned int k = 0, b = 1; k < non_const; ++k) {
+      int j = J[k];
+      unsigned int lenj = lens[j];
+      unsigned int c = (xi / b) % lenj;
+      unsigned char cc = C[j][c];// CHAR(STRING_ELT(ee, j))[c];
+      oi[j] = cc;
+      b *= lenj;
+    }
+    oi[max_nchar] = '\0';
+    const char * ansi = (const char *)oi;
+    SET_STRING_ELT(ans, i, mkCharCE(ansi, CE_UTF8));
+  }
+  free(J);
   UNPROTECT(1);
   return ans;
 }

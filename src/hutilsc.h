@@ -59,6 +59,9 @@ return ans;                                                    \
 
 int do_op2M(SEXP op);
 
+// character
+SEXP do_pad0(SEXP x, const int w);
+
 float ssqrt_fast(float x);
 unsigned int radix_find(int a, unsigned int x0, unsigned int x1, const int * k1, unsigned int * tbl);
 void radix_find_range(int a, 

@@ -59,6 +59,52 @@ int n_digits0(unsigned int x) {
   return 1;
 } 
 
+int n_digits(int x) {
+  if (x == 0) {
+    return 1;
+  } else if (x > 0) {
+    if (x >= 1000000000U) return 10;
+    if (x >= 100000000U)  return 9;
+    if (x >= 10000000U)   return 8;
+    if (x >= 1000000U)    return 7;
+    if (x >= 100000U)     return 6;
+    if (x >= 10000U)      return 5;
+    if (x >= 1000U)       return 4;
+    if (x >= 100U)        return 3;
+    if (x >= 10U)         return 2;
+    return 1;
+  } else {
+    if (x == NA_INTEGER) return 2;
+    if (x <= -1000000000) return 11;
+    if (x <= -100000000)  return 10;
+    if (x <= -10000000)   return 9;
+    if (x <= -1000000)    return 8;
+    if (x <= -100000)     return 7;
+    if (x <= -10000)      return 6;
+    if (x <= -1000)       return 5;
+    if (x <= -100)        return 4;
+    if (x <= -10)         return 3;
+  }
+  return 2;
+}
+
+SEXP ndigits_int(SEXP x) {
+  if (TYPEOF(x) != INTSXP) {
+    return ScalarInteger(0);
+  }
+  R_xlen_t N = xlength(x);
+  const int * xp = INTEGER(x);
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    ansp[i] = n_digits(xp[i]);
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+
+
 int nth_digit_of(int x, int n) {
   if (n >= 10) {
     return (x / 1000000000);
@@ -150,3 +196,93 @@ SEXP do_nth_char_of(SEXP x, SEXP n) {
   UNPROTECT(1);
   return ans;
 }
+
+SEXP Cnchar(SEXP x) {
+  if (TYPEOF(x) != STRSXP) {
+    switch(TYPEOF(x)) {
+    case NILSXP:
+      return R_NilValue;
+      break;
+    case INTSXP:
+      return ndigits_int(x);
+      break;
+    }
+    return R_NilValue;
+  }
+  R_xlen_t N = xlength(x);
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  
+  // Ignoring NA to avoid the branch has a very small
+  // impact on performance.
+  for (R_xlen_t i = 0; i < N; ++i) {
+    SEXP sxi = STRING_ELT(x, i);
+    if (sxi == NA_STRING) {
+      ansp[i] = NA_INTEGER;
+      continue;
+    }
+    ansp[i] = length(sxi);
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+void nchar_range(SEXP x, unsigned int xminmax[]) {
+  if (TYPEOF(x) != STRSXP) {
+    return;
+  }
+  R_xlen_t N = xlength(x);
+  for (R_xlen_t i = 0; i < N; ++i) {
+    unsigned int leni = length(STRING_ELT(x, i));
+    xminmax[0]  = (leni < xminmax[0]) ? leni : xminmax[0];
+    xminmax[1]  = (leni > xminmax[1]) ? leni : xminmax[1];
+  }
+}
+
+SEXP do_pad0(SEXP x, const int w) {
+  R_xlen_t N = xlength(x);
+  SEXP ans = PROTECT(allocVector(STRSXP, N));
+  char * acp = malloc(w * sizeof(char));
+  for (R_xlen_t i = 0; i < N; ++i) {
+    int strleni = length(STRING_ELT(x, i));
+    const char * xi = CHAR(STRING_ELT(x, i));
+    if (strleni >= w) {
+      SET_STRING_ELT(ans, i, mkCharCE(xi, CE_UTF8));
+      continue;
+    }
+    int z = w - strleni;
+    for (int c = 0; c < z; ++c) {
+      acp[c] = '0';
+    }
+    for (int c = z; c <= w; ++c) {
+      acp[c] = xi[c - z];
+    }
+    const char * cacp = (const char *)acp;
+    SET_STRING_ELT(ans, i, mkCharCE(cacp, CE_UTF8));
+  }
+  free(acp);
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP Cpad0(SEXP x, SEXP width) {
+  if (TYPEOF(x) != STRSXP) {
+    return x;
+  }
+  const int w = asInteger(width);
+  return do_pad0(x, w);
+}
+
+SEXP CEnsureEquichar(SEXP x) {
+  if (TYPEOF(x) != STRSXP) {
+    return R_NilValue;
+  }
+  unsigned int xminmax[2] = {INT_MAX, 0U};
+  nchar_range(x, xminmax);
+  if (xminmax[0] == xminmax[1]) {
+    return x;
+  }
+  return do_pad0(x, (const int)xminmax[1]);
+}
+
+

@@ -82,22 +82,38 @@ validate_const_width_alnum_encoding <- function(x, cipher, check_for_na = TRUE) 
   .Call("Cvalidate_encoding", x, cipher, PACKAGE = packageName())
 }
 
-my_nchar <- function(x, m = 0L) .Call("Cnchar", x, m, PACKAGE = packageName())
+hutilsc_nchar <- function(x) {
+  .Call("Cnchar", x, PACKAGE = packageName())
+}
 
-Encode_const_width_alnum <- function(x, cipher = NULL, n = nchar(x[1]), check_for_na = FALSE) {
+Encode_fwalnum <- function(x,
+                           cipher = NULL,
+                           validate_cipher = TRUE,
+                           check_for_na = FALSE) {
   if (is.null(cipher)) {
     cipher <- determine_const_width_alnum_encoding(x)
     n <- length(cipher)
   } else {
-    validate_const_width_alnum_encoding(x, cipher, check_for_na = check_for_na)
+    if (isTRUE(validate_cipher)) {
+      stopifnot(is.character(cipher))
+      validate_const_width_alnum_encoding(x, cipher, check_for_na = check_for_na)
+    }
   }
-  .Call("Calphnum_enc", x, cipher, PACKAGE = packageName())
+  ans <- .Call("Calphnum_enc", x, cipher, PACKAGE = packageName())
+  attr(ans, "hutilsc_cipher") <- cipher
+  ans
 }
 
+
+
+
 Decode_const_width_alnum <- function(e, cipher) {
-  if (v <- validate_const_width_alnum_encoding(e, cipher, check_for_na = TRUE)) {
-    stop("Invalid cipher due to ", e[v], " at position ", v)
-  }
+  # if (v <- validate_const_width_alnum_encoding(e, cipher, check_for_na = TRUE)) {
+  #   stop("Invalid cipher due to ", e[v], " at position ", v)
+  # }
   .Call("Calphnum_dec", e, cipher, PACKAGE = packageName())
 }
+
+EnsureEquinchar <- function(x) .Call("CEnsureEquichar", x, PACKAGE = packageName())
+
 
