@@ -25,8 +25,8 @@ extern SEXP Cego_net(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP CEncode3202(SEXP);
 extern SEXP CencodeRecordID(SEXP);
 extern SEXP Censeq(SEXP);
+extern SEXP CEnsure_fwc(SEXP);
 extern SEXP Censure_leq(SEXP, SEXP);
-extern SEXP CEnsureEquichar(SEXP);
 extern SEXP Cfibonacci(SEXP, SEXP);
 extern SEXP Cfind_ftc(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cfuse3(SEXP, SEXP, SEXP, SEXP);
@@ -41,6 +41,7 @@ extern SEXP count_sort_logi(SEXP);
 extern SEXP CpackSum(SEXP);
 extern SEXP Cpad0(SEXP, SEXP);
 extern SEXP Cpmax0(SEXP);
+extern SEXP Crange_nchar(SEXP);
 extern SEXP Csum_isna(SEXP, SEXP);
 extern SEXP Ctabula_RecordID(SEXP);
 extern SEXP Ctest_find_first(SEXP, SEXP, SEXP);
@@ -77,8 +78,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"CEncode3202",                           (DL_FUNC) &CEncode3202,                            1},
     {"CencodeRecordID",                       (DL_FUNC) &CencodeRecordID,                        1},
     {"Censeq",                                (DL_FUNC) &Censeq,                                 1},
+    {"CEnsure_fwc",                           (DL_FUNC) &CEnsure_fwc,                            1},
     {"Censure_leq",                           (DL_FUNC) &Censure_leq,                            2},
-    {"CEnsureEquichar",                       (DL_FUNC) &CEnsureEquichar,                        1},
     {"Cfibonacci",                            (DL_FUNC) &Cfibonacci,                             2},
     {"Cfind_ftc",                             (DL_FUNC) &Cfind_ftc,                              4},
     {"Cfuse3",                                (DL_FUNC) &Cfuse3,                                 4},
@@ -93,6 +94,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"CpackSum",                              (DL_FUNC) &CpackSum,                               1},
     {"Cpad0",                                 (DL_FUNC) &Cpad0,                                  2},
     {"Cpmax0",                                (DL_FUNC) &Cpmax0,                                 1},
+    {"Crange_nchar",                          (DL_FUNC) &Crange_nchar,                           1},
     {"Csum_isna",                             (DL_FUNC) &Csum_isna,                              2},
     {"Ctabula_RecordID",                      (DL_FUNC) &Ctabula_RecordID,                       1},
     {"Ctest_find_first",                      (DL_FUNC) &Ctest_find_first,                       3},

@@ -59,10 +59,6 @@ DecodeRecordID <- function(x) {
   .Call("CdecodeRecordID", x, PACKAGE = packageName())
 }
 
-pad0 <- function(x, w) {
-  stopifnot(is.character(x), is.integer(w))
-  .Call("Cpad0", x, w, PACKAGE = packageName())
-}
 
 tabula_RecordID <- function(x) {
   o <- .Call("Ctabula_RecordID", x, PACKAGE = packageName())
@@ -82,9 +78,7 @@ validate_const_width_alnum_encoding <- function(x, cipher, check_for_na = TRUE) 
   .Call("Cvalidate_encoding", x, cipher, PACKAGE = packageName())
 }
 
-hutilsc_nchar <- function(x) {
-  .Call("Cnchar", x, PACKAGE = packageName())
-}
+
 
 Encode_fwalnum <- function(x,
                            cipher = NULL,
@@ -114,6 +108,6 @@ Decode_const_width_alnum <- function(e, cipher) {
   .Call("Calphnum_dec", e, cipher, PACKAGE = packageName())
 }
 
-EnsureEquinchar <- function(x) .Call("CEnsureEquichar", x, PACKAGE = packageName())
+
 
 

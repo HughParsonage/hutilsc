@@ -239,6 +239,19 @@ void nchar_range(SEXP x, unsigned int xminmax[]) {
   }
 }
 
+SEXP Crange_nchar(SEXP x) {
+  if (TYPEOF(x) != STRSXP) {
+    return R_NilValue;
+  }
+  unsigned int xminmax[2] = {INT_MAX, 0};
+  nchar_range(x, xminmax);
+  SEXP ans = PROTECT(allocVector(INTSXP, 2));
+  INTEGER(ans)[0] = xminmax[0];
+  INTEGER(ans)[1] = xminmax[1];
+  UNPROTECT(1);
+  return ans;
+}
+
 SEXP do_pad0(SEXP x, const int w) {
   R_xlen_t N = xlength(x);
   SEXP ans = PROTECT(allocVector(STRSXP, N));
@@ -273,7 +286,7 @@ SEXP Cpad0(SEXP x, SEXP width) {
   return do_pad0(x, w);
 }
 
-SEXP CEnsureEquichar(SEXP x) {
+SEXP CEnsure_fwc(SEXP x) {
   if (TYPEOF(x) != STRSXP) {
     return R_NilValue;
   }
