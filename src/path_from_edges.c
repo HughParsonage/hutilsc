@@ -541,8 +541,8 @@ SEXP Censeq(SEXP x) {
   if (TYPEOF(x) != INTSXP || N == 0) {
     return R_NilValue; // # nocov 
   }
-  bool venseq = false;
-  int * xp = INTEGER(x);
+  
+  const int * xp = INTEGER(x);
   int xminmax[2] = {xp[0], xp[0]};
   Vminmax_i(xminmax, xp, N, 1);
   // the minimum is present
@@ -679,10 +679,10 @@ void next_neighb(const int max_order,
 }
 
 SEXP Cego_net(SEXP vv,
-                SEXP oo,
-                SEXP K1, SEXP K2,
-                SEXP NK1, SEXP NK2,
-                SEXP nNodes) {
+              SEXP oo,
+              SEXP K1, SEXP K2,
+              SEXP NK1, SEXP NK2,
+              SEXP nNodes) {
   const int v = asInteger(vv);
   const int o = asInteger(oo);
   R_xlen_t N = xlength(K1);
@@ -784,5 +784,665 @@ SEXP Cego_net(SEXP vv,
   return ans;
 }
 
+int notEquiInt2(SEXP x, SEXP y) {
+  if (TYPEOF(x) != INTSXP) {
+    return 1;
+  }
+  if (TYPEOF(y) != INTSXP) {
+    return 2;
+  }
+  if (xlength(x) != xlength(y)) {
+    return 3;
+  }
+  if (xlength(x) >= INT_MAX) {
+    return 4;
+  }
+  return 0;
+}
+
+int notEquiInt3(SEXP x, SEXP y, SEXP z) {
+  if (TYPEOF(x) != INTSXP) {
+    return 1;
+  }
+  if (TYPEOF(y) != INTSXP) {
+    return 2;
+  }
+  if (TYPEOF(z) != INTSXP) {
+    return 3;
+  }
+  if (xlength(x) != xlength(y)) {
+    return 4;
+  }
+  if (xlength(x) != xlength(z)) {
+    return 5;
+  }
+  if (xlength(x) >= INT_MAX) {
+    return 6;
+  }
+  return 0;
+}
+
+int n_paths_st(int d, int s, int t, int U0[], int U1[], const int k2[]) {
+  if (d == 0) {
+    return 0;
+  }
+  
+  int t_infra = U0[s - 1];
+  int t_supra = U1[s - 1];
+  if (t_supra < 0) {
+    return 0;
+  }
+  int o = 0;
+  if (d == 1) {
+    for (int tc = t_infra; tc <= t_supra; ++tc) {
+      o += k2[tc] == t;
+    }
+    return o;
+  }
+  for (int tc = t_infra; tc <= t_supra; ++tc) {
+    o += n_paths_st(d - 1, k2[tc], t, U0, U1, k2);
+  }
+  return o;
+}
+
+
+int n_paths_svt(int d, int s, int v, int t, 
+                int U0[], int U1[], const int k2[]) {
+  if (d <= 1) {
+    return 0; // not possible to have three nodes on a path of len 1
+  }
+  
+  // must be svt immediately
+  int s_infra = U0[s - 1];
+  int s_supra = U1[s - 1];
+  if (s_supra < 0) {
+    return 0;
+  }
+  int v_not_found = true;
+  // vc = v candidate
+  for (int vc = s_infra; vc <= s_supra; ++vc) {
+    v_not_found &= k2[vc] != v;
+  }
+  if (d == 2) {
+    if (v_not_found) {
+      return 0;
+    }
+    int v_infra = U0[v - 1];
+    
+    int v_supra = U1[v - 1];
+    if (v_supra < 0) {
+      return 0;
+    }
+    for (int tc = v_infra; tc <= v_supra; ++tc) {
+      if (k2[tc] == t) {
+        return 1;
+      }
+    }
+    return 0;
+  }
+  int o = 0;
+  if (v_not_found) {
+    for (int vc = s_infra; vc <= s_supra; ++vc) {
+      o += n_paths_svt(d - 1, k2[vc], v, t, U0, U1, k2);
+    }
+  } else {
+    
+    for (int vc = s_infra; vc <= s_supra; ++vc) {
+      if (k2[vc] == v) {
+        o += n_paths_st(d - 1, v, t, U0, U1, k2);
+      } else {
+        o += n_paths_svt(d - 1, k2[vc], v, t, U0, U1, k2);
+      }
+    }
+  }
+  return o;
+}
+
+
+SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
+                   SEXP U,
+                   SEXP J1, SEXP J2, SEXP D) {
+  if (TYPEOF(vv) != NILSXP) {
+    if (notEquiInt3(ss, vv, tt)) {
+      error("notEquiInt3(ss, vv, tt)");
+    }
+  } else {
+    if (notEquiInt2(ss, tt)) {
+      error("notEquiInt2(ss,, tt)");
+    }
+  }
+  if (notEquiInt2(K1, K2)) {
+    error("notEquiInt2(K2, K2)");
+  }
+  if (notEquiInt3(J1, J2, D)) {
+    error("notEquiInt3(J1, J2, D) (no: %d)", notEquiInt3(J1, J2, D));
+  }
+  if (TYPEOF(ss) != INTSXP) {
+    error("ss not integer.");
+  }
+  if (TYPEOF(tt) != INTSXP) {
+    error("tt not integer.");
+  }
+
+  
+  int nk = xlength(K1);
+  if (xlength(U) >= INT_MAX) {
+    error("xlength(U) >= INT_MAX");
+  }
+  int UN = length(U);
+  
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  int N = length(J1);
+  const int * j1 = INTEGER(J1);
+  const int * j2 = INTEGER(J2);
+  const int * d = INTEGER(D);
+  
+  for (int i = 0; i < nk; ++i) {
+    unsigned int k1i = k1[i];
+    if (k1i > UN) {
+      error("At i = %d, k1[i] = %d whereas UN = %d\n", i, k1i, UN);
+    }
+  }
+  for (int i = 0; i < N; ++i) {
+    // j1 == UN is acceptable since it is 1-indexed
+    unsigned int j1i = j1[i];
+    if (j1i > UN) {
+      error("At i = %d, j1[i] = %d whereas UN = %d\n", i, j1i, UN);
+    }
+  }
+  
+  int * U0 = malloc(sizeof(int) * UN);
+  if (U0 == NULL) {
+    free(U0); // # nocov
+    error("Unable to allocate U0."); // # nocov
+  }
+  int * U1 = malloc(sizeof(int) * UN);
+  if (U1 == NULL) {
+    free(U0); // # nocov
+    free(U1); // # nocov 
+    error("Unable to allocate U1"); // # nocov
+  }
+  
+  for (int i = 0; i < UN; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  
+  ftc2(U0, U1, k1, nk);
+  if (xlength(ss) == 1) {
+    const int s = asInteger(ss);
+    const int t = asInteger(tt);
+    
+    int dsvt = 0;
+    for (int j = 0; j < N; ++j) {
+      if (dsvt) {
+        break;
+      }
+      if (j1[j] == s) {
+        for (int jj = j; (jj < N && j1[jj] == s); ++j) {
+          if (j2[j] == t) {
+            dsvt = d[jj];
+            break;
+          }
+        }
+      }
+    }
+    if (TYPEOF(vv) != INTSXP || xlength(vv) != 1) {
+      int o = n_paths_st(dsvt, s, t, U0, U1, k2);
+      free(U0);
+      free(U1);
+      return ScalarInteger(o);
+    }
+    const int v = asInteger(vv);
+    int o = (n_paths_svt(dsvt, s, v, t, U0, U1, k2));
+    free(U0);
+    free(U1);
+    return ScalarInteger(o);
+  }
+
+  R_xlen_t n_dist = xlength(D);
+  int * S0 = malloc(sizeof(int) * n_dist);
+  if (S0 == NULL) {
+    free(U0);
+    free(U1);
+    free(S0);
+    error("Unable to allocate S0");
+  }
+  int * S1 = malloc(sizeof(int) * n_dist);
+  if (S1 == NULL) {
+    free(U0);
+    free(U1);
+    free(S0);
+    free(S1);
+    error("Unable to allocate S1");
+  }
+  for (int i = 0; i < N; ++i) {
+    S0[i] = 0;
+    S1[i] = -1;
+  }
+  ftc2(S0, S1, j1, n_dist);
+  
+  R_xlen_t M = xlength(ss);
+  if (xlength(vv) != M) {
+    error("xlength(vv) != M"); 
+  }
+  
+  const int * sp = INTEGER(ss);
+  const int * vp = INTEGER(vv);
+  const int * tp = INTEGER(tt);
+  SEXP ans = PROTECT(allocVector(INTSXP, M));
+  int * restrict ansp = INTEGER(ans);
+  int miss = 0;
+  for (R_xlen_t i = 0; i < M; ++i) {
+    int s = sp[i];
+    int v = vp[i];
+    int t = tp[i];
+    int di = 0;
+    int sdi = S0[s - 1];
+    int sds = S1[s - 1];
+    if (sdi < 0) {
+      if (miss == 0) {
+        miss = i;
+      }
+      ansp[i] = NA_INTEGER;
+      continue;
+    }
+    for (int id = sdi; id <= sds; ++id) {
+      if (j2[id] == t) {
+        di = d[id];
+        break;
+      }
+    }
+    ansp[i] = n_paths_svt(di, s, v, t, U0, U1, k2);
+  }
+  free(U0);
+  free(U1);
+  free(S0);
+  free(S1);
+  if (miss) {
+    warning("Missing distance at position %d", (miss + 1));
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+int n_paths_at_d(int d, int s_infra, int s_supra, int U0[], int U1[], const int k2[], int t) {
+  if (d <= 1) {
+    return 1;
+  }
+  int o = 0;
+  if (d == 2) {
+    for (int k = s_infra; k <= s_supra; ++k) {
+      int v = k2[k];
+      int v_infra = U0[v - 1];
+      int v_supra = U1[v - 1];
+      for (int kk = v_infra; kk <= v_supra; ++kk) {
+        o += k2[kk] == t;
+      }
+    }
+    return o;
+  }
+  for (int k = s_infra; k <= s_supra; ++k) {
+    int v = k2[k];
+    int v_infra = U0[v - 1];
+    int v_supra = U1[v - 1];
+    o += n_paths_at_d(d - 1, v_infra, v_supra, U0, U1, k2, t);
+  }
+  return o;
+}
+
+SEXP C_nPathsBetween_GivenDist(SEXP K1, SEXP K2, SEXP U, SEXP J1, SEXP J2, SEXP D) {
+  //' @description Returns an integer vector of the number of paths between edges
+  //' @param K1,K2 Integer vectors indicating edges
+  //' @param J1,J2,D Integer vectors indicating distances between J1 and J2
+  if (notEquiInt2(K1, K2)) {
+    error("notEquiInt2(K2, K2)");
+  }
+  if (notEquiInt2(U, U)) {
+    error("notEquiIn2(U, U)");
+  }
+  if (notEquiInt3(J1, J2, D)) {
+    error("notEquiInt3(J1, J2, D)");
+  }
+  int UN = length(U);
+  int nk = length(K1);
+  int N = length(J1);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int * j1 = INTEGER(J1);
+  const int * j2 = INTEGER(J2);
+  const int * d = INTEGER(D);
+  
+  for (int i = 0; i < nk; ++i) {
+    unsigned int k1i = k1[i];
+    if (k1i > UN) {
+      error("At i = %d, k1[i] = %d whereas UN = %d\n", i, k1i, UN);
+    }
+  }
+  for (int i = 0; i < N; ++i) {
+    // j1 == UN is acceptable since it is 1-indexed
+    unsigned int j1i = j1[i];
+    if (j1i > UN) {
+      error("At i = %d, j1[i] = %d whereas UN = %d\n", i, j1i, UN);
+    }
+  }
+  
+  int * U0 = malloc(sizeof(int) * UN);
+  if (U0 == NULL) {
+    free(U0); // # nocov
+    error("Unable to allocate U0."); // # nocov
+  }
+  int * U1 = malloc(sizeof(int) * UN);
+  if (U1 == NULL) {
+    free(U0); // # nocov
+    free(U1); // # nocov 
+    error("Unable to allocate U1"); // # nocov
+  }
+  
+  for (int i = 0; i < UN; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  
+  ftc2(U0, U1, k1, nk);
+  
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * ansp = INTEGER(ans);
+  
+  for (int i = 0; i < N; ++i) {
+    int di = d[i];
+    if (di <= 1) {
+      // typically this is distance = 1
+      // so there is only one distance
+      ansp[i] = di;
+      continue;
+    }
+    int s = j1[i];
+    int t = j2[i];
+    
+    // How many paths between s and t
+    int s_infra = U0[s - 1];
+    int s_supra = U1[s - 1];
+    if (s_supra < 0) {
+      ansp[i] = NA_INTEGER;
+      continue; // very unlikely 
+    }
+    ansp[i] = 0;
+    
+    
+    // distance = 2
+    // 
+    if (di == 2) {
+      for (int k = s_infra; k <= s_supra; ++k) {
+        int v = k2[k];
+        int v_infra = U0[v - 1];
+        int v_supra = U1[v - 1];
+        for (int kk = v_infra; kk <= v_supra; ++kk) {
+          ansp[i] += k2[kk] == t;
+        }
+      }
+      continue;
+    }
+    if (di == 3) {
+      for (int k = s_infra; k <= s_supra; ++k) {
+        
+        int v = k2[k];
+        int v_infra = U0[v - 1];
+        int v_supra = U1[v - 1];
+        for (int kk = v_infra; kk <= v_supra; ++kk) {
+          int vv = k2[kk];
+          int vv_infra = U0[vv - 1];
+          int vv_supra = U1[vv - 1];
+          for (int kkk = vv_infra; kkk <= vv_supra; ++kkk) {
+            ansp[i] += k2[kkk] == t;
+          }
+        }
+      }
+    } else {
+      // int    n_paths_at_d(int d, int s_infra, int s_supra, int U0[], int U1[], int k2[], int t) {
+      ansp[i] += n_paths_at_d(di, s_infra, s_supra, U0, U1, k2, t);
+    }
+  }
+  free(U0);
+  free(U1);
+  UNPROTECT(1);
+  return ans;
+}
+
+
+SEXP CBetweenessLen4(SEXP K1, SEXP K2, SEXP U, SEXP V1, SEXP V2, SEXP V3, SEXP V4) {
+  if (TYPEOF(K1) != INTSXP ||
+      TYPEOF(K1) != INTSXP ||
+      TYPEOF(U)  != INTSXP ||
+      TYPEOF(V1) != INTSXP ||
+      TYPEOF(V2) != INTSXP ||
+      TYPEOF(V3) != INTSXP ||
+      TYPEOF(V4) != INTSXP) {
+    error("Wrong type passed.");
+  }
+  if (xlength(K1) >= INT_MAX ||
+      xlength(K1) >= INT_MAX ||
+      xlength(U)  >= INT_MAX ||
+      xlength(V1) >= INT_MAX ||
+      xlength(V2) >= INT_MAX ||
+      xlength(V3) >= INT_MAX ||
+      xlength(V4) >= INT_MAX) {
+    error("Lengths >= INT_MAX");
+  }
+  int N = length(K1);
+  int UN = length(U);
+  int N4 = length(V1);
+  if (length(K1) != N ||
+      length(K1) != N ||
+      length(U)  != UN ||
+      length(V1) != N4 ||
+      length(V2) != N4 ||
+      length(V3) != N4 ||
+      length(V4) != N4) {
+    error("Lengths mismatch");
+  }
+  const int * k1 = INTEGER(K1);
+  // const int * k2 = INTEGER(K2);
+  // const int * u = INTEGER(U);
+  const int * v1 = INTEGER(V1);
+  const int * v2 = INTEGER(V2);
+  const int * v3 = INTEGER(V3);
+  const int * v4 = INTEGER(V4);
+  
+  int * U0 = malloc(sizeof(int) * UN);
+  if (U0 == NULL) {
+    free(U0); // # nocov
+    error("Unable to allocate U0."); // # nocov
+  }
+  int * U1 = malloc(sizeof(int) * UN);
+  if (U1 == NULL) {
+    free(U0); // # nocov
+    free(U1); // # nocov 
+    error("Unable to allocate U1"); // # nocov
+  }
+  
+  for (int i = 0; i < UN; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  
+  ftc2(U0, U1, k1, N);
+  
+  // Calculate number of len4 paths from a to b immediately
+  
+  
+  
+  
+  SEXP ans = PROTECT(allocVector(REALSXP, UN));
+  double * ansp = REAL(ans);
+  for (int v = 0; v < UN; ++v) {
+    ansp[v] = 0;
+  }
+  
+  for (int v = 0; v < UN; ++v) {
+    for (int s = 0; s < v; ++s) {
+      // int s_infra = U0[s];
+      int s_supra = U1[s];
+      if (s_supra < 0) {
+        continue;
+      }
+      // position of s (if any in l4)
+      int sv_infra = 0;
+      while (sv_infra < N4 && v1[sv_infra] != s) {
+        ++sv_infra;
+      }
+      // s not present in V1
+      if (sv_infra >= N4) {
+        continue;
+      }
+      int sv_supra = sv_infra;
+      while (sv_supra < N4 && v1[sv_supra] == s) {
+        ++sv_supra;
+      }
+      
+      for (int t = v + 1; t < UN; ++t) {
+        int n_len_4_paths_s_t = 0;
+        int n_len_4_paths_svt = 0;
+        for (int V4_i = sv_infra; V4_i < sv_supra; ++V4_i) {
+          n_len_4_paths_s_t += v4[V4_i] == t;
+          n_len_4_paths_svt += v2[V4_i] == v;
+          n_len_4_paths_svt += v3[V4_i] == v;
+        }
+        if (n_len_4_paths_s_t) {
+          double sigma_1 = n_len_4_paths_svt;
+          double sigma_2 = n_len_4_paths_s_t;
+          ansp[v] += sigma_1/sigma_2;
+        }
+      }
+    }
+  }
+  UNPROTECT(1);
+  return ans;
+  
+}
+
+SEXP CBetweeness(SEXP K1, SEXP K2, SEXP U, SEXP J1, SEXP J2, SEXP D, SEXP maxPath) {
+  //' @param K1,K2, equilength vectors indicating an edge exists between each K1[i]--K2[i]
+  //' and K1[i] < K2[i]
+  //' @param U Union of all nodes in order
+  //' @param J1,J2,D equilength vectors indicating D[i] is the distance from J1[i] to J2[i];
+  //' @param maxPath (int) the maximum distance a path that may be considered
+  if (TYPEOF(K1) != INTSXP ||
+      TYPEOF(K1) != INTSXP ||
+      TYPEOF(U)  != INTSXP ||
+      TYPEOF(J1) != INTSXP ||
+      TYPEOF(J1) != INTSXP ||
+      TYPEOF(D)  != INTSXP) {
+    error("Wrong types passed to CBetweenenss"); // # nocov
+  }
+  R_xlen_t N = xlength(K1);
+  if (xlength(K2) != N) {
+    error("xlength(K2) != N"); // # nocov
+  }
+  if (xlength(U) >= INT_MAX) {
+    error("xlength(U) >= INT_MAX"); // # nocov
+  }
+  if (xlength(maxPath) != 1 || 
+      TYPEOF(maxPath) != INTSXP) {
+    error("maxPath not an int."); // # nocov
+  }
+  if (xlength(J1) >= INT_MAX) {
+    error("xlength(J1) >= INT_MAX");
+  }
+  int NJ = xlength(J1);
+  if (NJ != xlength(J2) || 
+      NJ != xlength(D)) {
+    error("J1,J2,D mismatching lengths.");
+  }
+  
+  int UN = length(U);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int * u = INTEGER(U);
+  const int * j1 = INTEGER(J1);
+  const int * j2 = INTEGER(J2);
+  const int * d = INTEGER(D);
+  const int max_len = asInteger(maxPath);
+  if (max_len < 2) {
+    error("max_len < 2");
+  }
+  
+  
+  
+  int * U0 = malloc(sizeof(int) * UN);
+  if (U0 == NULL) {
+    free(U0); // # nocov
+    error("Unable to allocate U0."); // # nocov
+  }
+  int * U1 = malloc(sizeof(int) * UN);
+  if (U1 == NULL) {
+    free(U0); // # nocov
+    free(U1); // # nocov 
+    error("Unable to allocate U1"); // # nocov
+  }
+  
+  for (int i = 0; i < UN; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  
+  ftc2(U0, U1, k1, N);
+  
+  
+  SEXP ans = PROTECT(allocVector(REALSXP, UN));
+  double * ansp = REAL(ans);
+  // there must be at least three vertices
+  // s < v < t
+  //
+  for (int j = 0; j < NJ; ++j) {
+    int dj = d[j];
+    if (dj >= 3 && dj <= max_len) {
+      int s = j1[j];
+      int t = j2[j];
+      int us = u[s - 1];
+      int us_infra = U0[us - 1];
+      int us_supra = U1[us - 1];
+      if (us_supra < 0) {
+        continue;
+      }
+      
+      switch(dj) {
+      case 3: {
+        // s v t
+        for (int k = us_infra; k <= us_supra; ++k) {
+        int v = k2[k];
+        int v_infra = U0[v - 1];
+        int v_supra = U1[v - 1];
+        for (int jj = v_infra; jj < v_supra; ++jj) {
+          ansp[v - 1] += k2[jj] == t;
+        }
+      }
+      }
+        break;
+      case 4: {
+        // s v _ t
+        for (int kk = us_infra; kk <= us_supra; ++kk) {
+        int k2kk = k2[kk];
+        int k2kk_infra = U0[k2kk - 1];
+        int k2kk_supra = U1[k2kk - 1];
+        for (int kk3 = k2kk_infra; kk3 < k2kk_supra; ++kk3) {
+          ansp[k2kk - 1] += k2[kk3] == t;
+        }
+      }
+        
+      } 
+        
+        // s _ v t
+        
+      }
+    }
+  }
+  free(U0);
+  free(U1);
+  
+  return R_NilValue;
+}
 
 

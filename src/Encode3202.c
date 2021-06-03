@@ -3,39 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 SEXP CValidate3202(SEXP x) {
   R_xlen_t N = xlength(x);
   int typeofx = TYPEOF(x);
@@ -618,17 +585,19 @@ SEXP Cdetermine_const_width_alnum_encoding(SEXP x, SEXP MaxNchar) {
   if (N == 0) {
     return R_NilValue;
   }
+  
+  
   int max_nchar_tmp = 1;
   R_xlen_t first_non_na = 0;
-  if (TYPEOF(MaxNchar) != INTSXP) {
-    if (TYPEOF(MaxNchar) == NILSXP) {
+  if (TYPEOF(MaxNchar) != INTSXP || INTEGER(MaxNchar)[0] == NA_INTEGER) {
+    bool auto_maxnchar = TYPEOF(MaxNchar) == NILSXP;
+    auto_maxnchar |= TYPEOF(MaxNchar) == INTSXP && INTEGER(MaxNchar)[0] == NA_INTEGER;
+    if (auto_maxnchar) {
       // User has requested max_nchar to be based of first non-NA string
       max_nchar_tmp = length(STRING_ELT(x, first_non_na));
       while (first_non_na < N &&
-             max_nchar_tmp == 2 && 
              STRING_ELT(x, first_non_na) == NA_STRING) {
         ++first_non_na;
-        max_nchar_tmp = length(STRING_ELT(x, first_non_na));
       }
       if (first_non_na == N) {
         error("`n = NULL`, but x is full of NA.");
@@ -645,8 +614,8 @@ SEXP Cdetermine_const_width_alnum_encoding(SEXP x, SEXP MaxNchar) {
   if (max_nchar < 0) {
     error("max_nchar is negative (possible NA).");
   }
-  bool any_nchar_ge = false;
-  bool any_nchar_le = false;
+  unsigned int any_nchar_ge = 0;
+  unsigned int any_nchar_le = 0;
   // tbl[62*j + k] is 1 if string[k] is present at position j
   unsigned char * tbl = calloc(max_nchar * 62, sizeof(char));
   if (tbl == NULL) {
@@ -656,8 +625,9 @@ SEXP Cdetermine_const_width_alnum_encoding(SEXP x, SEXP MaxNchar) {
     if (STRING_ELT(x, i) == NA_STRING) {
       continue;
     }
+    
     const char * xi = CHAR(STRING_ELT(x, i));
-    unsigned int strleni = strlen(xi);
+    unsigned int strleni = LENGTH(STRING_ELT(x, i));
     unsigned int base_tbl_j = 0;
     if (strleni == max_nchar) {
       for (unsigned int c = 0; c < max_nchar; ++c) {
@@ -666,16 +636,16 @@ SEXP Cdetermine_const_width_alnum_encoding(SEXP x, SEXP MaxNchar) {
         base_tbl_j += 62U;
       }
     } else if (strleni < max_nchar) {
-      any_nchar_le = true;
+      any_nchar_le = i;
     } else {
-      any_nchar_ge = true;
+      any_nchar_ge = i;
     }
   }
   if (any_nchar_le) {
-    warning("Some elements had strings narrower than max_nchar.");
+    warning("Element %d had strings narrower than max_nchar.", any_nchar_le);
   }
   if (any_nchar_ge) {
-    warning("Some elements had strings wider than max_nchar.");
+    warning("Element %d had strings wider than max_nchar.", any_nchar_ge);
   }
   
   SEXP ans = PROTECT(allocVector(STRSXP, max_nchar));
@@ -754,7 +724,9 @@ SEXP Cvalidate_encoding(SEXP x, SEXP ee) {
   }
   R_xlen_t o = 0;
   for (R_xlen_t i = 0; i < N; ++i) {
-    // Don't check for NA -- faster to check at R level.
+    if (STRING_ELT(x, i) == NA_STRING) {
+      continue;
+    }
     const char * xi = CHAR(STRING_ELT(x, i));
     if (strlen(xi) != max_nchar) {
       o = i + 1;
@@ -827,6 +799,10 @@ SEXP Calphnum_enc(SEXP x, SEXP ee) {
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
   for (R_xlen_t i = 0; i < N; ++i) {
+    if (STRING_ELT(x, i) == NA_STRING) {
+      ansp[i] = NA_INTEGER;
+      continue;
+    }
     const char * xi = CHAR(STRING_ELT(x, i));
     unsigned int oi = 0;
     for (int k = 0; k < non_const; ++k) {

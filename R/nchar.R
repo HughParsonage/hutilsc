@@ -1,7 +1,7 @@
 #' Number of characters
 #' @description Various enhancements of \code{nchar} and related operations.
 #' 
-#' @param x A character vector.
+#' @param x A character vector. Integer vectors are also supported for convenience.
 #' 
 #' @return
 #' \describe{
@@ -14,15 +14,21 @@
 #' @export
 
 hutilsc_nchar <- function(x) {
-  stopifnot(is.character(x))
-  .Call("Cnchar", x, PACKAGE = packageName())
+  if (is.character(x) || is.integer(x)) {
+    .Call("Cnchar", x, PACKAGE = packageName())
+  } else {
+    nchar(x, type = "bytes")
+  }
 }
 
 
 #' @rdname hutilsc_nchar
 #' @export
 range_nchar <- function(x) {
-  stopifnot(is.character(x))
-  .Call("Crange_nchar", x, PACKAGE = packageName())
+  if (is.character(x) || is.integer(x)) {
+    .Call("Crange_nchar", x, PACKAGE = packageName())
+  } else {
+    range(nchar(x), na.rm = TRUE)
+  }
 }
 

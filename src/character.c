@@ -59,7 +59,7 @@ int n_digits0(unsigned int x) {
   return 1;
 } 
 
-int n_digits(int x) {
+int n_chars(int x) {
   if (x == 0) {
     return 1;
   } else if (x > 0) {
@@ -74,7 +74,7 @@ int n_digits(int x) {
     if (x >= 10U)         return 2;
     return 1;
   } else {
-    if (x == NA_INTEGER) return 2;
+    if (x == NA_INTEGER) return NA_INTEGER;
     if (x <= -1000000000) return 11;
     if (x <= -100000000)  return 10;
     if (x <= -10000000)   return 9;
@@ -88,7 +88,7 @@ int n_digits(int x) {
   return 2;
 }
 
-SEXP ndigits_int(SEXP x) {
+SEXP nchar_int(SEXP x) {
   if (TYPEOF(x) != INTSXP) {
     return ScalarInteger(0);
   }
@@ -97,7 +97,7 @@ SEXP ndigits_int(SEXP x) {
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
   for (R_xlen_t i = 0; i < N; ++i) {
-    ansp[i] = n_digits(xp[i]);
+    ansp[i] = n_chars(xp[i]);
   }
   UNPROTECT(1);
   return ans;
@@ -204,7 +204,7 @@ SEXP Cnchar(SEXP x) {
       return R_NilValue;
       break;
     case INTSXP:
-      return ndigits_int(x);
+      return nchar_int(x);
       break;
     }
     return R_NilValue;
@@ -241,7 +241,7 @@ void nchar_range(SEXP x, unsigned int xminmax[]) {
 
 SEXP Crange_nchar(SEXP x) {
   if (TYPEOF(x) != STRSXP) {
-    return R_NilValue;
+    return R_NilValue; // # nocov
   }
   unsigned int xminmax[2] = {INT_MAX, 0};
   nchar_range(x, xminmax);
@@ -280,7 +280,7 @@ SEXP do_pad0(SEXP x, const int w) {
 
 SEXP Cpad0(SEXP x, SEXP width) {
   if (TYPEOF(x) != STRSXP) {
-    return x;
+    return x; // # nocov
   }
   const int w = asInteger(width);
   return do_pad0(x, w);
@@ -288,7 +288,7 @@ SEXP Cpad0(SEXP x, SEXP width) {
 
 SEXP CEnsure_fwc(SEXP x) {
   if (TYPEOF(x) != STRSXP) {
-    return R_NilValue;
+    return R_NilValue; // # nocov
   }
   unsigned int xminmax[2] = {INT_MAX, 0U};
   nchar_range(x, xminmax);

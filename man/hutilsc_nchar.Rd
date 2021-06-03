@@ -10,7 +10,7 @@ hutilsc_nchar(x)
 range_nchar(x)
 }
 \arguments{
-\item{x}{A character vector.}
+\item{x}{A character vector. Integer vectors are also supported for convenience.}
 }
 \value{
 \describe{

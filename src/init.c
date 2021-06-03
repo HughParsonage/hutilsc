@@ -8,11 +8,14 @@
 */
 
 /* .Call calls */
+extern SEXP C_nPathsBetween_GivenDist(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP Callocate0_int(SEXP, SEXP);
 extern SEXP Calphnum_dec(SEXP, SEXP);
 extern SEXP Calphnum_enc(SEXP, SEXP);
 extern SEXP Cand_lgl_int(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cand2s(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cany_or2(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP CBetweenessLen4(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cclassify_chars(SEXP, SEXP);
 extern SEXP Cclique1(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Ccollatz(SEXP);
@@ -35,6 +38,7 @@ extern SEXP Cis_constant(SEXP, SEXP);
 extern SEXP Cis_sorted(SEXP, SEXP);
 extern SEXP Cis_valid_path(SEXP, SEXP, SEXP);
 extern SEXP Cminmax(SEXP, SEXP, SEXP);
+extern SEXP Cn_paths_svt0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cnames2int(SEXP, SEXP);
 extern SEXP Cnchar(SEXP);
 extern SEXP count_sort_logi(SEXP);
@@ -61,11 +65,14 @@ extern SEXP lookup4_char(SEXP);
 extern SEXP test_input_types(SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
+    {"C_nPathsBetween_GivenDist",             (DL_FUNC) &C_nPathsBetween_GivenDist,              6},
+    {"Callocate0_int",                        (DL_FUNC) &Callocate0_int,                         2},
     {"Calphnum_dec",                          (DL_FUNC) &Calphnum_dec,                           2},
     {"Calphnum_enc",                          (DL_FUNC) &Calphnum_enc,                           2},
     {"Cand_lgl_int",                          (DL_FUNC) &Cand_lgl_int,                           5},
     {"Cand2s",                                (DL_FUNC) &Cand2s,                                10},
     {"Cany_or2",                              (DL_FUNC) &Cany_or2,                               7},
+    {"CBetweenessLen4",                       (DL_FUNC) &CBetweenessLen4,                        7},
     {"Cclassify_chars",                       (DL_FUNC) &Cclassify_chars,                        2},
     {"Cclique1",                              (DL_FUNC) &Cclique1,                               4},
     {"Ccollatz",                              (DL_FUNC) &Ccollatz,                               1},
@@ -88,6 +95,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cis_sorted",                            (DL_FUNC) &Cis_sorted,                             2},
     {"Cis_valid_path",                        (DL_FUNC) &Cis_valid_path,                         3},
     {"Cminmax",                               (DL_FUNC) &Cminmax,                                3},
+    {"Cn_paths_svt0",                         (DL_FUNC) &Cn_paths_svt0,                          9},
     {"Cnames2int",                            (DL_FUNC) &Cnames2int,                             2},
     {"Cnchar",                                (DL_FUNC) &Cnchar,                                 1},
     {"count_sort_logi",                       (DL_FUNC) &count_sort_logi,                        1},

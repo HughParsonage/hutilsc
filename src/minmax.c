@@ -26,7 +26,7 @@ void vminmax_i(int minmax[], int xi) {
   }
 }
 
-void Vminmax_i(int minmax[], int * x, R_xlen_t N, int nthreads) {
+void Vminmax_i(int minmax[], const int * x, R_xlen_t N, int nthreads) {
   if (N == 0) {
     minmax[0] = INT_MAX;
     minmax[1] = INT_MIN;

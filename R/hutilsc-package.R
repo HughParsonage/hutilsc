@@ -4,6 +4,9 @@
 #' @importFrom checkmate vname
 #' @importFrom fastmatch fmatch
 #' @importFrom hutils coalesce
+#' @importFrom hutils if_else
+#' @importFrom hutils set_cols_first
+#' @importFrom hutils set_cols_last
 #' @importFrom utils hasName
 #' @importFrom utils packageName
 
