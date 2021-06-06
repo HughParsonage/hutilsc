@@ -4,6 +4,10 @@ int maxii(int x, int y) {
   return (x >= y) ? x : y;
 }
 
+unsigned int minuu(unsigned int x, unsigned int y) {
+  return (x <= y) ? x : y;
+}
+
 int maxX(const int * x, R_xlen_t N, bool sx) {
   if (N == 0) {
     return INT_MIN;

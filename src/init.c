@@ -8,6 +8,7 @@
 */
 
 /* .Call calls */
+extern SEXP C_LayoutFruchtermanReingold1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_nPathsBetween_GivenDist(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Callocate0_int(SEXP, SEXP);
 extern SEXP Calphnum_dec(SEXP, SEXP);
@@ -24,6 +25,7 @@ extern SEXP CCountRecordID(SEXP);
 extern SEXP CDecode3202(SEXP);
 extern SEXP CdecodeRecordID(SEXP);
 extern SEXP Cdetermine_const_width_alnum_encoding(SEXP, SEXP);
+extern SEXP Cdist_bw_edges(SEXP, SEXP, SEXP);
 extern SEXP Cego_net(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP CEncode3202(SEXP);
 extern SEXP CencodeRecordID(SEXP);
@@ -38,7 +40,7 @@ extern SEXP Cis_constant(SEXP, SEXP);
 extern SEXP Cis_sorted(SEXP, SEXP);
 extern SEXP Cis_valid_path(SEXP, SEXP, SEXP);
 extern SEXP Cminmax(SEXP, SEXP, SEXP);
-extern SEXP Cn_paths_svt0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP Cn_paths_svt0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cnames2int(SEXP, SEXP);
 extern SEXP Cnchar(SEXP);
 extern SEXP count_sort_logi(SEXP);
@@ -46,6 +48,7 @@ extern SEXP CpackSum(SEXP);
 extern SEXP Cpad0(SEXP, SEXP);
 extern SEXP Cpmax0(SEXP);
 extern SEXP Crange_nchar(SEXP);
+extern SEXP Csqrt2(SEXP);
 extern SEXP Csum_isna(SEXP, SEXP);
 extern SEXP Ctabula_RecordID(SEXP);
 extern SEXP Ctest_find_first(SEXP, SEXP, SEXP);
@@ -62,9 +65,11 @@ extern SEXP is_binary_call(SEXP);
 extern SEXP len3_paths(SEXP, SEXP, SEXP);
 extern SEXP len4_paths(SEXP, SEXP, SEXP, SEXP);
 extern SEXP lookup4_char(SEXP);
+extern SEXP qgraph_layout_Cpp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP test_input_types(SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
+    {"C_LayoutFruchtermanReingold1",          (DL_FUNC) &C_LayoutFruchtermanReingold1,           6},
     {"C_nPathsBetween_GivenDist",             (DL_FUNC) &C_nPathsBetween_GivenDist,              6},
     {"Callocate0_int",                        (DL_FUNC) &Callocate0_int,                         2},
     {"Calphnum_dec",                          (DL_FUNC) &Calphnum_dec,                           2},
@@ -81,6 +86,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"CDecode3202",                           (DL_FUNC) &CDecode3202,                            1},
     {"CdecodeRecordID",                       (DL_FUNC) &CdecodeRecordID,                        1},
     {"Cdetermine_const_width_alnum_encoding", (DL_FUNC) &Cdetermine_const_width_alnum_encoding,  2},
+    {"Cdist_bw_edges",                        (DL_FUNC) &Cdist_bw_edges,                         3},
     {"Cego_net",                              (DL_FUNC) &Cego_net,                               7},
     {"CEncode3202",                           (DL_FUNC) &CEncode3202,                            1},
     {"CencodeRecordID",                       (DL_FUNC) &CencodeRecordID,                        1},
@@ -95,7 +101,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cis_sorted",                            (DL_FUNC) &Cis_sorted,                             2},
     {"Cis_valid_path",                        (DL_FUNC) &Cis_valid_path,                         3},
     {"Cminmax",                               (DL_FUNC) &Cminmax,                                3},
-    {"Cn_paths_svt0",                         (DL_FUNC) &Cn_paths_svt0,                          9},
+    {"Cn_paths_svt0",                         (DL_FUNC) &Cn_paths_svt0,                         10},
     {"Cnames2int",                            (DL_FUNC) &Cnames2int,                             2},
     {"Cnchar",                                (DL_FUNC) &Cnchar,                                 1},
     {"count_sort_logi",                       (DL_FUNC) &count_sort_logi,                        1},
@@ -103,6 +109,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cpad0",                                 (DL_FUNC) &Cpad0,                                  2},
     {"Cpmax0",                                (DL_FUNC) &Cpmax0,                                 1},
     {"Crange_nchar",                          (DL_FUNC) &Crange_nchar,                           1},
+    {"Csqrt2",                                (DL_FUNC) &Csqrt2,                                 1},
     {"Csum_isna",                             (DL_FUNC) &Csum_isna,                              2},
     {"Ctabula_RecordID",                      (DL_FUNC) &Ctabula_RecordID,                       1},
     {"Ctest_find_first",                      (DL_FUNC) &Ctest_find_first,                       3},
@@ -119,6 +126,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"len3_paths",                            (DL_FUNC) &len3_paths,                             3},
     {"len4_paths",                            (DL_FUNC) &len4_paths,                             4},
     {"lookup4_char",                          (DL_FUNC) &lookup4_char,                           1},
+    {"qgraph_layout_Cpp",                     (DL_FUNC) &qgraph_layout_Cpp,                     14},
     {"test_input_types",                      (DL_FUNC) &test_input_types,                       4},
     {NULL, NULL, 0}
 };

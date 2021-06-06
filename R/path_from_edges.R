@@ -101,7 +101,7 @@ len_four_paths <- function(Edges, set_key = TRUE) {
 #' 
 #' @export
 
-n_paths_stv <- function(s = NULL, v = NULL, t = NULL, Edges, nPaths = NULL) {
+n_paths_svt <- function(s = NULL, v = NULL, t = NULL, Edges, nPaths = NULL) {
   stopifnot(is.data.table(Edges), length(key(Edges)) >= 2)
   key_names <- key(Edges)[1:2]
   
@@ -216,7 +216,52 @@ betweeness4 <- function(Edges) {
   .Call("CBetweenessLen4", k1, k2, u, V1, V2, V3, V4, PACKAGE = packageName())
 }
 
-n_paths_between_given_dist <- function(Edges, MoltenDistances = NULL, return_dt = FALSE) {
+dist_bw_edges <- function(Edges) {
+  stopifnot(length(key(Edges)) >= 2)
+  k1 <- .subset2(Edges, key(Edges)[1])
+  k2 <- .subset2(Edges, key(Edges)[2])
+  k1 <- ensure_integer(k1)
+  k2 <- ensure_integer(k2)
+  u <- unique(c(k1, k2))
+  u <- u[order(u)]
+  K1 <- match(k1, u)
+  K2 <- match(k2, u)
+  ans_ <- .Call("Cdist_bw_edges", K1, K2, u, PACKAGE = packageName())
+  CJ(orig = u, dest = u)[, dist := ans_][]
+}
+
+dist_bw_edge_igraph <- function(Edges) {
+  Graph <- igraph::graph_from_data_frame(Edges, directed = FALSE)
+  Distances <- igraph::distances(Graph)
+  MoltenDistances <-
+    melt(as.data.table(Distances, keep.rownames = "orig"),
+         id.vars = "orig",
+         variable.name = "dest",
+         variable.factor = FALSE,
+         value.name = "dist")
+  
+  as_int_inf <- function(x) {
+    if (is.integer(x)) {
+      return(x)
+    }
+    if (!is.double(x)) {
+      return(as.integer(x))
+    }
+    # handle Inf at c level (Infinite distance imply no paths)
+    o <- integer(length(x))
+    o[is.finite(x)] <- as.integer(x[is.finite(x)])
+    o
+  }
+  
+  MoltenDistances <- MoltenDistances[, lapply(.SD, as_int_inf)]
+  setkeyv(MoltenDistances, c("orig", "dest"))
+  hutils::set_cols_first(MoltenDistances, c("orig", "dest"))[]
+}
+
+
+#' @rdname n_paths
+#' @export
+n_paths_between_given_dist <- function(Edges, MoltenDistances = NULL, return_dt = TRUE) {
   if (is.null(MoltenDistances)) {
     if (!requireNamespace("igraph", quietly = TRUE)) {
       stop("igraph not available, yet Distances = NULL.")
@@ -238,7 +283,7 @@ n_paths_between_given_dist <- function(Edges, MoltenDistances = NULL, return_dt 
         return(as.integer(x))
       }
       # handle Inf at c level (Infinite distance imply no paths)
-      o <- rep_len(0L, length(x))
+      o <- integer(length(x))
       o[is.finite(x)] <- as.integer(x[is.finite(x)])
       o
     }
@@ -317,7 +362,9 @@ melt_distances <- function(Edges, Distances = NULL) {
   hutils::set_cols_first(MoltenDistances, c("orig", "dest"))
 }
 
-n_paths_svt0 <- function(s, v, t, Edges, MoltenDistances = NULL, double_edges = TRUE) {
+#' @rdname n_paths
+#' @export
+n_paths_svt0 <- function(s, v, t, Edges, MoltenDistances = NULL, double_edges = TRUE, nThread = getOption("hutilsc.nThread", 1L)) {
   
   if (is.null(MoltenDistances)) {
     MoltenDistances <- melt_distances(Edges)
@@ -340,7 +387,7 @@ n_paths_svt0 <- function(s, v, t, Edges, MoltenDistances = NULL, double_edges = 
   J1 <- match(j1, u)
   J2 <- match(j2, u)
   uz <- match(u, u)
-  .Call("Cn_paths_svt0", s, v, t, K1, K2, uz, J1, J2, D, PACKAGE = packageName()) #%/% (1L + double_edges)
+  .Call("Cn_paths_svt0", s, v, t, K1, K2, uz, J1, J2, D, nThread, PACKAGE = packageName()) #%/% (1L + double_edges)
 }
 
 n_paths_igraph <- function(s, v = NULL, t, Edges) {
@@ -357,10 +404,14 @@ n_paths_igraph <- function(s, v = NULL, t, Edges) {
   if (!length(Res <- Paths$res)) {
     return(0L)
   }
-  vc <- as.character(v)
-  sum(vapply(Res, function(r) vc %in% names(r), FUN.VALUE = 0L))
-  
-  
+  DT_ <- as.data.table(t(sapply(Res, as.matrix)))
+  DTU <- unique(DT_)
+  o <- 0L
+  for (j in seq.int(2L, ncol(DTU) - 1L, by = 1L)) {
+    vj <- .subset2(DTU, j)
+    o <- o + sum(vj == v)
+  }
+  return(o)
 }
 
 t5 <- function() {
@@ -368,4 +419,125 @@ t5 <- function() {
   DT <- n_paths_between_given_dist(DT, return_dt = TRUE)
   DT[]
 }
+
+
+qgraph.layout.fruchtermanreingold <- function(edgelist,
+                                              Ef = .subset2(edgelist, key(edgelist)[1]),
+                                              Et = .subset2(edgelist, key(edgelist)[2]),
+                                              weights = rep(1, nrow(edgelist)),
+                                              vcount = length(union(Ef, Et)),
+                                              niter = 500L,
+                                              max.delta = NULL,
+                                              area = NULL,
+                                              cool.exp = 1.5,
+                                              repulse.rad = NULL,
+                                              init = NULL,
+                                              groups = NULL,
+                                              rotation = NULL,
+                                              layout.control = 0.5,
+                                              constraints = NULL,
+                                              round = TRUE, 
+                                              digits = 5) {
+  stopifnot(is.integer(Ef), is.integer(Et))
+  # Provide default settings
+  ecount <- nrow(edgelist)
+  
+  if (!is.null(vcount)) {
+    n <- vcount 
+  } else {
+    # n <- max(length(unique(c(edgelist))),max(edgelist))
+    n <- length(union(.subset2(edgelist, 1L),
+                      .subset2(edgelist, 2L)))
+    vcount <- n
+  }
+  if (is.null(weights)) {
+    weights <- rep(1, ecount)
+  }
+  if (is.null(niter)) {
+    niter <- 500
+  }
+  if (is.null(max.delta)) {
+    max.delta <- as.double(n)
+  }
+  if (length(max.delta) == 1) {
+    max.delta <- rep(max.delta, n)
+  }
+  if (is.null(area)) {
+    area <- n^2
+  }
+  if (is.null(cool.exp)) { 
+    cool.exp <- 1.5
+  }
+  if (is.null(repulse.rad)) {
+    repulse.rad <- area*n
+  }
+  if (is.null(init)) {
+    init <- matrix(0, nrow = n, ncol = 2)
+    tl <- n + 1
+    init[, 1] <- sin(seq(0, 2*pi, length = tl))[-tl] + rnorm(n, 0, 0.01)
+    init[, 2] <- cos(seq(0, 2*pi, length = tl))[-tl] + rnorm(n, 0, 0.01)
+  }
+  
+  
+  x <- init[, 1]
+  y <- init[, 2]
+  
+  # constraints:
+  if (is.null(constraints)) {
+    Cx <- Cy <- logical(vcount)
+  } else {
+    Cx <- !is.na(constraints[, 1])
+    Cy <- !is.na(constraints[, 2])
+    x[Cx] <- constraints[Cx, 1]
+    y[Cy] <- constraints[Cy, 2]
+  }
+  
+
+  
+  # Round:
+  if (round) {
+    weights <- round(weights, digits)
+    x <- round(x, digits)
+    y <- round(y, digits)
+  }
+  
+  
+  
+  layout <- 
+    .Call("qgraph_layout_Cpp", 
+          as.integer(niter),
+          as.integer(n), 
+          as.integer(ecount),
+          as.double(max.delta),
+          as.double(area), 
+          as.double(cool.exp), 
+          as.double(repulse.rad), 
+          Ef,
+          Et, 
+          abs(weights), 
+          as.double(x), 
+          as.double(y), 
+          as.logical(Cx), 
+          as.logical(Cy),
+          PACKAGE = packageName())
+}
+
+sqrt2 <- function(x) {
+  .Call("Csqrt2", as.double(x), PACKAGE = "hutilsc")
+}
+
+myDists <- function() {
+  hh_ss()
+  suppressMessages(libraries())
+  Edges <- fst::read_fst("~/nComm_by_RACF_Dec.fst", as.data = TRUE)
+  u <- Edges[, union(orig, dest)]
+  Edges[, orig := match(orig, u)]
+  Edges[, dest := match(dest, u)]
+  Edges[, c("orig", "dest") := ensure_leq(orig, dest)]
+  setkey(Edges, orig, dest)
+  Edges <- double_edgelist(Edges)
+  # print(dist_bw_edges(Edges))
+  dist_bw_edges(Edges)[, .N, keyby = .(dist)]
+}
+
 

@@ -64,7 +64,21 @@ float ssqrt_fast(float x) {
 #endif
 }
 
-SEXP sqrt2(SEXP x) {
+
+double euclid_dist_d(double d0, double d1) {
+  float squared_dist = d0 * d0 + d1 * d1;
+  return (double)ssqrt_fast(squared_dist); 
+}
+
+double euclid_dist(double x0, double y0, double x1, double y1) {
+  double d0 = y0 - x0;
+  double d1 = y1 - x1;
+  float squared_dist = d0 * d0 + d1 * d1;
+  return (double)ssqrt_fast(squared_dist);
+}
+
+
+SEXP Csqrt2(SEXP x) {
   R_xlen_t N = xlength(x);
   if (!isReal(x)) {
     return R_NilValue;
@@ -108,3 +122,5 @@ SEXP euclid(SEXP x1, SEXP y1, SEXP x2, SEXP y2, SEXP uu) {
   UNPROTECT(1);
   return ans;
 }
+
+

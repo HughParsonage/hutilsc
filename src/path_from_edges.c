@@ -784,6 +784,30 @@ SEXP Cego_net(SEXP vv,
   return ans;
 }
 
+bool notInt(SEXP x) {
+  return TYPEOF(x) != INTSXP || xlength(x) != 1;
+}
+
+bool notDbl(SEXP x) {
+  return TYPEOF(x) != REALSXP || xlength(x) != 1;
+}
+
+int notEquiLgl2(SEXP x, SEXP y) {
+  if (TYPEOF(x) != LGLSXP) {
+    return 1;
+  }
+  if (TYPEOF(y) != LGLSXP) {
+    return 2;
+  }
+  if (xlength(x) != xlength(y)) {
+    return 3;
+  }
+  if (xlength(x) >= INT_MAX) {
+    return 4;
+  }
+  return 0;
+}
+
 int notEquiInt2(SEXP x, SEXP y) {
   if (TYPEOF(x) != INTSXP) {
     return 1;
@@ -818,6 +842,22 @@ int notEquiInt3(SEXP x, SEXP y, SEXP z) {
   }
   if (xlength(x) >= INT_MAX) {
     return 6;
+  }
+  return 0;
+}
+
+int notEquiReal2(SEXP x, SEXP y) {
+  if (TYPEOF(x) != REALSXP) {
+    return 1;
+  }
+  if (TYPEOF(y) != REALSXP) {
+    return 2;
+  }
+  if (xlength(x) != xlength(y)) {
+    return 3;
+  }
+  if (xlength(x) >= INT_MAX) {
+    return 4;
   }
   return 0;
 }
@@ -901,7 +941,8 @@ int n_paths_svt(int d, int s, int v, int t,
 
 SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
                    SEXP U,
-                   SEXP J1, SEXP J2, SEXP D) {
+                   SEXP J1, SEXP J2, SEXP D,
+                   SEXP nthreads) {
   if (TYPEOF(vv) != NILSXP) {
     if (notEquiInt3(ss, vv, tt)) {
       error("notEquiInt3(ss, vv, tt)");
@@ -923,12 +964,13 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
   if (TYPEOF(tt) != INTSXP) {
     error("tt not integer.");
   }
-
+  
   
   int nk = xlength(K1);
   if (xlength(U) >= INT_MAX) {
     error("xlength(U) >= INT_MAX");
   }
+  int nThread = as_nThread(nthreads);
   int UN = length(U);
   
   const int * k1 = INTEGER(K1);
@@ -1000,7 +1042,7 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
     free(U1);
     return ScalarInteger(o);
   }
-
+  
   R_xlen_t n_dist = xlength(D);
   int * S0 = malloc(sizeof(int) * n_dist);
   if (S0 == NULL) {
@@ -1034,6 +1076,9 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
   SEXP ans = PROTECT(allocVector(INTSXP, M));
   int * restrict ansp = INTEGER(ans);
   int miss = 0;
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) reduction(min : miss)
+#endif
   for (R_xlen_t i = 0; i < M; ++i) {
     int s = sp[i];
     int v = vp[i];
@@ -1444,5 +1489,480 @@ SEXP CBetweeness(SEXP K1, SEXP K2, SEXP U, SEXP J1, SEXP J2, SEXP D, SEXP maxPat
   
   return R_NilValue;
 }
+
+static const unsigned int MAX_BFS_DEPTH = 64u;
+
+
+static void bfs(unsigned int depth, unsigned char ans[1024][1024], int orig0, int dest0, int U0[], int U1[], const int k1[], const int k2[], int N) {
+  // @param depth: current depth
+  if (depth >= MAX_BFS_DEPTH) {
+    ans[orig0][dest0] = 255;
+    return;
+  }
+  if (dest0 == orig0) {
+    ans[orig0][dest0] = 0;
+    return;
+  }
+  if (ans[dest0][orig0] != 255) {
+    ans[orig0][dest0] = ans[dest0][orig0];
+    return;
+  }
+  
+  // orig0,dest0 the origin and destination using ZERO INDEXING
+  
+  int k1i = U0[orig0];
+  int k2i = U1[orig0];
+  if (k2i < 0) {
+    return;
+  }
+  for (int kk = k1i; kk <= k2i; ++kk) {
+    int k2kk = k2[kk] - 1;
+    
+    if (k2kk == dest0) {
+      ans[orig0][dest0] = depth;
+      ans[dest0][orig0] = depth;
+      break;
+    }
+    // if already known how far k2kk is from dest0 from existing searches
+    unsigned char dist_k2kk_dest0 = ans[k2kk][dest0]; // assume == ans[dest0][k2kk]
+    if (dist_k2kk_dest0 <= 250) {
+      ans[orig0][dest0] = dist_k2kk_dest0 + 1;
+      ans[dest0][orig0] = dist_k2kk_dest0 + 1;
+      return;
+    }
+    bfs(depth + 1u, ans, k2kk, dest0, U0, U1, k1, k2, N);
+    bfs(depth + 1u, ans, dest0, k2kk, U0, U1, k1, k2, N);
+  }
+}
+
+SEXP Cdist_bw_edges(SEXP K1, SEXP K2, SEXP U) {
+  if (notEquiInt2(K1, K2)) {
+    error("notEquiInt2(K2, K2)");
+  }
+  int N = length(U);
+  int kN = length(K1);
+  if (N > 1023) {
+    error("N > 1023, so N will exceed stack");
+  }
+  int N2 = N * N;
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  int * U0 = malloc(sizeof(int) * N);
+  if (U0 == NULL) {
+    free(U0); // # nocov
+    error("Unable to allocate U0."); // # nocov
+  }
+  int * U1 = malloc(sizeof(int) * N);
+  if (U1 == NULL) {
+    free(U0); // # nocov
+    free(U1); // # nocov 
+    error("Unable to allocate U1"); // # nocov
+  }
+  for (int i = 0; i < N; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  ftc2(U0, U1, k1, kN);
+  
+  unsigned char bans[1024][1024] = {255};
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      bans[i][j] = (i == j) ? 0 : 255;
+    }
+  }
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, N2));
+  int * ansp = INTEGER(ans);
+  for (int i = 0; i < N2; ++i) {
+    ansp[i] = NA_INTEGER;
+  }
+  // 
+  for (int i = 0; i < N; ++i) {
+    int i_a = i * N; // index of ansp
+    ansp[i_a + i] = 0;
+    int k1i = U0[i];
+    int k2i = U1[i];
+    if (k2i > 0) {
+      // all one distances
+      for (int kk = k1i; kk <= k2i; ++kk) {
+        int k2kk = k2[kk];
+        
+        unsigned int i_ab = i_a + (k2kk - 1);
+        unsigned int i_ba = i + (k2kk - 1) * N;
+        ansp[i_ab] = 1;
+        ansp[i_ba] = 1;
+        bans[i][k2kk - 1] = 1;
+        bans[k2kk - 1][i] = 1;
+        int kk1i = U0[k2kk - 1];
+        int kk2i = U1[k2kk - 1];
+        for (int kkk = kk1i; kkk <= kk2i; ++kkk) {
+          int k2kkk = k2[kkk];
+          unsigned int ii_ab = i_a + (k2kkk - 1);
+          unsigned int ii_ba = i + (k2kkk - 1) * N;
+          // assume all distances are symmetrically inserted
+          if (ansp[ii_ab] == NA_INTEGER) {
+            ansp[ii_ab] = 2;
+            ansp[ii_ba] = 2;
+            bans[i][k2kkk - 1] = 2;
+            bans[k2kkk - 1][i] = 2;
+          }
+        }
+      } 
+    }
+  }
+  // int loops[1] = {1e5};
+  
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      if (i != j) {
+        bfs(1u, bans, i, j, U0, U1, k1, k2, N);
+      }
+    } 
+  }
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      int ij = i * N + j;
+      ansp[ij] = bans[i][j];
+    }
+  }
+  
+  free(U0);
+  free(U1);
+  UNPROTECT(1);
+  return ans;
+}
+
+unsigned int utriangle(unsigned int N) {
+  return (N % 2U) ? (N * ((N - 1U) / 2U)) : ((N / 2U) * (N - 1U));
+}
+
+unsigned int wpos(unsigned int i, unsigned int j, unsigned int N) {
+  if (i <= j) {
+    return -N + ((2U * N - 1U - i) * i) / 2U + j - 1U;
+  }
+  return wpos(j, i, N);
+}
+
+SEXP C_LayoutFruchtermanReingold1(SEXP UU, SEXP K1, SEXP K2, SEXP WW,
+                                  SEXP GG, SEXP SS) {
+  // GG,SS gravitational and spring constants
+  if (notEquiInt3(K1, K2, WW)) {
+    error("notEquiInt3(K1, K2, WW)"); // # nocov
+  }
+  if (!isInteger(UU)) {
+    error("UU not an integer.");
+  }
+  if (TYPEOF(GG) != REALSXP || xlength(GG) != 1) {
+    error("GG not num.");
+  }
+  if (TYPEOF(SS) != REALSXP || xlength(SS) != 1) {
+    error("SS not num.");
+  }
+  R_xlen_t N = xlength(UU);
+  R_xlen_t nk = xlength(K1);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int * ww = INTEGER(WW);
+  const double g = asReal(GG);
+  const double s = asReal(SS);
+  
+  SEXP xx = PROTECT(allocVector(REALSXP, N));
+  SEXP yy = PROTECT(allocVector(REALSXP, N));
+  double * xp = REAL(xx);
+  double * yp = REAL(yy);
+  
+  // Normalize
+  SEXP xxminmax = Cminmax(xx, ScalarReal(0), ScalarInteger(1));
+  SEXP yyminmax = Cminmax(yy, ScalarReal(0), ScalarInteger(1));
+  double xminmax[2] = {REAL(xxminmax)[0], REAL(xxminmax)[1]};
+  double yminmax[2] = {REAL(yyminmax)[0], REAL(yyminmax)[1]};
+  double x_domain = xminmax[1] - xminmax[0];
+  double y_domain = yminmax[1] - yminmax[0];
+  if (x_domain > 2 && y_domain > 2) {
+    for (R_xlen_t i = 0; i < N; ++i) {
+      xp[i] /= x_domain;
+      yp[i] /= y_domain;
+    }
+  } else {
+    for (R_xlen_t i = 0; i < N; ++i) {
+      xp[i] = (i + 0.5) / N;
+      yp[i] = 0.5;
+    }
+  }
+  
+  xp[0] = 0;
+  yp[0] = 0;
+  
+  int * U0 = malloc(sizeof(int) * N);
+  if (U0 == NULL) {
+    free(U0); // # nocov
+    error("Unable to allocate U0."); // # nocov
+  }
+  int * U1 = malloc(sizeof(int) * N);
+  if (U1 == NULL) {
+    free(U0); // # nocov
+    free(U1); // # nocov 
+    error("Unable to allocate U1"); // # nocov
+  }
+  for (int i = 0; i < N; ++i) {
+    U0[i] = 0;
+    U1[i] = -1;
+  }
+  ftc2(U0, U1, k1, nk);
+  
+  
+  // only consider i < j
+  unsigned int TN = utriangle(N);
+  int * Wpos = malloc(sizeof(int) * TN);
+  if (Wpos == NULL) {
+    free(U0);
+    free(U1);
+    free(Wpos);
+    error("Unable to allocate Wpos"); // # nocov
+  }
+  for (unsigned int i = 0; i < TN; ++i) {
+    Wpos[i] = 0;
+  }
+  for (int i = 0; i < nk; ++i) {
+    int k1i = k1[i];
+    int k2i = k2[i];
+    int wi = ww[i];
+    unsigned int wposi = wpos(k1i, k2i, N);
+    if (wposi >= TN) {
+      warning("k1i = %d, k2i = %d, wpois = %u >= %u = TN", k1i, k2i, wposi, TN); // # nocov
+      wposi = 0;
+    }
+    Wpos[wposi] = wi;
+  }
+  
+  
+  
+  for (int iter = 0; iter < 1024; ++iter) {
+    if (!(iter & 15)) {
+      R_CheckUserInterrupt();
+      Rprintf("%f,%f\n", xp[0], yp[0]);
+    }
+    for (R_xlen_t i = 0; i < N; ++i) {
+      double xpi = xp[i];
+      double ypi = yp[i];
+      for (R_xlen_t j = 0; j < N; ++j) {
+        if (i == j) {
+          continue;
+        }
+        unsigned int wposij = wpos(i, j, N);
+        int wij = Wpos[wposij];
+        double xpj = xp[j];
+        double ypj = yp[j];
+        double dx_ij = xpj - xpi;
+        double dy_ij = ypj - ypi;
+        if (dx_ij < 1 || dx_ij > -1) {
+          dx_ij = 0;
+        }
+        if (dy_ij < 1 || dy_ij > -1) {
+          dy_ij = 0;
+        }
+        double dist_ij_squared = dx_ij * dx_ij + dy_ij * dy_ij;
+        // double dist_ij = ssqrt_fast((float)dist_ij_squared);
+        if (dist_ij_squared > 0.5) {
+          double F_repulsion = g / dist_ij_squared;
+          xp[j] += F_repulsion * dx_ij;
+          yp[j] += F_repulsion * dy_ij;
+        }
+      }
+    }
+  }
+  
+  
+  free(U0);
+  free(U1);
+  free(Wpos);
+  SEXP ans = PROTECT(allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(ans, 0, xx);
+  SET_VECTOR_ELT(ans, 1, yy);
+  UNPROTECT(3);
+  return ans;
+}
+
+SEXP qgraph_layout_Cpp(SEXP Pniter,
+                       SEXP Pvcount,
+                       SEXP Pecount,
+                       SEXP Maxdelta,
+                       SEXP Parea,
+                       SEXP Pcoolexp,
+                       SEXP Prepulserad,
+                       SEXP EEf,
+                       SEXP EEt, 
+                       SEXP WW,
+                       SEXP xxInit,
+                       SEXP yyInit,
+                       SEXP Cxx,
+                       SEXP Cyy) {
+  /*
+   Calculate a two-dimensional Fruchterman-Reingold layout for (symmetrized) 
+   edgelist matrix d.  Positions (stored in (x,y)) should be initialized
+   prior to calling this routine.
+   */
+  if (notInt(Pniter) || notInt(Pvcount) || notInt(Pecount)) {
+    error("Expected int. (%d)", notInt(Pniter) + 2 * notInt(Pvcount) + 4 * notInt(Pecount)); // # nocov
+  }
+  int pniter = asInteger(Pniter);
+  int pvcount = asInteger(Pvcount);
+  int pecount = asInteger(Pecount);
+  int n = pvcount;
+  
+  if (TYPEOF(Maxdelta) != REALSXP || xlength(Maxdelta) != n) {
+    error("Maxdelta not REAL or xlength(Maxdelta) != n"); // # nocov
+  }
+  const double * maxdelta = REAL(Maxdelta);
+  if (notDbl(Parea) || notDbl(Pcoolexp) || notDbl(Prepulserad)) {
+    error("Expected dbl."); // # nocov
+  }
+  double parea = asReal(Parea);
+  double pcoolexp = asReal(Pcoolexp);
+  double prepulserad = asReal(Prepulserad);
+  
+  if (notEquiInt2(EEf, EEt)) {
+    error("notEquiInt2(EEf, EEt)");
+  }
+  const int * Ef = INTEGER(EEf);   // Edges from 
+  const int * Et = INTEGER(EEt);  // Edges t0
+  
+  const double * W = REAL(WW);
+  if (TYPEOF(WW) != REALSXP || xlength(WW) != xlength(EEf)) {
+    error("WW not REAL or equilength with EEf."); // # nocov
+  }
+  
+  if (notEquiReal2(xxInit, yyInit)) {
+    error("notEquiReal2(xxInit, yyInit)");
+  }
+  const double * xInit = REAL(xxInit);
+  const double * yInit = REAL(yyInit);
+  if (notEquiLgl2(Cxx, Cyy)) {
+    error("notEquiLgl2(Cxx, Cyy)");
+  }
+  const int * Cx = LOGICAL(Cxx);
+  const int * Cy = LOGICAL(Cyy);
+  
+  
+  int m = pecount;
+  double frk;
+  double ded;
+  double xd;
+  double yd;
+  double rf;
+  double af;
+  int i;
+  int j;
+  int k;
+  int l;
+  int niter = pniter;
+  //double maxdelta;
+  double area = parea;
+  double coolexp = pcoolexp;
+  double repulserad = prepulserad;
+  
+  // Unprotections
+  int np = 0;
+  SEXP dxx = PROTECT(allocVector(REALSXP, n)); np++;
+  SEXP dyy = PROTECT(allocVector(REALSXP, n)); np++;
+  SEXP tt = PROTECT(allocVector(REALSXP, n)); np++;
+  double * dx = REAL(dxx);
+  double * dy = REAL(dyy);
+  double * t = REAL(tt);
+  
+  // Copy xIint and yInit:
+  SEXP xx = PROTECT(allocVector(REALSXP, n)); np++;
+  double * x = REAL(xx);
+  SEXP yy = PROTECT(allocVector(REALSXP, n)); np++;
+  double * y = REAL(yy);
+  
+  for (int i = 0; i < n; i++) {
+    x[i] = xInit[i];
+    y[i] = yInit[i];
+  }
+  
+  frk = sqrt(area/(double)n);
+  double frksq = area/((double)n);
+  
+  SEXP pows = PROTECT(allocVector(REALSXP, niter)); np++;
+  double * powsp = REAL(pows);
+  for (int i = 0; i < niter; ++i) {
+    powsp[i] = pow((double)i / (double)niter, coolexp);
+  }
+  
+  // Run the annealing loop
+  for (i = niter; i >= 0; i--) {
+    // Clear the deltas
+    for (j = 0; j < n; j++){
+      dx[j] = 0.0;
+      dy[j] = 0.0;
+    }
+    // Increment deltas for each undirected pair
+    for (j = 0; j < n; j++) {
+      // Set the temperature (maximum move/iteration)
+      t[j] = maxdelta[j] * powsp[i];
+      
+      for (k = j + 1; k < n; k++){
+        // Obtain difference vector
+        xd = x[j] - x[k];
+        yd = y[j] - y[k];
+        float dedsq = xd * xd + yd * yd;
+        ded = ssqrt_fast(dedsq);  // Get dyadic euclidean distance
+        xd /= ded;                // Rescale differences to length 1
+        yd /= ded;
+        // Calculate repulsive "force"
+        rf = frksq * (1.0/ded - dedsq/repulserad);
+        xd *= rf;
+        yd *= rf;
+        dx[j] += xd;        // Add to the position change vector
+        dx[k] -= xd;
+        dy[j] += yd;
+        dy[k] -= yd;
+      }
+      
+    }
+    // Calculate the attractive "force"
+    for (j = 0; j < m; j++) {
+      k = Ef[j] - 1;
+      l = Et[j] - 1;
+      
+      xd = x[k] - x[l];
+      yd = y[k] - y[l];
+      ded = euclid_dist_d(xd, yd);
+      // ded = sqrt(xd*xd + yd*yd);  // Get dyadic euclidean distance
+      if (ded > 0.000001 || ded < -0.000001) {
+        xd /= ded;                // Rescale differences to length 1
+        yd /= ded;
+      }
+      af = ded * ded / frk * W[j];
+      dx[k] -= xd * af;        // Add to the position change vector
+      dx[l] += xd * af;
+      dy[k] -= yd * af;
+      dy[l] += yd * af;
+    }
+    // Dampen motion, if needed, and move the points
+    for (j = 0; j < n; j++) {
+      // ded = sqrt(dx[j]*dx[j] + dy[j]*dy[j]);
+      ded = euclid_dist_d(dx[j], dy[j]);
+      if (ded > t[j]) {                 // Dampen to t
+        ded = t[j] / ded;
+        dx[j] *= ded;
+        dy[j] *= ded;
+      }
+      if (!Cx[j]) {
+        x[j] += round(dx[j] * 1e5) / 1e5; // Update positions (correcting for floating point errors)
+      }
+      if (!Cy[j]) {
+        y[j] += round(dy[j] * 1e5) / 1e5;
+      }
+    }
+  }
+  SEXP ans = PROTECT(allocVector(VECSXP, 2)); np++;
+  SET_VECTOR_ELT(ans, 0, xx);
+  SET_VECTOR_ELT(ans, 1, yy);
+  UNPROTECT(np);
+  return ans;
+}
+
 
 

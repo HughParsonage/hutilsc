@@ -2,10 +2,24 @@
 % Please edit documentation in R/path_from_edges.R
 \name{n_paths}
 \alias{n_paths}
-\alias{n_paths_stv}
+\alias{n_paths_svt}
+\alias{n_paths_between_given_dist}
+\alias{n_paths_svt0}
 \title{Number of paths between vertices}
 \usage{
-n_paths_stv(s = NULL, v = NULL, t = NULL, Edges, nPaths = NULL)
+n_paths_svt(s = NULL, v = NULL, t = NULL, Edges, nPaths = NULL)
+
+n_paths_between_given_dist(Edges, MoltenDistances = NULL, return_dt = TRUE)
+
+n_paths_svt0(
+  s,
+  v,
+  t,
+  Edges,
+  MoltenDistances = NULL,
+  double_edges = TRUE,
+  nThread = getOption("hutilsc.nThread", 1L)
+)
 }
 \arguments{
 \item{s}{\code{int} A vertex in Edges. The origin of the paths.}

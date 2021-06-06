@@ -63,6 +63,9 @@ int do_op2M(SEXP op);
 SEXP do_pad0(SEXP x, const int w);
 
 float ssqrt_fast(float x);
+double euclid_dist_d(double d0, double d1);
+double euclid_dist(double x0, double y0, double x1, double y1);
+
 unsigned int radix_find(int a, unsigned int x0, unsigned int x1, const int * k1, unsigned int * tbl);
 void radix_find_range(int a, 
                       const int * k1,
@@ -75,8 +78,12 @@ void ftc2(int * U0, int * U1, const int * k1, int N);
 // maxmin
 int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy);
 void Vminmax_i(int minmax[], const int * x, R_xlen_t N, int nthreads);
+SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);
 
 // sortedness
 bool sorted_int(const int * xp, R_xlen_t N, int nThreads);
+
+// omp_diagnose
+int as_nThread(SEXP x);
   
 #endif
