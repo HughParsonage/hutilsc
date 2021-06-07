@@ -46,8 +46,11 @@ extern SEXP Cnchar(SEXP);
 extern SEXP count_sort_logi(SEXP);
 extern SEXP CpackSum(SEXP);
 extern SEXP Cpad0(SEXP, SEXP);
+extern SEXP Cpcg_hash(SEXP, SEXP, SEXP);
 extern SEXP Cpmax0(SEXP);
 extern SEXP Crange_nchar(SEXP);
+extern SEXP CShuffleRindex(SEXP);
+extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Csqrt2(SEXP);
 extern SEXP Csum_isna(SEXP, SEXP);
 extern SEXP Ctabula_RecordID(SEXP);
@@ -107,8 +110,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"count_sort_logi",                       (DL_FUNC) &count_sort_logi,                        1},
     {"CpackSum",                              (DL_FUNC) &CpackSum,                               1},
     {"Cpad0",                                 (DL_FUNC) &Cpad0,                                  2},
+    {"Cpcg_hash",                             (DL_FUNC) &Cpcg_hash,                              3},
     {"Cpmax0",                                (DL_FUNC) &Cpmax0,                                 1},
     {"Crange_nchar",                          (DL_FUNC) &Crange_nchar,                           1},
+    {"CShuffleRindex",                        (DL_FUNC) &CShuffleRindex,                         1},
+    {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                         6},
     {"Csqrt2",                                (DL_FUNC) &Csqrt2,                                 1},
     {"Csum_isna",                             (DL_FUNC) &Csum_isna,                              2},
     {"Ctabula_RecordID",                      (DL_FUNC) &Ctabula_RecordID,                       1},

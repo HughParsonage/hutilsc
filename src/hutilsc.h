@@ -62,6 +62,14 @@ int do_op2M(SEXP op);
 // character
 SEXP do_pad0(SEXP x, const int w);
 
+// error
+bool notInt(SEXP x);
+bool notDbl(SEXP x);
+int notEquiLgl2(SEXP x, SEXP y);
+int notEquiInt2(SEXP x, SEXP y);
+int notEquiInt3(SEXP x, SEXP y, SEXP z);
+int notEquiDbl3(SEXP x, SEXP y);
+
 float ssqrt_fast(float x);
 double euclid_dist_d(double d0, double d1);
 double euclid_dist(double x0, double y0, double x1, double y1);
@@ -79,6 +87,10 @@ void ftc2(int * U0, int * U1, const int * k1, int N);
 int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy);
 void Vminmax_i(int minmax[], const int * x, R_xlen_t N, int nthreads);
 SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);
+
+// pcg_hash
+unsigned int pcg_sample1(unsigned int max);
+unsigned int pcg_sample_halfmax();
 
 // sortedness
 bool sorted_int(const int * xp, R_xlen_t N, int nThreads);
