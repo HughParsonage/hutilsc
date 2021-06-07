@@ -60,7 +60,7 @@ simulate_racf <- function(STP,
         K1, K2,
         J1, J2,
         IMIN, IMAX,
-        2075820L - c(1:8), 
+        PatientZero, 
         28L,
         list(), 
         nThread)
@@ -128,6 +128,10 @@ TestSimulate <- function(nn = 1e3) {
   # STP[, "DatesInfected" := DatesInfected]
   # return(STP[])
   DatesInfected
+}
+
+CountRaws <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
+  .Call("CCountRaws", x, nThread, PACKAGE = packageName())
 }
 
 

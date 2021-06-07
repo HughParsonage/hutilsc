@@ -139,7 +139,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   
   
   int n_days = asInteger(nDays);
-  if (n_days <= 1 || n_days > 250) {
+  if (n_days <= 1 || n_days >= (SUSCEPTIBLE_DATE - 1)) {
     error("n_days = %d ; <= 1 || n_days > 250", n_days);
   }
   if (TYPEOF(PatientZero) != INTSXP) {
@@ -176,7 +176,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   bool malloc_failures[8] = {0};
   unsigned char * infection_dates = malloc(sizeof(char) * N * 8);
   
-  for (int thread = 0; thread < 1; ++thread) {
+  for (int thread = 0; thread < nThread; ++thread) {
     
     // Used to randomize order
     int * rindex = malloc(sizeof(int) * N);
@@ -292,3 +292,28 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   UNPROTECT(np);
   return ans;
 }
+
+SEXP CCountRaws(SEXP x, SEXP nthreads) {
+  if (TYPEOF(x) != RAWSXP) {
+    error("TYPEOF(x) != RAWSXP");
+  }
+  const unsigned char * xp = RAW(x);
+  R_xlen_t N = xlength(x);
+  unsigned int o[256] = {0};
+  int nThread = as_nThread(nthreads);
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) reduction(+ : o)
+#endif
+  for (R_xlen_t i = 0; i < N; ++i) {
+    unsigned int xi = (unsigned char)xp[i];
+    o[xi] += 1;
+  }
+  SEXP ans = PROTECT(allocVector(INTSXP, 256));
+  int * ansp = INTEGER(ans);
+  for (int i = 0; i < 256; ++i) {
+    ansp[i] = o[i];
+  }
+  UNPROTECT(1);
+  return ans;
+}
+

@@ -21,6 +21,7 @@ extern SEXP Cclassify_chars(SEXP, SEXP);
 extern SEXP Cclique1(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Ccollatz(SEXP);
 extern SEXP Ccommon_contacts(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP CCountRaws(SEXP, SEXP);
 extern SEXP CCountRecordID(SEXP);
 extern SEXP CDecode3202(SEXP);
 extern SEXP CdecodeRecordID(SEXP);
@@ -85,6 +86,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cclique1",                              (DL_FUNC) &Cclique1,                               4},
     {"Ccollatz",                              (DL_FUNC) &Ccollatz,                               1},
     {"Ccommon_contacts",                      (DL_FUNC) &Ccommon_contacts,                       6},
+    {"CCountRaws",                            (DL_FUNC) &CCountRaws,                             2},
     {"CCountRecordID",                        (DL_FUNC) &CCountRecordID,                         1},
     {"CDecode3202",                           (DL_FUNC) &CDecode3202,                            1},
     {"CdecodeRecordID",                       (DL_FUNC) &CdecodeRecordID,                        1},
