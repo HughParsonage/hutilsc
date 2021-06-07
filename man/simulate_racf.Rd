@@ -7,10 +7,12 @@
 \usage{
 simulate_racf(
   STP,
+  keyz = c("id", "racf_abm"),
   Epi = set_epipars(),
   PatientZeroGroup = NULL,
   PatientZero = sample(nrow(STP), size = 1),
-  n_days = 28L
+  n_days = 28L,
+  nThread = getOption("hutilsc.nThread", 1L)
 )
 
 set_epipars(

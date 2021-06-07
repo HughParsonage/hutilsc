@@ -1486,7 +1486,7 @@ SEXP Cdist_bw_edges(SEXP K1, SEXP K2, SEXP U) {
   }
   ftc2(U0, U1, k1, kN);
   
-  unsigned char bans[1024][1024] = {255};
+  unsigned char bans[1024][1024];
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
       bans[i][j] = (i == j) ? 0 : 255;
@@ -1586,7 +1586,7 @@ SEXP C_LayoutFruchtermanReingold1(SEXP UU, SEXP K1, SEXP K2, SEXP WW,
   const int * k2 = INTEGER(K2);
   const int * ww = INTEGER(WW);
   const double g = asReal(GG);
-  const double s = asReal(SS);
+  // const double s = asReal(SS);
   
   SEXP xx = PROTECT(allocVector(REALSXP, N));
   SEXP yy = PROTECT(allocVector(REALSXP, N));
@@ -1671,8 +1671,8 @@ SEXP C_LayoutFruchtermanReingold1(SEXP UU, SEXP K1, SEXP K2, SEXP WW,
         if (i == j) {
           continue;
         }
-        unsigned int wposij = wpos(i, j, N);
-        int wij = Wpos[wposij];
+        // unsigned int wposij = wpos(i, j, N);
+        // int wij = Wpos[wposij];
         double xpj = xp[j];
         double ypj = yp[j];
         double dx_ij = xpj - xpi;
@@ -1754,8 +1754,8 @@ SEXP qgraph_layout_Cpp(SEXP Pniter,
     error("WW not REAL or equilength with EEf."); // # nocov
   }
   
-  if (notEquiReal2(xxInit, yyInit)) {
-    error("notEquiReal2(xxInit, yyInit)");
+  if (notEquiDbl2(xxInit, yyInit)) {
+    error("notEquiDbl2(xxInit, yyInit)");
   }
   const double * xInit = REAL(xxInit);
   const double * yInit = REAL(yyInit);

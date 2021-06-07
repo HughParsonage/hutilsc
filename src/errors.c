@@ -74,7 +74,7 @@ int notEquiInt3(SEXP x, SEXP y, SEXP z) {
   return 0;
 }
 
-int notEquiReal2(SEXP x, SEXP y) {
+int notEquiDbl2(SEXP x, SEXP y) {
   if (TYPEOF(x) != REALSXP) {
     return ERR_XNOT_DBL;
   }
@@ -89,6 +89,16 @@ int notEquiReal2(SEXP x, SEXP y) {
   }
   return 0;
 }
+
+int notEquiDbl3(SEXP x, SEXP y, SEXP z) {
+  int xy = notEquiDbl2(x, y);
+  int xz = notEquiDbl2(x, z);
+  if (xy) return xy;
+  return xz;
+}
+
+
+
 
 
 #define ERR_EPI_NOT_LIST 1379605085;

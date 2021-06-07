@@ -68,7 +68,8 @@ bool notDbl(SEXP x);
 int notEquiLgl2(SEXP x, SEXP y);
 int notEquiInt2(SEXP x, SEXP y);
 int notEquiInt3(SEXP x, SEXP y, SEXP z);
-int notEquiDbl3(SEXP x, SEXP y);
+int notEquiDbl3(SEXP x, SEXP y, SEXP z);
+int notEquiDbl2(SEXP x, SEXP y);
 
 float ssqrt_fast(float x);
 double euclid_dist_d(double d0, double d1);
@@ -91,6 +92,7 @@ SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);
 // pcg_hash
 unsigned int pcg_sample1(unsigned int max);
 unsigned int pcg_sample_halfmax();
+unsigned int tpcg_sample_halfmax(int thread);
 
 // sortedness
 bool sorted_int(const int * xp, R_xlen_t N, int nThreads);

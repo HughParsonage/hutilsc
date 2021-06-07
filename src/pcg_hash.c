@@ -1,6 +1,7 @@
 #include "hutilsc.h"
 
 unsigned int rng_state;
+unsigned int rng_states[8];
 
 SEXP CResetRNG(SEXP x) {
   if (TYPEOF(x) == INTSXP && xlength(x) == 1) {
@@ -12,6 +13,13 @@ SEXP CResetRNG(SEXP x) {
 unsigned int rand_pcg() {
   unsigned int state = rng_state;
   rng_state = rng_state * 747796405u + 2891336453u;
+  unsigned int word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+  return (word >> 22u) ^ word;
+}
+
+unsigned int trand_pcg(int thread) {
+  unsigned int state = rng_states[thread];
+  rng_states[thread] = rng_states[thread] * 747796405u + 2891336453u;
   unsigned int word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
   return (word >> 22u) ^ word;
 }
@@ -28,6 +36,10 @@ unsigned int pcg_sample1(unsigned int max) {
 }
 unsigned int pcg_sample_halfmax() {
   unsigned int r = rand_pcg();
+  return r & 1073741823u;
+}
+unsigned int tpcg_sample_halfmax(int nthread) {
+  unsigned int r = trand_pcg(nthread);
   return r & 1073741823u;
 }
 

@@ -78,7 +78,10 @@ validate_fwalnume <- function(x, cipher, check_for_na = TRUE) {
   .Call("Cvalidate_encoding", x, cipher, PACKAGE = packageName())
 }
 
-
+Encode_fwalnum1 <- function(x) {
+  as.integer(Encode_fwalnum(x, cipher = rep(fwalnume(c(0:9, LETTERS, letters)),
+                                 nchar(x[1]))))
+}
 
 Encode_fwalnum <- function(x,
                            cipher = NULL,
