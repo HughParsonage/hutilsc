@@ -92,7 +92,7 @@ SEXP Cand_lgl_int(SEXP A, SEXP x2, SEXP op2, SEXP y2, SEXP nThread) {
   if (AN == 1 && xN == 1 && yN == 1) {
     const int a = asLogical(A);
     if (a == 0) {
-      return_false;
+      return ScalarLogical(0);
     }
   }
   if (xN == 1 && yN == 1) {
@@ -125,7 +125,7 @@ SEXP Cand_lgl_int(SEXP A, SEXP x2, SEXP op2, SEXP y2, SEXP nThread) {
     if (o) {
       return A;
     } else if (AN == 1) {
-      return_false;
+      return ScalarLogical(0);
     } else {
       return allocVector(LGLSXP, AN);
     }
@@ -1140,9 +1140,9 @@ SEXP test_scalar_xoy(SEXP x, SEXP o, SEXP y) {
   const int op = do_op2M(o);
   int ans = scalar_xoy(x, op, y);
   if (ans != TRUE) {
-    return_false;
+    return ScalarLogical(0);
   }
-  return_true;
+  return ScalarLogical(1);
 }
 
 SEXP Cand2s(SEXP x1, SEXP op1, SEXP y1,

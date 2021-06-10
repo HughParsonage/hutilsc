@@ -41,7 +41,7 @@ extern SEXP Cis_constant(SEXP, SEXP);
 extern SEXP Cis_sorted(SEXP, SEXP);
 extern SEXP Cis_valid_path(SEXP, SEXP, SEXP);
 extern SEXP Cminmax(SEXP, SEXP, SEXP);
-extern SEXP Cn_paths_svt0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP Cn_paths_svt0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cnames2int(SEXP, SEXP);
 extern SEXP Cnchar(SEXP);
 extern SEXP count_sort_logi(SEXP);
@@ -106,7 +106,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cis_sorted",                            (DL_FUNC) &Cis_sorted,                             2},
     {"Cis_valid_path",                        (DL_FUNC) &Cis_valid_path,                         3},
     {"Cminmax",                               (DL_FUNC) &Cminmax,                                3},
-    {"Cn_paths_svt0",                         (DL_FUNC) &Cn_paths_svt0,                         10},
+    {"Cn_paths_svt0",                         (DL_FUNC) &Cn_paths_svt0,                         11},
     {"Cnames2int",                            (DL_FUNC) &Cnames2int,                             2},
     {"Cnchar",                                (DL_FUNC) &Cnchar,                                 1},
     {"count_sort_logi",                       (DL_FUNC) &count_sort_logi,                        1},

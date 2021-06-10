@@ -60,20 +60,20 @@ bool is_constant_dbl(const double * x, int nThreads, const R_xlen_t N) {
 SEXP Cis_constant(SEXP x, SEXP nThread) {
   R_xlen_t N = xlength(x);
   if (N < 2) {
-    return_true;
+    return ScalarLogical(1);
   }
   int nThreads = asInteger(nThread);
   switch(TYPEOF(x)) {
   case NILSXP:
-    return_true;
+    return ScalarLogical(1);
     break;
   case LGLSXP:
   case INTSXP: {
     const int * xp = INTEGER(x);
     if (is_constant_int(xp, nThreads, N)) {
-      return_true;
+      return ScalarLogical(1);
     } else {
-      return_false;
+      return ScalarLogical(0);
     }
   }
     break;
@@ -81,9 +81,9 @@ SEXP Cis_constant(SEXP x, SEXP nThread) {
   case REALSXP: {
     const double * xp = REAL(x);
     if (is_constant_dbl(xp, nThreads, N)) {
-      return_true;
+      return ScalarLogical(1);
     } else {
-      return_false;
+      return ScalarLogical(0);
     }
   }
     break;
@@ -97,10 +97,10 @@ SEXP Cis_constant(SEXP x, SEXP nThread) {
       double Rxi = xpi.r;
       double Ixi = xpi.i;
       if (Rxi != R0 || Ixi != I0) {
-        return_false;
+        return ScalarLogical(0);
       }
     }
-    return_true;
+    return ScalarLogical(1);
   }
     break;
   case STRSXP: {
@@ -108,10 +108,10 @@ SEXP Cis_constant(SEXP x, SEXP nThread) {
     for (R_xlen_t i = 0; i < N; ++i) {
       const char * xi = CHAR(STRING_ELT(x, i));
       if (xi != x0) {
-        return_false;
+        return ScalarLogical(0);
       }
     }
-    return_true;
+    return ScalarLogical(1);
   }
   case RAWSXP: {
     
@@ -119,10 +119,10 @@ SEXP Cis_constant(SEXP x, SEXP nThread) {
     const Rbyte x0 = xp[0];
     for (R_xlen_t i = 1; i < N; ++i) {
       if (xp[i] != x0) {
-        return_false;
+        return ScalarLogical(0);
       }
     }
-    return_true;
+    return ScalarLogical(1);
   }
   }
   return R_NilValue;

@@ -176,6 +176,9 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   bool malloc_failures[8] = {0};
   unsigned char * infection_dates = malloc(sizeof(char) * N * 8);
   
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) schedule(static)
+#endif
   for (int thread = 0; thread < nThread; ++thread) {
     
     // Used to randomize order
@@ -183,7 +186,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     if (rindex == NULL) {
       free(rindex);
       malloc_failures[thread] = true;
-      break;
+      continue;
     }
     // Set to seq_along initially
     for (int i = 0; i < N; ++i) {
@@ -196,7 +199,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
       free(rindex);
       free(infection_date);
       malloc_failures[thread] = true;
-      break;
+      continue;
     }
     for (int i = 0; i < N; ++i) {
       infection_date[i] = SUSCEPTIBLE_DATE;

@@ -785,7 +785,13 @@ SEXP Cego_net(SEXP vv,
 }
 
 int n_paths_st(int d, int s, int t, int U0[], int U1[], const int k2[]) {
-  if (d == 0) {
+  // s >= t we mark as zero to avoid double counting
+  // s -- t and t -- s
+  // however, we need to double count k2[tc] -- t and t -- k2[tc]
+  // in the loop below
+  // since we may have s < t < v for v a linking node
+  
+  if (d == 0 || s >= t) {
     return 0;
   }
   
@@ -803,6 +809,65 @@ int n_paths_st(int d, int s, int t, int U0[], int U1[], const int k2[]) {
   }
   for (int tc = t_infra; tc <= t_supra; ++tc) {
     o += n_paths_st(d - 1, k2[tc], t, U0, U1, k2);
+    o += n_paths_st(d - 1, t, k2[tc], U0, U1, k2);
+  }
+  return o;
+}
+
+// weighted paths between s-t
+unsigned int w_paths_st(int d, int s, int t, int U0[], int U1[], const int k2[], const int w[], unsigned int ans[256][256]) {
+  if (d == 0) {
+    return 0;
+  }
+  if (ans[s][t] < INT_MAX) {
+    return ans[s][t];
+  }
+  if (ans[t][s] < INT_MAX) {
+    ans[s][t] = ans[t][s];
+    return ans[t][s];
+  }
+  int t_infra = U0[s - 1];
+  int t_supra = U1[s - 1];
+  if (t_supra < 0) {
+    return 0;
+  }
+  unsigned int o = 0;
+  if (d == 1) {
+    for (int tc = t_infra; tc <= t_supra; ++tc) {
+      o += w[tc] * (k2[tc] == t);
+    }
+    return o;
+  }
+  if (d == 2) {
+    // s . t
+    // number of paths is
+    // number of paths from s -> .
+    // times
+    // number of paths from . -> t
+    
+    for (int tc = t_infra; tc <= t_supra; ++tc) {
+      unsigned int ns_ = 0, n_t = 0;
+      ns_ += w_paths_st(1, s, k2[tc], U0, U1, k2, w, ans);
+      ns_ += w_paths_st(1, k2[tc], s, U0, U1, k2, w, ans);
+      n_t += w_paths_st(1, k2[tc], t, U0, U1, k2, w, ans);
+      n_t += w_paths_st(1, t, k2[tc], U0, U1, k2, w, ans);
+      o += ns_ * n_t;
+    }
+    if (o) {
+      ans[s][t] = o;
+      ans[t][s] = o;
+    }
+    return o;
+  }
+  for (int tc = t_infra; tc <= t_supra; ++tc) {
+    if (ans[k2[tc]][t] < INT_MAX) {
+      o += ans[k2[tc]][t];
+      continue;
+    }
+    o += w[tc] * w_paths_st(d - 1, k2[tc], t, U0, U1, k2, w, ans);
+  }
+  if (o) {
+    ans[s][t] = o;
   }
   return o;
 }
@@ -861,7 +926,9 @@ int n_paths_svt(int d, int s, int v, int t,
 }
 
 
-SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
+
+SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt,
+                   SEXP K1, SEXP K2, SEXP W,
                    SEXP U,
                    SEXP J1, SEXP J2, SEXP D,
                    SEXP nthreads) {
@@ -874,8 +941,15 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
       error("notEquiInt2(ss,, tt)");
     }
   }
-  if (notEquiInt2(K1, K2)) {
-    error("notEquiInt2(K2, K2)");
+  const bool W_null = TYPEOF(W) == NILSXP;
+  if (W_null) {
+    if (notEquiInt2(K1, K2)) {
+      error("notEquiInt2(K2, K2)");
+    }
+  } else {
+    if (notEquiInt3(K1, K2, W)) {
+      error("notEquiInt3(K2, K2, W)");
+    } 
   }
   if (notEquiInt3(J1, J2, D)) {
     error("notEquiInt3(J1, J2, D) (no: %d)", notEquiInt3(J1, J2, D));
@@ -892,11 +966,15 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
   if (xlength(U) >= INT_MAX) {
     error("xlength(U) >= INT_MAX");
   }
+  if (xlength(U) >= 255) {
+    error("xlength(U) >= 255.");
+  }
   int nThread = as_nThread(nthreads);
   int UN = length(U);
   
   const int * k1 = INTEGER(K1);
   const int * k2 = INTEGER(K2);
+  const int * ww = W_null ? INTEGER(K2) : INTEGER(W);
   int N = length(J1);
   const int * j1 = INTEGER(J1);
   const int * j2 = INTEGER(J2);
@@ -915,6 +993,7 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
       error("At i = %d, j1[i] = %d whereas UN = %d\n", i, j1i, UN);
     }
   }
+
   
   int * U0 = malloc(sizeof(int) * UN);
   if (U0 == NULL) {
@@ -933,19 +1012,38 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
     U1[i] = -1;
   }
   
+  
   ftc2(U0, U1, k1, nk);
+  
+  unsigned int wpaths[256][256];
+  unsigned char dists[256][256];
+  for (int i = 0; i < 256; ++i) {
+    for (int j = 0; j < 256; ++j) {
+      wpaths[i][j] = INT_MAX;
+      dists[i][j] = (i != j) * 255;
+    }
+  }
+  
   if (xlength(ss) == 1) {
-    const int s = asInteger(ss);
-    const int t = asInteger(tt);
-    
+    int s = asInteger(ss);
+    int t = asInteger(tt);
+    if (s > t) {
+      int tmp = s;
+      s = t;
+      t = tmp;
+    }
     int dsvt = 0;
-    for (int j = 0; j < N; ++j) {
+    // binary search for s in j1
+    unsigned int Rs[2] = {1, 0};
+    radix_find_range(s, j1, NULL, N, Rs);
+    
+    for (int j = Rs[0]; j <= Rs[1]; ++j) {
       if (dsvt) {
         break;
       }
       if (j1[j] == s) {
-        for (int jj = j; (jj < N && j1[jj] == s); ++j) {
-          if (j2[j] == t) {
+        for (int jj = j; (jj < N && j1[jj] == s); ++jj) {
+          if (j2[jj] == t) {
             dsvt = d[jj];
             break;
           }
@@ -953,80 +1051,115 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt, SEXP K1, SEXP K2,
       }
     }
     if (TYPEOF(vv) != INTSXP || xlength(vv) != 1) {
-      int o = n_paths_st(dsvt, s, t, U0, U1, k2);
+      int o = W_null ? n_paths_st(dsvt, s, t, U0, U1, k2) : w_paths_st(dsvt, s, t, U0, U1, k2, ww, wpaths);
       free(U0);
       free(U1);
       return ScalarInteger(o);
     }
     const int v = asInteger(vv);
-    int o = (n_paths_svt(dsvt, s, v, t, U0, U1, k2));
+    unsigned int osv = W_null ? n_paths_st(dsvt, s, v, U0, U1, k2) : w_paths_st(dsvt, s, v, U0, U1, k2, ww, wpaths);
+    unsigned int ovt = W_null ? n_paths_st(dsvt, v, t, U0, U1, k2) : w_paths_st(dsvt, v, t, U0, U1, k2, ww, wpaths);
+    unsigned int o = 0;
+    if (W_null) {
+      o = (int)(osv + ovt);
+    } else {
+      if (__builtin_umul_overflow(osv, ovt, &o)) {
+        return(ScalarInteger(NA_INTEGER));
+      }
+    }
     free(U0);
     free(U1);
     return ScalarInteger(o);
   }
   
-  R_xlen_t n_dist = xlength(D);
-  int * S0 = malloc(sizeof(int) * n_dist);
-  if (S0 == NULL) {
-    free(U0);
-    free(U1);
-    free(S0);
-    error("Unable to allocate S0");
-  }
-  int * S1 = malloc(sizeof(int) * n_dist);
-  if (S1 == NULL) {
-    free(U0);
-    free(U1);
-    free(S0);
-    free(S1);
-    error("Unable to allocate S1");
-  }
-  for (int i = 0; i < N; ++i) {
-    S0[i] = 0;
-    S1[i] = -1;
-  }
-  ftc2(S0, S1, j1, n_dist);
+  const int * sp = INTEGER(ss);
+  const int * tp = INTEGER(tt);
   
   R_xlen_t M = xlength(ss);
-  if (xlength(vv) != M) {
-    error("xlength(vv) != M"); 
-  }
-  
-  const int * sp = INTEGER(ss);
-  const int * vp = INTEGER(vv);
-  const int * tp = INTEGER(tt);
   SEXP ans = PROTECT(allocVector(INTSXP, M));
   int * restrict ansp = INTEGER(ans);
   int miss = 0;
-#if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(min : miss)
-#endif
-  for (R_xlen_t i = 0; i < M; ++i) {
-    int s = sp[i];
-    int v = vp[i];
-    int t = tp[i];
-    int di = 0;
-    int sdi = S0[s - 1];
-    int sds = S1[s - 1];
-    if (sdi < 0) {
-      if (miss == 0) {
-        miss = i;
+  
+  
+  for (int di = 0; di < N; ++di) {
+    int j1i = j1[di] - 1;
+    int j2i = j2[di] - 1;
+    dists[j1i][j2i] = (unsigned char)d[di];
+  }
+  
+  if (TYPEOF(vv) == NILSXP) {
+    // all paths
+    for (R_xlen_t i = 0; i < M; ++i) {
+      int s = sp[i];
+      int t = tp[i];
+      int di = dists[s - 1][t - 1];
+      if (di > 8) {
+        ansp[i] = NA_INTEGER;
+        continue;
       }
-      ansp[i] = NA_INTEGER;
-      continue;
+      if (s > t) {
+        int tmp = s;
+        s = t;
+        t = tmp;
+      }
+      ansp[i] = W_null ? n_paths_st(di, s, t, U0, U1, k2) : w_paths_st(di, s, t, U0, U1, k2, ww, wpaths);
     }
-    for (int id = sdi; id <= sds; ++id) {
-      if (j2[id] == t) {
-        di = d[id];
-        break;
+  } else {
+    // n_paths s -- t including v
+    
+    if (xlength(vv) != M) {
+      error("xlength(vv) != M"); 
+    }
+    
+    const int * vp = INTEGER(vv);
+    int miss = 0;
+    if (!W_null) {
+      for (int i = 0; i < M; ++i) {
+        ansp[i] = NA_INTEGER;
+        int spi = sp[i];
+        int vpi = sp[i];
+        int tpi = vp[i];
+        unsigned char d_si_vi = dists[spi][vpi];
+        if (d_si_vi > 128) {
+          continue;
+        }
+        unsigned char d_vi_ti = dists[vpi][tpi];
+        if (d_vi_ti > 128) {
+          continue;
+        }
+        unsigned int w_si_vi = w_paths_st(d_si_vi, spi, vpi, U0, U1, k2, ww, wpaths);
+        unsigned int w_vi_ti = w_paths_st(d_vi_ti, vpi, tpi, U0, U1, k2, ww, wpaths);
+        unsigned int anspi;
+        if (__builtin_umul_overflow(w_si_vi, w_vi_ti, &anspi)) {
+          continue;
+        }
+        ansp[i] = anspi;
+      }
+    } else {
+      for (R_xlen_t i = 0; i < M; ++i) {
+        ansp[i] = NA_INTEGER;
+        int s = sp[i];
+        int v = vp[i];
+        int t = tp[i];
+        unsigned char di = dists[s - 1][t - 1];
+        if (di > 16) {
+          continue;
+        }
+        unsigned int d_si_vi = dists[s - 1][v - 1];
+        unsigned int d_vi_ti = dists[v - 1][t - 1];
+        // if the total minimum distance from s -> v - t
+        // is the greater than s -> t then there must be zero 
+        // shortest paths through v
+        if ((d_si_vi + d_vi_ti) > (unsigned int)di) {
+          ansp[i] = 0;
+          continue;
+        }
+        ansp[i] = n_paths_svt(di, s, v, t, U0, U1, k2);
       }
     }
-    ansp[i] = n_paths_svt(di, s, v, t, U0, U1, k2);
   }
   free(U0);
   free(U1);
-  free(S0);
-  free(S1);
   if (miss) {
     warning("Missing distance at position %d", (miss + 1));
   }
@@ -1885,6 +2018,8 @@ SEXP qgraph_layout_Cpp(SEXP Pniter,
   UNPROTECT(np);
   return ans;
 }
+
+
 
 
 

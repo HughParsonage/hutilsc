@@ -32,6 +32,7 @@ test_find_first <- function(x, k1, k2, u = NULL) {
   .Call("Ctest_find_first", x, k1, u, PACKAGE = packageName())
 }
 
+
 # bsearch <- function(a, x) {
 #   .Call("do_bsearch", a, x, PACKAGE = packageName())
 # }

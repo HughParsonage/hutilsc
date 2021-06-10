@@ -94,7 +94,8 @@ len_four_paths <- function(Edges, set_key = TRUE) {
 #' @name n_paths
 #' @title Number of paths between vertices
 #' @param s \code{int} A vertex in Edges. The origin of the paths.
-#' @param v \code{int} Optionally a vertex between \code{s} and \code{t}.
+#' @param v \code{int} Optionally a vertex between \code{s} and \code{t}. If \code{NULL}, 
+#' \code{n_paths_svt} returns the number of shortest paths between \code{s} and \code{t}.
 #' @param t \code{int} A vertex in Edges. The destination.
 #' @param Edges A \code{data.table} designating the edgelist.
 #' 
@@ -322,7 +323,11 @@ double_edgelist <- function(Edges) {
   k2 = key(Edges)[2]
   out <- data.table(orig = c(Edges[[k1]], Edges[[k2]]),
                     dest = c(Edges[[k2]], Edges[[k1]]))
-  setnames(out, c(k1, k2))
+  if (length(Edges) >= 3L) {
+    nom3 <- names(Edges)[3]
+    out[, (nom3) := rep(.subset2(Edges, 3L), 2L)]
+  }
+  setnames(out, c("orig", "dest"), c(k1, k2))
   setkeyv(out, c(k1, k2))[]
 }
 is_symmetric <- function(X) {
@@ -364,13 +369,18 @@ melt_distances <- function(Edges, Distances = NULL) {
 
 #' @rdname n_paths
 #' @export
-n_paths_svt0 <- function(s, v, t, Edges, MoltenDistances = NULL, double_edges = TRUE, nThread = getOption("hutilsc.nThread", 1L)) {
-  
+n_paths_svt0 <- function(s, v = NULL, t, Edges,
+                         weight_col = 3L,
+                         MoltenDistances = NULL,
+                         double_edges = TRUE,
+                         nThread = getOption("hutilsc.nThread", 1L)) {
+  stopifnot(is.data.table(Edges), haskey(Edges), 
+            identical(key(Edges)[1:2], names(Edges)[1:2]))
   if (is.null(MoltenDistances)) {
     MoltenDistances <- melt_distances(Edges)
   }
   if (isTRUE(double_edges)) {
-    Edges <- unique(double_edgelist(Edges))
+    Edges <- setkeyv(unique(double_edgelist(Edges)), key(Edges))
   }
   j1 <- .subset2(MoltenDistances, 1L)
   j2 <- .subset2(MoltenDistances, 2L)
@@ -378,16 +388,41 @@ n_paths_svt0 <- function(s, v, t, Edges, MoltenDistances = NULL, double_edges = 
   stopifnot(length(key(Edges)) >= 2)
   k1 <- .subset2(Edges, key(Edges)[1])
   k2 <- .subset2(Edges, key(Edges)[2])
+  W <- NULL
+  if (is.numeric(weight_col) && isTRUE(weight_col <= length(Edges))) {
+    W <- .subset2(Edges, weight_col)  
+  }
+  if (is.character(weight_col)) {
+    W <- .subset2(Edges, weight_col)
+  }
+  
   k1 <- ensure_integer(k1)
   k2 <- ensure_integer(k2)
   u <- unique(c(k1, k2, j1, j2))
   u <- u[order(u)]
-  K1 <- match(k1, u)
-  K2 <- match(k2, u)
-  J1 <- match(j1, u)
-  J2 <- match(j2, u)
+  if (length(u) > 255 && is.null(v)) {
+    stop("The number of nodes, length(u) = ", length(u), " > 255, which is not permitted.")
+  }
+  
+  cc <- identity
+  cc(K1 <- match(k1, u))
+  cc(K2 <- match(k2, u))
+  cc(J1 <- match(j1, u))
+  cc(J2 <- match(j2, u))
   uz <- match(u, u)
-  .Call("Cn_paths_svt0", s, v, t, K1, K2, uz, J1, J2, D, nThread, PACKAGE = packageName()) #%/% (1L + double_edges)
+  
+  
+  
+  if (is.null(v)) {
+    .Call("Cn_paths_svt0", s, v, t, K1, K2, W, uz, J1, J2, D, nThread, PACKAGE = packageName())
+  } else {
+    .Call("Cn_paths_svt0",
+          s, v, t, 
+          K1, K2, W,
+          uz,
+          J1, J2, D, nThread, 
+          PACKAGE = packageName())
+  }
 }
 
 n_paths_igraph <- function(s, v = NULL, t, Edges) {
@@ -395,7 +430,9 @@ n_paths_igraph <- function(s, v = NULL, t, Edges) {
     stop("igraph required.")
   }
   Graph <- igraph::graph_from_data_frame(Edges, directed = FALSE)
-  Paths <- igraph::all_shortest_paths(from = s, to = t, graph = Graph)
+  Paths <- igraph::all_shortest_paths(from = as.character(s), 
+                                      to = as.character(t),
+                                      graph = Graph)
   
   if (is.null(v)) {
     return(length(Paths$res))
@@ -403,6 +440,9 @@ n_paths_igraph <- function(s, v = NULL, t, Edges) {
   o <- 0L
   if (!length(Res <- Paths$res)) {
     return(0L)
+  }
+  if (length(Res) == 1) {
+    return(as.integer(as.character(v) %in% names(Paths$res)))
   }
   DT_ <- as.data.table(t(sapply(Res, as.matrix)))
   DTU <- unique(DT_)
@@ -538,6 +578,15 @@ myDists <- function() {
   Edges <- double_edgelist(Edges)
   # print(dist_bw_edges(Edges))
   dist_bw_edges(Edges)[, .N, keyby = .(dist)]
+}
+
+zzz <- function() {
+  hh_ss()
+  suppressMessages(libraries())
+  Edges <- fst::read_fst("~/nComm_by_RACF_Dec_geq10.fst", as.data = TRUE)
+  CJ1 <- CJ(1:41, 2:42)
+  CJ1[, s_t := n_paths_svt0(V1, NULL, V2, Edges = Edges)][]
+  
 }
 
 

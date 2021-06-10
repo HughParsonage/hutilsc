@@ -43,20 +43,6 @@ char digit2char(int d);
 int n_digits0(unsigned int x);
 
 
-#define return_false do {                                      \
-            SEXP ans = PROTECT(allocVector(LGLSXP, 1));        \
-            LOGICAL(ans)[0] = FALSE;                           \
-            UNPROTECT(1);                                      \
-            return ans;                                        \
-} while (0)
-
-#define return_true do {                                      \
-SEXP ans = PROTECT(allocVector(LGLSXP, 1));                    \
-LOGICAL(ans)[0] = TRUE;                                       \
-UNPROTECT(1);                                                  \
-return ans;                                                    \
-} while (0)                                                    \
-
 int do_op2M(SEXP op);
 
 // character
@@ -93,6 +79,9 @@ SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);
 unsigned int pcg_sample1(unsigned int max);
 unsigned int pcg_sample_halfmax();
 unsigned int tpcg_sample_halfmax(int thread);
+
+// ScalarLength
+SEXP ScalarLength(R_xlen_t o);
 
 // sortedness
 bool sorted_int(const int * xp, R_xlen_t N, int nThreads);

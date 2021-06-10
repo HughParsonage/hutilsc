@@ -13,9 +13,10 @@ n_paths_between_given_dist(Edges, MoltenDistances = NULL, return_dt = TRUE)
 
 n_paths_svt0(
   s,
-  v,
+  v = NULL,
   t,
   Edges,
+  weight_col = 3L,
   MoltenDistances = NULL,
   double_edges = TRUE,
   nThread = getOption("hutilsc.nThread", 1L)
@@ -24,7 +25,8 @@ n_paths_svt0(
 \arguments{
 \item{s}{\code{int} A vertex in Edges. The origin of the paths.}
 
-\item{v}{\code{int} Optionally a vertex between \code{s} and \code{t}.}
+\item{v}{\code{int} Optionally a vertex between \code{s} and \code{t}. If \code{NULL},
+\code{n_paths_svt} returns the number of shortest paths between \code{s} and \code{t}.}
 
 \item{t}{\code{int} A vertex in Edges. The destination.}
 

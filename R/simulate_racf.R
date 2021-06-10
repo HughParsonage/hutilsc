@@ -134,4 +134,3 @@ CountRaws <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
   .Call("CCountRaws", x, nThread, PACKAGE = packageName())
 }
 
-

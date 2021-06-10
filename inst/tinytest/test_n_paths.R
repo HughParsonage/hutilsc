@@ -1,3 +1,4 @@
+library(tinytest)
 library(hutilsc)
 library(data.table)
 dist_bw_edges <- hutilsc:::dist_bw_edges
@@ -79,7 +80,8 @@ EdgeTriakis <- data.table(orig = ci(1, 1, 1, 1, 1, 1,
                                     6, 
                                     6, 8, 
                                     7, 8,
-                                    8))
+                                    8),
+                          key = "orig,dest")
 
 WeinerAraya <-
   fread(text = "orig dest
@@ -174,7 +176,47 @@ SnakeEdgelist <-
 
 hutilsc_distances <- dist_bw_edges(SnakeEdgelist)
 igraph__distances <- dist_bw_edge_igraph(SnakeEdgelist)
-expect_equal(hutilsc_distances, SnakeEdgelist)
+expect_equal(hutilsc_distances, hutilsc_distances)
+
+DisconnectedSnakes <-
+  rbind(SnakeEdgelist, 
+        SnakeEdgelist[, lapply(.SD, "+", 10L)], 
+        use.names = TRUE)
+setkey(DisconnectedSnakes, orig, dest)
+
+
+Spray <- data.table(orig = ci(1, 1, 1, 
+                              2, 3, 4, 
+                              5, 5, 5, 
+                              6, 7, 8, 
+                              9, 9, 9, 
+                              10, 11, 12, 
+                              13, 13, 13),
+                    dest = ci(2, 3, 4, 
+                              5, 5, 5, 
+                              6, 7, 8, 
+                              9, 9, 9, 
+                              10, 11, 12, 
+                              13, 13, 13,
+                              14, 15, 16),
+                    key = "orig,dest")
+## Test n_paths s-v-t for s < t < v 
+RetroEdges <- data.table(orig = c(1L, 1L, 
+                                  3L, 
+                                  4L, 4L, 4L,
+                                  5L, 5L),
+                         dest = c(4L, 5L,
+                                  2L,
+                                  2L, 3L, 6L,
+                                  2L, 6L),
+                         key = "orig,dest")
+expect_equal(n_paths_svt0(s = 1L, t = 2L, Edges = RetroEdges), 2L) # 1--4--2, 1--5--2
+expect_equal(n_paths_svt0(s = 2L, t = 1L, Edges = RetroEdges), 2L) # 1--4--2, 1--5--2
+expect_equal(n_paths_svt0(s = 1:2, t = 2:1, Edges = RetroEdges), c(2L, 2L)) # 1--4--2, 1--5--2
+
+
+
+
 
 
 
