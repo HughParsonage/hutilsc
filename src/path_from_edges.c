@@ -1,4 +1,6 @@
 #include "hutilsc.h"
+#include <time.h>
+
 
 struct Node {
   int key_value;
@@ -993,7 +995,7 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt,
       error("At i = %d, j1[i] = %d whereas UN = %d\n", i, j1i, UN);
     }
   }
-
+  
   
   int * U0 = malloc(sizeof(int) * UN);
   if (U0 == NULL) {
@@ -1545,21 +1547,18 @@ SEXP CBetweeness(SEXP K1, SEXP K2, SEXP U, SEXP J1, SEXP J2, SEXP D, SEXP maxPat
   return R_NilValue;
 }
 
-static const unsigned int MAX_BFS_DEPTH = 64u;
+static const unsigned int MAX_BFS_DEPTH = 16u;
 
 
-static void bfs(unsigned int depth, unsigned char ans[1024][1024], int orig0, int dest0, int U0[], int U1[], const int k1[], const int k2[], int N) {
+static void bfs(unsigned int depth, unsigned char ans[512][512], int orig0, int dest0, int U0[], int U1[], const int k1[], const int k2[], int N, unsigned int max_depth) {
+  if (ans[orig0][dest0] != 255) {
+    return;
+  }
+  
   // @param depth: current depth
-  if (depth >= MAX_BFS_DEPTH) {
-    ans[orig0][dest0] = 255;
-    return;
-  }
-  if (dest0 == orig0) {
-    ans[orig0][dest0] = 0;
-    return;
-  }
-  if (ans[dest0][orig0] != 255) {
-    ans[orig0][dest0] = ans[dest0][orig0];
+  if (depth >= max_depth) {
+    ans[orig0][dest0] = 254;
+    ans[dest0][orig0] = 254;
     return;
   }
   
@@ -1585,8 +1584,11 @@ static void bfs(unsigned int depth, unsigned char ans[1024][1024], int orig0, in
       ans[dest0][orig0] = dist_k2kk_dest0 + 1;
       return;
     }
-    bfs(depth + 1u, ans, k2kk, dest0, U0, U1, k1, k2, N);
-    bfs(depth + 1u, ans, dest0, k2kk, U0, U1, k1, k2, N);
+  }
+  for (int kk = k1i; kk <= k2i; ++kk) {
+    int k2kk = k2[kk] - 1;
+    bfs(depth + 1u, ans, k2kk, dest0, U0, U1, k1, k2, N, max_depth);
+    bfs(depth + 1u, ans, dest0, k2kk, U0, U1, k1, k2, N, max_depth);
   }
 }
 
@@ -1619,7 +1621,7 @@ SEXP Cdist_bw_edges(SEXP K1, SEXP K2, SEXP U) {
   }
   ftc2(U0, U1, k1, kN);
   
-  unsigned char bans[1024][1024];
+  unsigned char bans[512][512];
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
       bans[i][j] = (i == j) ? 0 : 255;
@@ -1665,14 +1667,17 @@ SEXP Cdist_bw_edges(SEXP K1, SEXP K2, SEXP U) {
       } 
     }
   }
+  
   // int loops[1] = {1e5};
   
-  for (int i = 0; i < N; ++i) {
+  for (int dep = 4; dep <= 16; dep += 2) {
     for (int j = 0; j < N; ++j) {
-      if (i != j) {
-        bfs(1u, bans, i, j, U0, U1, k1, k2, N);
-      }
-    } 
+      for (int i = 0; i < N; ++i) {
+        if (i < j && bans[i][j] == 255) {
+          bfs(1u, bans, i, j, U0, U1, k1, k2, N, dep);
+        }
+      } 
+    }
   }
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
