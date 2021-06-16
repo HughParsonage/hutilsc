@@ -3,6 +3,8 @@
 #' @import data.table
 #' @importFrom checkmate vname
 #' @importFrom fastmatch fmatch
+#' @importFrom fst read_fst
+#' @importFrom igraph graph_from_data_frame
 #' @importFrom hutils coalesce
 #' @importFrom hutils if_else
 #' @importFrom hutils set_cols_first

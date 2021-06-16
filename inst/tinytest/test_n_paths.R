@@ -215,7 +215,24 @@ expect_equal(n_paths_svt0(s = 2L, t = 1L, Edges = RetroEdges), 2L) # 1--4--2, 1-
 expect_equal(n_paths_svt0(s = 1:2, t = 2:1, Edges = RetroEdges), c(2L, 2L)) # 1--4--2, 1--5--2
 
 
-
+DiverseDistance <-
+  data.table(x = ci(1,
+                    2, 2,
+                    3, 3,
+                    4,
+                    5, 5, 5,
+                    NULL,
+                    7, 
+                    8),
+             y = ci(2, 
+                    3, 4,
+                    4, 5, 
+                    6,
+                    4, 6, 7,
+                    NULL,
+                    8, 
+                    4),
+             key = "x,y")
 
 
 

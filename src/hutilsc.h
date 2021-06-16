@@ -14,6 +14,15 @@
 #include <omp.h>
 #endif
 
+#if defined _OPENMP && _OPENMP >= 201511
+#define pragma_omp _Pragma("omp parallel for num_threads(nThread)")
+#else
+#define pragma_omp 
+#endif
+
+
+
+
 #define DEBUG 0
 
 // int op = !(eq || gt || lt) ? 0 : (eq ? (gt ? 2 : (lt ? 3 : 1)) : (gt ? 4 : 5));

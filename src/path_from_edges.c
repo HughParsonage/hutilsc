@@ -468,8 +468,6 @@ SEXP Cclique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
       ansp[p2i] = color;
     }
   }
-  
-  
   UNPROTECT(1);
   return ans;
 }
@@ -1314,238 +1312,6 @@ SEXP C_nPathsBetween_GivenDist(SEXP K1, SEXP K2, SEXP U, SEXP J1, SEXP J2, SEXP 
 }
 
 
-SEXP CBetweenessLen4(SEXP K1, SEXP K2, SEXP U, SEXP V1, SEXP V2, SEXP V3, SEXP V4) {
-  if (TYPEOF(K1) != INTSXP ||
-      TYPEOF(K1) != INTSXP ||
-      TYPEOF(U)  != INTSXP ||
-      TYPEOF(V1) != INTSXP ||
-      TYPEOF(V2) != INTSXP ||
-      TYPEOF(V3) != INTSXP ||
-      TYPEOF(V4) != INTSXP) {
-    error("Wrong type passed.");
-  }
-  if (xlength(K1) >= INT_MAX ||
-      xlength(K1) >= INT_MAX ||
-      xlength(U)  >= INT_MAX ||
-      xlength(V1) >= INT_MAX ||
-      xlength(V2) >= INT_MAX ||
-      xlength(V3) >= INT_MAX ||
-      xlength(V4) >= INT_MAX) {
-    error("Lengths >= INT_MAX");
-  }
-  int N = length(K1);
-  int UN = length(U);
-  int N4 = length(V1);
-  if (length(K1) != N ||
-      length(K1) != N ||
-      length(U)  != UN ||
-      length(V1) != N4 ||
-      length(V2) != N4 ||
-      length(V3) != N4 ||
-      length(V4) != N4) {
-    error("Lengths mismatch");
-  }
-  const int * k1 = INTEGER(K1);
-  // const int * k2 = INTEGER(K2);
-  // const int * u = INTEGER(U);
-  const int * v1 = INTEGER(V1);
-  const int * v2 = INTEGER(V2);
-  const int * v3 = INTEGER(V3);
-  const int * v4 = INTEGER(V4);
-  
-  int * U0 = malloc(sizeof(int) * UN);
-  if (U0 == NULL) {
-    free(U0); // # nocov
-    error("Unable to allocate U0."); // # nocov
-  }
-  int * U1 = malloc(sizeof(int) * UN);
-  if (U1 == NULL) {
-    free(U0); // # nocov
-    free(U1); // # nocov 
-    error("Unable to allocate U1"); // # nocov
-  }
-  
-  for (int i = 0; i < UN; ++i) {
-    U0[i] = 0;
-    U1[i] = -1;
-  }
-  
-  ftc2(U0, U1, k1, N);
-  
-  // Calculate number of len4 paths from a to b immediately
-  
-  
-  
-  
-  SEXP ans = PROTECT(allocVector(REALSXP, UN));
-  double * ansp = REAL(ans);
-  for (int v = 0; v < UN; ++v) {
-    ansp[v] = 0;
-  }
-  
-  for (int v = 0; v < UN; ++v) {
-    for (int s = 0; s < v; ++s) {
-      // int s_infra = U0[s];
-      int s_supra = U1[s];
-      if (s_supra < 0) {
-        continue;
-      }
-      // position of s (if any in l4)
-      int sv_infra = 0;
-      while (sv_infra < N4 && v1[sv_infra] != s) {
-        ++sv_infra;
-      }
-      // s not present in V1
-      if (sv_infra >= N4) {
-        continue;
-      }
-      int sv_supra = sv_infra;
-      while (sv_supra < N4 && v1[sv_supra] == s) {
-        ++sv_supra;
-      }
-      
-      for (int t = v + 1; t < UN; ++t) {
-        int n_len_4_paths_s_t = 0;
-        int n_len_4_paths_svt = 0;
-        for (int V4_i = sv_infra; V4_i < sv_supra; ++V4_i) {
-          n_len_4_paths_s_t += v4[V4_i] == t;
-          n_len_4_paths_svt += v2[V4_i] == v;
-          n_len_4_paths_svt += v3[V4_i] == v;
-        }
-        if (n_len_4_paths_s_t) {
-          double sigma_1 = n_len_4_paths_svt;
-          double sigma_2 = n_len_4_paths_s_t;
-          ansp[v] += sigma_1/sigma_2;
-        }
-      }
-    }
-  }
-  UNPROTECT(1);
-  return ans;
-  
-}
-
-SEXP CBetweeness(SEXP K1, SEXP K2, SEXP U, SEXP J1, SEXP J2, SEXP D, SEXP maxPath) {
-  //' @param K1,K2, equilength vectors indicating an edge exists between each K1[i]--K2[i]
-  //' and K1[i] < K2[i]
-  //' @param U Union of all nodes in order
-  //' @param J1,J2,D equilength vectors indicating D[i] is the distance from J1[i] to J2[i];
-  //' @param maxPath (int) the maximum distance a path that may be considered
-  if (TYPEOF(K1) != INTSXP ||
-      TYPEOF(K1) != INTSXP ||
-      TYPEOF(U)  != INTSXP ||
-      TYPEOF(J1) != INTSXP ||
-      TYPEOF(J1) != INTSXP ||
-      TYPEOF(D)  != INTSXP) {
-    error("Wrong types passed to CBetweenenss"); // # nocov
-  }
-  R_xlen_t N = xlength(K1);
-  if (xlength(K2) != N) {
-    error("xlength(K2) != N"); // # nocov
-  }
-  if (xlength(U) >= INT_MAX) {
-    error("xlength(U) >= INT_MAX"); // # nocov
-  }
-  if (xlength(maxPath) != 1 || 
-      TYPEOF(maxPath) != INTSXP) {
-    error("maxPath not an int."); // # nocov
-  }
-  if (xlength(J1) >= INT_MAX) {
-    error("xlength(J1) >= INT_MAX");
-  }
-  int NJ = xlength(J1);
-  if (NJ != xlength(J2) || 
-      NJ != xlength(D)) {
-    error("J1,J2,D mismatching lengths.");
-  }
-  
-  int UN = length(U);
-  const int * k1 = INTEGER(K1);
-  const int * k2 = INTEGER(K2);
-  const int * u = INTEGER(U);
-  const int * j1 = INTEGER(J1);
-  const int * j2 = INTEGER(J2);
-  const int * d = INTEGER(D);
-  const int max_len = asInteger(maxPath);
-  if (max_len < 2) {
-    error("max_len < 2");
-  }
-  
-  
-  
-  int * U0 = malloc(sizeof(int) * UN);
-  if (U0 == NULL) {
-    free(U0); // # nocov
-    error("Unable to allocate U0."); // # nocov
-  }
-  int * U1 = malloc(sizeof(int) * UN);
-  if (U1 == NULL) {
-    free(U0); // # nocov
-    free(U1); // # nocov 
-    error("Unable to allocate U1"); // # nocov
-  }
-  
-  for (int i = 0; i < UN; ++i) {
-    U0[i] = 0;
-    U1[i] = -1;
-  }
-  
-  ftc2(U0, U1, k1, N);
-  
-  
-  SEXP ans = PROTECT(allocVector(REALSXP, UN));
-  double * ansp = REAL(ans);
-  // there must be at least three vertices
-  // s < v < t
-  //
-  for (int j = 0; j < NJ; ++j) {
-    int dj = d[j];
-    if (dj >= 3 && dj <= max_len) {
-      int s = j1[j];
-      int t = j2[j];
-      int us = u[s - 1];
-      int us_infra = U0[us - 1];
-      int us_supra = U1[us - 1];
-      if (us_supra < 0) {
-        continue;
-      }
-      
-      switch(dj) {
-      case 3: {
-        // s v t
-        for (int k = us_infra; k <= us_supra; ++k) {
-        int v = k2[k];
-        int v_infra = U0[v - 1];
-        int v_supra = U1[v - 1];
-        for (int jj = v_infra; jj < v_supra; ++jj) {
-          ansp[v - 1] += k2[jj] == t;
-        }
-      }
-      }
-        break;
-      case 4: {
-        // s v _ t
-        for (int kk = us_infra; kk <= us_supra; ++kk) {
-        int k2kk = k2[kk];
-        int k2kk_infra = U0[k2kk - 1];
-        int k2kk_supra = U1[k2kk - 1];
-        for (int kk3 = k2kk_infra; kk3 < k2kk_supra; ++kk3) {
-          ansp[k2kk - 1] += k2[kk3] == t;
-        }
-      }
-        
-      } 
-        
-        // s _ v t
-        
-      }
-    }
-  }
-  free(U0);
-  free(U1);
-  
-  return R_NilValue;
-}
 
 static const unsigned int MAX_BFS_DEPTH = 16u;
 
@@ -1556,7 +1322,7 @@ static void bfs(unsigned int depth, unsigned char ans[512][512], int orig0, int 
   }
   
   // @param depth: current depth
-  if (depth >= max_depth) {
+  if (depth >= MAX_BFS_DEPTH) {
     ans[orig0][dest0] = 254;
     ans[dest0][orig0] = 254;
     return;
@@ -1670,7 +1436,7 @@ SEXP Cdist_bw_edges(SEXP K1, SEXP K2, SEXP U) {
   
   // int loops[1] = {1e5};
   
-  for (int dep = 4; dep <= 16; dep += 2) {
+  for (int dep = 0; dep <= 16; dep += 1) {
     for (int j = 0; j < N; ++j) {
       for (int i = 0; i < N; ++i) {
         if (i < j && bans[i][j] == 255) {
@@ -1843,184 +1609,168 @@ SEXP C_LayoutFruchtermanReingold1(SEXP UU, SEXP K1, SEXP K2, SEXP WW,
   return ans;
 }
 
-SEXP qgraph_layout_Cpp(SEXP Pniter,
-                       SEXP Pvcount,
-                       SEXP Pecount,
-                       SEXP Maxdelta,
-                       SEXP Parea,
-                       SEXP Pcoolexp,
-                       SEXP Prepulserad,
-                       SEXP EEf,
-                       SEXP EEt, 
-                       SEXP WW,
-                       SEXP xxInit,
-                       SEXP yyInit,
-                       SEXP Cxx,
-                       SEXP Cyy) {
-  /*
-   Calculate a two-dimensional Fruchterman-Reingold layout for (symmetrized) 
-   edgelist matrix d.  Positions (stored in (x,y)) should be initialized
-   prior to calling this routine.
-   */
-  if (notInt(Pniter) || notInt(Pvcount) || notInt(Pecount)) {
-    error("Expected int. (%d)", notInt(Pniter) + 2 * notInt(Pvcount) + 4 * notInt(Pecount)); // # nocov
-  }
-  int pniter = asInteger(Pniter);
-  int pvcount = asInteger(Pvcount);
-  int pecount = asInteger(Pecount);
-  int n = pvcount;
-  
-  if (TYPEOF(Maxdelta) != REALSXP || xlength(Maxdelta) != n) {
-    error("Maxdelta not REAL or xlength(Maxdelta) != n"); // # nocov
-  }
-  const double * maxdelta = REAL(Maxdelta);
-  if (notDbl(Parea) || notDbl(Pcoolexp) || notDbl(Prepulserad)) {
-    error("Expected dbl."); // # nocov
-  }
-  double parea = asReal(Parea);
-  double pcoolexp = asReal(Pcoolexp);
-  double prepulserad = asReal(Prepulserad);
-  
-  if (notEquiInt2(EEf, EEt)) {
-    error("notEquiInt2(EEf, EEt)");
-  }
-  const int * Ef = INTEGER(EEf);   // Edges from 
-  const int * Et = INTEGER(EEt);  // Edges t0
-  
-  const double * W = REAL(WW);
-  if (TYPEOF(WW) != REALSXP || xlength(WW) != xlength(EEf)) {
-    error("WW not REAL or equilength with EEf."); // # nocov
+
+
+#define MAX_ID2 16384u
+
+SEXP C_nFirstOrder(SEXP id1, SEXP id2, SEXP nid2, SEXP nthreads) {
+  int err_equi3 = notEquiInt3(id1, id2, nid2);
+  if (err_equi3) {
+    error("notEquiInt3: [%d]", err_equi3);
   }
   
-  if (notEquiDbl2(xxInit, yyInit)) {
-    error("notEquiDbl2(xxInit, yyInit)");
-  }
-  const double * xInit = REAL(xxInit);
-  const double * yInit = REAL(yyInit);
-  if (notEquiLgl2(Cxx, Cyy)) {
-    error("notEquiLgl2(Cxx, Cyy)");
-  }
-  const int * Cx = LOGICAL(Cxx);
-  const int * Cy = LOGICAL(Cyy);
   
   
-  int m = pecount;
-  double frk;
-  double ded;
-  double xd;
-  double yd;
-  double rf;
-  double af;
-  int i;
-  int j;
-  int k;
-  int l;
-  int niter = pniter;
-  //double maxdelta;
-  double area = parea;
-  double coolexp = pcoolexp;
-  double repulserad = prepulserad;
-  
-  // Unprotections
-  int np = 0;
-  SEXP dxx = PROTECT(allocVector(REALSXP, n)); np++;
-  SEXP dyy = PROTECT(allocVector(REALSXP, n)); np++;
-  SEXP tt = PROTECT(allocVector(REALSXP, n)); np++;
-  double * dx = REAL(dxx);
-  double * dy = REAL(dyy);
-  double * t = REAL(tt);
-  
-  // Copy xIint and yInit:
-  SEXP xx = PROTECT(allocVector(REALSXP, n)); np++;
-  double * x = REAL(xx);
-  SEXP yy = PROTECT(allocVector(REALSXP, n)); np++;
-  double * y = REAL(yy);
-  
-  for (int i = 0; i < n; i++) {
-    x[i] = xInit[i];
-    y[i] = yInit[i];
+  int N = length(id1);
+  int nThread = as_nThread(nthreads);
+  int id2_minmax[2] = {INT_MAX, INT_MIN};
+  const int * id1p = INTEGER(id1);
+  const int * id2p = INTEGER(id2);
+  const int * nid2p = INTEGER(id2);
+  if (__builtin_expect(!sorted_int(id1p, N, nThread), 0)) {
+    error("id1p was not sorted."); // # nocov
   }
   
-  frk = sqrt(area/(double)n);
-  double frksq = area/((double)n);
-  
-  SEXP pows = PROTECT(allocVector(REALSXP, niter)); np++;
-  double * powsp = REAL(pows);
-  for (int i = 0; i < niter; ++i) {
-    powsp[i] = pow((double)i / (double)niter, coolexp);
+  Vminmax_i(id2_minmax, id2p, N, nThread);
+  if (id2_minmax[1] > id2_minmax[0] + MAX_ID2) {
+    return R_NilValue;
   }
+  const int id2min = id2_minmax[0];
+  const int id2max = id2_minmax[1];
+  const int n_out = id2max - id2min;
+
   
-  // Run the annealing loop
-  for (i = niter; i >= 0; i--) {
-    // Clear the deltas
-    for (j = 0; j < n; j++){
-      dx[j] = 0.0;
-      dy[j] = 0.0;
+  // Do this so they won't bound check within each loop
+  // Check the first element
+  int id1_0 = id1p[0];
+  // Very unusual -- only one person in data
+  if (id1p[N - 1] == id1_0) {
+    SEXP ans = PROTECT(allocVector(INTSXP, n_out));
+    for (int i = 0; i < n_out; ++i) {
+      INTEGER(ans)[i] = 1;
     }
-    // Increment deltas for each undirected pair
-    for (j = 0; j < n; j++) {
-      // Set the temperature (maximum move/iteration)
-      t[j] = maxdelta[j] * powsp[i];
-      
-      for (k = j + 1; k < n; k++){
-        // Obtain difference vector
-        xd = x[j] - x[k];
-        yd = y[j] - y[k];
-        float dedsq = xd * xd + yd * yd;
-        ded = ssqrt_fast(dedsq);  // Get dyadic euclidean distance
-        xd /= ded;                // Rescale differences to length 1
-        yd /= ded;
-        // Calculate repulsive "force"
-        rf = frksq * (1.0/ded - dedsq/repulserad);
-        xd *= rf;
-        yd *= rf;
-        dx[j] += xd;        // Add to the position change vector
-        dx[k] -= xd;
-        dy[j] += yd;
-        dy[k] -= yd;
+    UNPROTECT(1);
+    return ans;
+  }
+  
+  unsigned int o[MAX_ID2] = {0};
+  
+  // Count the number of people in each id2
+  unsigned int n_staff_by_id2[MAX_ID2] = {0};
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) reduction(+ : n_staff_by_id2[:MAX_ID2])
+#endif 
+  for (int i = 0; i < N; ++i) {
+    n_staff_by_id2[id2p[i] - id2min] += 1;
+  }
+  
+  SEXP SumById2 = PROTECT(allocVector(INTSXP, N));
+  int * sum_by_id2 = INTEGER(SumById2);
+  sum_by_id2[0] = n_staff_by_id2[id2p[0]];
+  for (int i = 1; i < N; ++i) {
+    int csum = sum_by_id2[i - 1];
+    int n_staffi = n_staff_by_id2[id2p[i]];
+    sum_by_id2[i] = n_staffi + (id1p[i - 1] == id1p[i]) * csum;
+  }
+  for (int i = N - 1; i >= 0; --i) {
+    sum_by_id2[i] = (id1p[i + 1] == id1p[i]) ? sum_by_id2[i + 1] : sum_by_id2[i];
+  }
+  
+  // Now we can evaluate directly by subtracting off the total sum by 
+  for (int i = 0; i < N; ++i) {
+    int id2i = id2p[i] - id2min;
+    o[id2i] += n_staff_by_id2[id2i] - sum_by_id2[i];
+  }
+  SEXP ans = PROTECT(allocVector(INTSXP, n_out));
+  int * restrict ansp = INTEGER(ans);
+  for (int i = 0; i < n_out; ++i) {
+    ansp[i] = o[i];
+  }
+  UNPROTECT(2);
+  return ans;
+}
+
+int min4_n0(int a, int b, int c, int d) {
+  if (!(a & b & c & d)) {
+    return 0;
+  }
+  return 0;
+}
+
+unsigned char capAt254(unsigned char x, unsigned char y) {
+  char o = x + y;
+  return o < 0 ? 254 : o;
+}
+
+
+SEXP CDist2(SEXP K1, SEXP K2, SEXP UU) {
+  if (notEquiInt2(K1, K2)) {
+    error("notEquiInt2.");
+  }
+  if (TYPEOF(UU) != INTSXP) {
+    error("UU not INTSXP.");
+  }
+  if (xlength(UU) > 250) {
+    error("xlength(UU) > 250");
+  }
+  int kn = length(K1);
+  int N = xlength(UU);
+  const int * k1 = INTEGER(K1);
+  const int * k2 = INTEGER(K2);
+  const int * up = INTEGER(UU);
+  
+  unsigned short int dists[256][256];
+  memset(dists, 0, sizeof(dists));
+  
+  
+  for (int i = 0; i < kn; ++i) {
+    int k1i = k1[i] - 1;
+    int k2i = k2[i] - 1;
+    dists[k1i][k2i] = 1;
+    dists[k2i][k1i] = 1;
+  }
+  for (int i = 0; i < kn; ++i) {
+    int k1i = k1[i] - 1;
+    int k2i = k2[i] - 1;
+    for (int j = 0; j < N; ++j) {
+      if (!dists[j][k2i] && k2i != j && dists[j][k1i] == 1) {
+        dists[j][k2i] = 2;
+        dists[k2i][j] = 2;
       }
-      
-    }
-    // Calculate the attractive "force"
-    for (j = 0; j < m; j++) {
-      k = Ef[j] - 1;
-      l = Et[j] - 1;
-      
-      xd = x[k] - x[l];
-      yd = y[k] - y[l];
-      ded = euclid_dist_d(xd, yd);
-      // ded = sqrt(xd*xd + yd*yd);  // Get dyadic euclidean distance
-      if (ded > 0.000001 || ded < -0.000001) {
-        xd /= ded;                // Rescale differences to length 1
-        yd /= ded;
-      }
-      af = ded * ded / frk * W[j];
-      dx[k] -= xd * af;        // Add to the position change vector
-      dx[l] += xd * af;
-      dy[k] -= yd * af;
-      dy[l] += yd * af;
-    }
-    // Dampen motion, if needed, and move the points
-    for (j = 0; j < n; j++) {
-      // ded = sqrt(dx[j]*dx[j] + dy[j]*dy[j]);
-      ded = euclid_dist_d(dx[j], dy[j]);
-      if (ded > t[j]) {                 // Dampen to t
-        ded = t[j] / ded;
-        dx[j] *= ded;
-        dy[j] *= ded;
-      }
-      if (!Cx[j]) {
-        x[j] += round(dx[j] * 1e5) / 1e5; // Update positions (correcting for floating point errors)
-      }
-      if (!Cy[j]) {
-        y[j] += round(dy[j] * 1e5) / 1e5;
+      if (!dists[j][k1i] && k1i != j && dists[j][k2i] == 1) {
+        dists[j][k1i] = 2;
+        dists[k1i][j] = 2;
       }
     }
   }
-  SEXP ans = PROTECT(allocVector(VECSXP, 2)); np++;
-  SET_VECTOR_ELT(ans, 0, xx);
-  SET_VECTOR_ELT(ans, 1, yy);
-  UNPROTECT(np);
+  
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      if (i != j && dists[j][i]) {
+        for (int k = 0; k < N; ++k) {
+          if (i == k) {
+            continue;
+          }
+          
+          unsigned short int dist_ij = dists[k][j] + dists[j][i];
+          // Select minimum distance, provided link between k and j already established
+          if (dists[k][j] && (dists[k][i] == 0 || dists[k][i] >= dist_ij)) {
+            dists[i][k] = dist_ij;
+            dists[k][i] = dist_ij;
+            
+          }
+        }
+      }
+    }
+  }
+  SEXP ans = PROTECT(allocVector(INTSXP, N * N));
+  int * restrict ansp = INTEGER(ans);
+  for (int k = 0, i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j, ++k) {
+      ansp[k] = (i == j) ? 0 : dists[i][j];
+    }
+  }
+  UNPROTECT(1);
   return ans;
 }
 

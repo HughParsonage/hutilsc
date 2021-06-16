@@ -21,6 +21,19 @@ simulate_racf <- function(STP,
                           PatientZero = sample(nrow(STP), size = 1),
                           n_days = 28L,
                           nThread = getOption("hutilsc.nThread", 1L)) {
+  if (identical(key(STP), c("id", "racf_abn"))) {
+    STP[, racf_abm := chmatch(racf_abn, unique(racf_abn))]
+    setkey(STP, id, racf_abm)
+  }
+  
+  if (STP[, first(id)] > 0L) {
+    STP[, id := id - first(id)]
+    setkey(STP, id, racf_abm)
+  }
+  
+  u_id <- STP[, unique(id)]
+  u_racf_abm <- STP[, unique(racf_abm)]
+  
   stopifnot(missing(keyz))  # just hardcode for now
   stopifnot(is.data.table(STP),
             # id, racf
@@ -28,16 +41,23 @@ simulate_racf <- function(STP,
             keyz %in% names(STP),
             "n_employers_per_month" %in% names(STP))
   
+  STP[, id := match(id, u_id) - 1L]
+  STP[, racf_abm := match(racf_abm, u_racf_abm) - 1L]
+  setkey(STP, id, racf_abm)
+  
+  
+  
+  
   id <- racf_abm <- NULL
   id_racf <- STP[, .(id, racf_abm, n_employers_per_month)]
   racf_id <- STP[, .(racf_abm, id)]
   setkey(id_racf, id, racf_abm)
   setkey(racf_id, racf_abm, id)
   
-  K1 <- .subset2(id_racf, 1L) - 1L
-  K2 <- .subset2(id_racf, 2L) - 1L
-  J1 <- .subset2(racf_id, 1L) - 1L
-  J2 <- .subset2(racf_id, 2L) - 1L
+  K1 <- .subset2(id_racf, 1L)
+  K2 <- .subset2(id_racf, 2L)
+  J1 <- .subset2(racf_id, 1L)
+  J2 <- .subset2(racf_id, 2L)
   stopifnot(is.integer(K1),
             is.integer(K2),
             is.integer(J1),
@@ -50,8 +70,8 @@ simulate_racf <- function(STP,
                 imax = max(i)), 
             keyby = .(racf_abm)]
   
-  iminmax_by_racf_id[, imin := imin - 1L]
-  iminmax_by_racf_id[, imax := imax - 1L]
+  iminmax_by_racf_id[, imin := imin ]
+  iminmax_by_racf_id[, imax := imax ]
   
   IMIN <- .subset2(iminmax_by_racf_id, "imin")
   IMAX <- .subset2(iminmax_by_racf_id, "imax")
@@ -101,12 +121,9 @@ set_epipars <- function(incubation_distribution = c("dirac", "pois", "lnorm", "c
              r_workplace_rate)
 }
 
-pcg_hash <- function(n, r = NULL, nThread = getOption("hutilsc.nThread", 1L)) {
-  if (is.null(r)) {
-    r <- .Random.seed
-  }
-  .Call("Cpcg_hash", as.double(n), r, nThread, PACKAGE = packageName()) 
-}
+
+
+
 
 ShuffleRindex <- function(x) {
   .Call("CShuffleRindex", x, PACKAGE = packageName())
@@ -114,23 +131,8 @@ ShuffleRindex <- function(x) {
 
 TestSimulate <- function(nn = 1e3) {
   STP <- fst::read_fst("~/dhhs/ATO-RACF/data/STP.fst", as.data = TRUE)
-  K1 <- STP$id
-  K2 <- chmatch(STP$racf_abn, unique(STP$racf_abn))
-  formatted <- format(seq_len(nn))
-  DatesInfected <-
-    lapply(seq_len(nn), function(i) {
-      cat(formatted[i], "\r")
-      # .Call("Csimulate_racf", K1, K2, K2, 
-      #       i, 28L, list(), 
-      #       PACKAGE = "hutilsc")
-    })
-  cat("\n")
-  # STP[, "DatesInfected" := DatesInfected]
-  # return(STP[])
-  DatesInfected
+  simulate_racf(STP[Month == "Dec"])
 }
 
-CountRaws <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
-  .Call("CCountRaws", x, nThread, PACKAGE = packageName())
-}
+
 

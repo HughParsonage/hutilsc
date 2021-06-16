@@ -33,6 +33,42 @@ SEXP CShuffleRindex(SEXP Rindex) {
   return Rindex2;
 }
 
+typedef struct {
+  int nNeighbours; // number of neighbours
+  unsigned char Neighbours[MAX_WID]; // neighbours in ascending order, 0-terminated
+  unsigned int * EdgeWeight;
+  int n_infected;
+  int n_new_infections;
+} Racf;
+
+int searchNe(unsigned char * x, int a, int n) {
+  for (int i = 0; i < MAX_WID; ++i) {
+    if (x[i] == a) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+void insertNe(unsigned char * x, int a, int n) {
+  if (x == NULL) {
+    x = calloc(MAX_WID, sizeof(char));
+    if (x == NULL) {
+      error("insertNe unavailable."); // # nocov
+    }
+    x[0] = a;
+    return;
+  }
+  int pos = searchNe(x, a, n);
+  if (pos) {
+    return;
+  }
+  int j = n - 1;
+  for (; j >= pos; --j) {
+    x[j + 1] = x[j];
+  }
+  x[j + 1] = a;
+}
 
 
 
@@ -115,6 +151,10 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     maxima[2] = (pjdi > maxima[2]) ? pjdi : maxima[2];
     maxima[3] = (wjdi > maxima[3]) ? wjdi : maxima[3];
   }
+  if (maxima[0] == minima[0]) {
+    // pid is constant
+    error("There is only person in the data (max(pid) == min(pid)) so no transmission may occur."); // nocov
+  }
   
   for (int i = 0; i < 4; ++i) {
     if (minima[i]) {
@@ -130,6 +170,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   if (maxima[1] >= MAX_WID) {
     error("maxima[1] >= MAX_WID\n(%d >= %d)", maxima[1], MAX_WID);
   }
+  int n_wid = maxima[1];
   if (!pid_sorted) {
     error("pid unsorted");
   }
@@ -160,11 +201,57 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   }
   
   
-  unsigned int RACF_SIZE[256] = {0};
+  unsigned int RACF_SIZE[MAX_WID] = {0};
   for (int i = 0; i < N; ++i) {
     unsigned int widi = wid[i];
     RACF_SIZE[widi] += 1;
   }
+  
+  Racf * Racfs = malloc(sizeof(Racf) * n_wid);
+  for (int w = 0; w < n_wid; ++w) {
+    Racf Racfi;
+    Racfi.n_infected = 0;
+    Racfi.n_new_infections = 0;
+    Racfi.nNeighbours = 0;
+    Racfi.EdgeWeight = NULL;
+    memset(Racfi.Neighbours, 0, sizeof(Racfi.Neighbours));
+    Racfs[w] = Racfi;
+  }
+  // do links pid
+  // first look at the first pid
+  for (int i = 0; i < N; ++i) {
+    int pidi = pid[i];
+    int ii = i;
+    // now we see which widis are linked by moving down
+    while (++ii < N && pid[ii] == pidi) {
+      // the individual is linked to another Racf
+      // viz. wid[ii];
+      int widi = wid[i];
+      int widii = wid[ii];
+      Racfs[widi].nNeighbours  += (Racfs[widi].Neighbours[widii] == 0);
+      Racfs[widii].nNeighbours += (Racfs[widii].Neighbours[widi] == 0);
+      Racfs[widi].Neighbours[widii] = 1;
+      Racfs[widii].Neighbours[widi] = 1;
+      
+      if (Racfs[widi].EdgeWeight == NULL) {
+        Racfs[widi].EdgeWeight = calloc(MAX_WID, sizeof(int));
+        Racfs[widi].EdgeWeight[widii] = 1;
+      } else {
+        Racfs[widi].EdgeWeight[widii] += 1;
+      }
+      
+      
+      if (Racfs[widii].EdgeWeight == NULL) {
+        Racfs[widii].EdgeWeight = calloc(MAX_WID, sizeof(int));
+        Racfs[widii].EdgeWeight[widi] = 1;
+      } else {
+        Racfs[widii].EdgeWeight[widi] += 1;
+      }
+    }
+  }
+  
+  
+  
   
   // array of possible reinfections
   // based on rpois(16, 2.2/8)
@@ -206,11 +293,15 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     }
     infection_date[patientZero] = 0;
     
-    int RACF_INFECTED[256] = {0};
+    int RACF_INFECTED[MAX_WID] = {0};
     int racf_zero = wid[patientZero];
     RACF_INFECTED[racf_zero] = 1;
     int n_infected = 1;
     for (unsigned int day = 1; day <= n_days; ++day) {
+      // each day
+      // calculate the number of new infections at each RACF
+      // then cycle through each person until infections exhausted
+      
       int RACF_NEW_INFECTIONS[256] = {0};
       int n_new_infections = 0;
       // internal infections
@@ -296,27 +387,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   return ans;
 }
 
-SEXP CCountRaws(SEXP x, SEXP nthreads) {
-  if (TYPEOF(x) != RAWSXP) {
-    error("TYPEOF(x) != RAWSXP");
-  }
-  const unsigned char * xp = RAW(x);
-  R_xlen_t N = xlength(x);
-  unsigned int o[256] = {0};
-  int nThread = as_nThread(nthreads);
-#if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+ : o)
-#endif
-  for (R_xlen_t i = 0; i < N; ++i) {
-    unsigned int xi = (unsigned char)xp[i];
-    o[xi] += 1;
-  }
-  SEXP ans = PROTECT(allocVector(INTSXP, 256));
-  int * ansp = INTEGER(ans);
-  for (int i = 0; i < 256; ++i) {
-    ansp[i] = o[i];
-  }
-  UNPROTECT(1);
-  return ans;
-}
+
+
+
 

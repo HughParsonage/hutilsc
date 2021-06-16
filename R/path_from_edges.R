@@ -165,58 +165,6 @@ n_paths_svt <- function(s = NULL, v = NULL, t = NULL, Edges, nPaths = NULL) {
 }
 
 
-betweeness <- function(a, Edges) {
-  .Len3Paths <- len_three_paths(Edges)
-  .Len4Paths <- len_four_paths(Edges)
-  k1 <- .subset2(Edges, key(Edges)[1])
-  k2 <- .subset2(Edges, key(Edges)[2])
-  k1 <- ensure_integer(k1)
-  k2 <- ensure_integer(k2)
-  a <- ensure_integer(a)
-  u <- union(k1, k2)
-  u <- u[order(u)]
-  ans <- 0
-  cat(format(Sys.time(), format = "%M:%S"), " n = ", length(u), "\n", sep = "")
-  for (s in seq_along(u)) {
-    if (s %in% .Len3Paths$V1) {
-      for (t in seq_along(u)) {
-        if (s >= t) {
-          next
-        }
-        cat(formatC(s, width = 4), formatC(t, width = 4), "\r")
-        st.Len3Paths <- .Len3Paths[.(s, u, t), .N, nomatch = 0L]
-        st.Len4Paths <- .Len4Paths[.(s, u, u, t), .N, nomatch = 0L]
-        if (!(st.Len4Paths || st.Len3Paths)) {
-          break
-        }
-        stv.Len3Paths <- .Len3Paths[.(s, a, t), .N, nomatch = 0L]
-        stv.Len4Paths <- 
-          .Len4Paths[.(s, u, a, t), .N, nomatch = 0L] + 
-          .Len4Paths[.(s, a, u, t), .N, nomatch = 0L]
-        n_with_v <- st.Len3Paths
-        ans <-  ans + (stv.Len3Paths + stv.Len4Paths) / (st.Len3Paths + st.Len4Paths)
-      }
-    }
-  }
-  cat(format(Sys.time(), format = "%M:%S"), "\n", sep = "")
-  ans
-}
-
-betweeness4 <- function(Edges) {
-  .Len4Paths <- len_four_paths(Edges)
-  k1 <- .subset2(Edges, key(Edges)[1])
-  k2 <- .subset2(Edges, key(Edges)[2])
-  k1 <- ensure_integer(k1)
-  k2 <- ensure_integer(k2)
-  u <- union(k1, k2)
-  u <- u[order(u)]
-  V1 <- .Len4Paths[["V1"]]
-  V2 <- .Len4Paths[["V2"]]
-  V3 <- .Len4Paths[["V3"]]
-  V4 <- .Len4Paths[["V4"]]
-  .Call("CBetweenessLen4", k1, k2, u, V1, V2, V3, V4, PACKAGE = packageName())
-}
-
 dist_bw_edges <- function(Edges) {
   stopifnot(length(key(Edges)) >= 2)
   k1 <- .subset2(Edges, key(Edges)[1])
@@ -461,109 +409,14 @@ t5 <- function() {
 }
 
 
-qgraph.layout.fruchtermanreingold <- function(edgelist,
-                                              Ef = .subset2(edgelist, key(edgelist)[1]),
-                                              Et = .subset2(edgelist, key(edgelist)[2]),
-                                              weights = rep(1, nrow(edgelist)),
-                                              vcount = length(union(Ef, Et)),
-                                              niter = 500L,
-                                              max.delta = NULL,
-                                              area = NULL,
-                                              cool.exp = 1.5,
-                                              repulse.rad = NULL,
-                                              init = NULL,
-                                              groups = NULL,
-                                              rotation = NULL,
-                                              layout.control = 0.5,
-                                              constraints = NULL,
-                                              round = TRUE, 
-                                              digits = 5) {
-  stopifnot(is.integer(Ef), is.integer(Et))
-  # Provide default settings
-  ecount <- nrow(edgelist)
-  
-  if (!is.null(vcount)) {
-    n <- vcount 
-  } else {
-    # n <- max(length(unique(c(edgelist))),max(edgelist))
-    n <- length(union(.subset2(edgelist, 1L),
-                      .subset2(edgelist, 2L)))
-    vcount <- n
-  }
-  if (is.null(weights)) {
-    weights <- rep(1, ecount)
-  }
-  if (is.null(niter)) {
-    niter <- 500
-  }
-  if (is.null(max.delta)) {
-    max.delta <- as.double(n)
-  }
-  if (length(max.delta) == 1) {
-    max.delta <- rep(max.delta, n)
-  }
-  if (is.null(area)) {
-    area <- n^2
-  }
-  if (is.null(cool.exp)) { 
-    cool.exp <- 1.5
-  }
-  if (is.null(repulse.rad)) {
-    repulse.rad <- area*n
-  }
-  if (is.null(init)) {
-    init <- matrix(0, nrow = n, ncol = 2)
-    tl <- n + 1
-    init[, 1] <- sin(seq(0, 2*pi, length = tl))[-tl] + rnorm(n, 0, 0.01)
-    init[, 2] <- cos(seq(0, 2*pi, length = tl))[-tl] + rnorm(n, 0, 0.01)
-  }
-  
-  
-  x <- init[, 1]
-  y <- init[, 2]
-  
-  # constraints:
-  if (is.null(constraints)) {
-    Cx <- Cy <- logical(vcount)
-  } else {
-    Cx <- !is.na(constraints[, 1])
-    Cy <- !is.na(constraints[, 2])
-    x[Cx] <- constraints[Cx, 1]
-    y[Cy] <- constraints[Cy, 2]
-  }
-  
 
-  
-  # Round:
-  if (round) {
-    weights <- round(weights, digits)
-    x <- round(x, digits)
-    y <- round(y, digits)
-  }
-  
-  
-  
-  layout <- 
-    .Call("qgraph_layout_Cpp", 
-          as.integer(niter),
-          as.integer(n), 
-          as.integer(ecount),
-          as.double(max.delta),
-          as.double(area), 
-          as.double(cool.exp), 
-          as.double(repulse.rad), 
-          Ef,
-          Et, 
-          abs(weights), 
-          as.double(x), 
-          as.double(y), 
-          as.logical(Cx), 
-          as.logical(Cy),
-          PACKAGE = packageName())
-}
 
 sqrt2 <- function(x) {
   .Call("Csqrt2", as.double(x), PACKAGE = "hutilsc")
+}
+
+showsqrt_fast_ <- function(x) {
+  .Call("showsqrt_fast", x, PACKAGE = packageName())
 }
 
 myDists <- function() {
@@ -589,4 +442,31 @@ zzz <- function() {
   
 }
 
+nFirstOrder <- function(id1, id2, nid2, nThread = 1L) {
+  .Call("C_nFirstOrder", id1, id2, nid2, nThread, PACKAGE = "hutilsc")
+}
 
+
+Dist2 <- function(Edges) {
+  stopifnot(names(Edges)[1] == "orig",
+            names(Edges)[2] == "dest",
+            is.integer(Edges$orig),
+            is.integer(Edges$dest))
+  Edges2 <- copy(Edges)
+  
+  Edges2[, c("orig", "dest") := ensure_leq(orig, dest)]
+  setkey(Edges2, orig, dest)
+  u <- Edges2[, union(orig, dest)]
+  u <- sort(u)
+  orig <- match(.subset2(Edges2, "orig"), u)
+  dest <- match(.subset2(Edges2, "dest"), u)
+  
+  ans_ <- .Call("CDist2", orig, dest, u, PACKAGE = "hutilsc")
+  CJ1 <- 
+    CJ(orig = u[seq_along(u)], 
+       dest = u[seq_along(u)])
+  CJ1[, ans := ans_]
+  CJ1[]
+}
+
+ig2df <- igraph::graph_from_data_frame
