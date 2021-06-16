@@ -109,4 +109,18 @@ SEXP Callocate0_int(SEXP N, SEXP nThread) {
   return ans;
 }
 
+SEXP Cevery_int32(SEXP nthreads) {
+  int nThread = as_nThread(nthreads);
+  SEXP ans = PROTECT(allocVector(INTSXP, 4294967296));
+  int * restrict ansp = INTEGER(ans);
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread)
+#endif
+  for (unsigned int i = 0; i < 4294967295; ++i) {
+    ansp[i] = i;
+  }
+  ansp[4294967295] = -1;
+  UNPROTECT(1);
+  return ans;
+}
 
