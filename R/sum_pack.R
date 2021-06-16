@@ -1,4 +1,4 @@
 
-sum_pack <- function(x) {
-  .Call("CpackSum", x, PACKAGE = packageName())
+sum_pack <- function(x, m = 0L) {
+  .Call("CpackSum", x, m, PACKAGE = packageName())
 }
