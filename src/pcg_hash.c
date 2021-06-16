@@ -43,13 +43,14 @@ unsigned int tpcg_sample_halfmax(int nthread) {
   return r & 1073741823u;
 }
 
-SEXP Cpcg_hash(SEXP n, SEXP r, SEXP nthreads) {
+SEXP Cpcg_hash(SEXP n, SEXP r, SEXP nthreads, SEXP rawres) {
   int nThread = as_nThread(nthreads);
   if (nThread > 32) {
     nThread = 32;
   }
   unsigned int N = asReal(n);
-
+  const bool raw_res = asLogical(rawres);
+  
   unsigned int States[32] = {0};
   if (TYPEOF(r) == INTSXP && xlength(r) >= 32) {
     for (int i = 0; i < 32; ++i) {
@@ -60,20 +61,37 @@ SEXP Cpcg_hash(SEXP n, SEXP r, SEXP nthreads) {
       States[i] = i + 2U;
     }
   }
-  SEXP ans = PROTECT(allocVector(INTSXP, N));
-  int * restrict ansp = INTEGER(ans);
+  SEXP ans = PROTECT(allocVector(raw_res ? RAWSXP : INTSXP, N));
+  if (raw_res) {
+    unsigned char * restrict ansp = RAW(ans);
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) schedule(static)
 #endif
-  for (unsigned int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
 #ifdef _OPENMP
-    int oi = omp_get_thread_num();
+      int oi = omp_get_thread_num();
 #else
-    int oi = (i & 31U);
+      int oi = (i & 31U);
 #endif
-    unsigned int new_si = pcg_hash(States[oi]);
-    ansp[i] = new_si;
-    States[oi] = new_si;
+      unsigned int new_si = pcg_hash(States[oi]);
+      ansp[i] = new_si;
+      States[oi] = new_si;
+    }
+  } else {
+    int * restrict ansp = INTEGER(ans);
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) schedule(static)
+#endif
+    for (unsigned int i = 0; i < N; ++i) {
+#ifdef _OPENMP
+      int oi = omp_get_thread_num();
+#else
+      int oi = (i & 31U);
+#endif
+      unsigned int new_si = pcg_hash(States[oi]);
+      ansp[i] = new_si;
+      States[oi] = new_si;
+    }
   }
   UNPROTECT(1);
   return ans;
@@ -98,8 +116,8 @@ SEXP firstAbsentInt(SEXP xx, SEXP From, SEXP nthreads) {
     warning("Unable to allocate.");
     return R_NilValue;
   }
-
-
+  
+  
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
 #endif
@@ -107,7 +125,7 @@ SEXP firstAbsentInt(SEXP xx, SEXP From, SEXP nthreads) {
     unsigned int ui = xp[i];
     all_ints[ui] |= 1;
   }
-
+  
   unsigned int i = 0;
   for (; i < 4294967294U; ++i) {
     unsigned char aii = all_ints[i];
@@ -145,7 +163,7 @@ SEXP firstAbsentIntBuf(SEXP xx, SEXP From, SEXP nthreads) {
     }
     const unsigned int b_shift = 16777216U * b;
     const unsigned int b_right = b_shift + 16777216U;
-
+    
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
 #endif
@@ -157,8 +175,8 @@ SEXP firstAbsentIntBuf(SEXP xx, SEXP From, SEXP nthreads) {
       unsigned int ui = xpi & 16777215U;
       all_ints[ui] |= 1;
     }
-
-
+    
+    
     for (unsigned int i = 0; i < 16777216U; ++i) {
       unsigned char aii = all_ints[i];
       if (!aii) {
@@ -177,7 +195,7 @@ SEXP COneTo1024(SEXP x, SEXP nthreads) {
   }
   int nThread = as_nThread(nthreads);
   unsigned char o[1024] = {0};
-
+  
   const int * xp = INTEGER(x);
   R_xlen_t N = xlength(x);
 #if defined _OPENMP && _OPENMP >= 201511
@@ -205,7 +223,7 @@ SEXP CTabulate256(SEXP x, SEXP nthreads) {
   int nThread = as_nThread(nthreads);
   R_xlen_t N = xlength(x);
   const int * xp = INTEGER(x);
-
+  
   unsigned int o[256] = {0};
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+ : o[:256])
@@ -237,3 +255,40 @@ SEXP CNot(SEXP x, SEXP nthreads) {
   }
   return x;
 }
+
+int int_log2(uint32_t x) { return 31 - __builtin_clz(x|1); }
+
+int fast_digit_count(uint32_t x) {
+  static uint64_t table[] = {
+    4294967296,  8589934582,  8589934582,  8589934582,  12884901788,
+    12884901788, 12884901788, 17179868184, 17179868184, 17179868184,
+    21474826480, 21474826480, 21474826480, 21474826480, 25769703776,
+    25769703776, 25769703776, 30063771072, 30063771072, 30063771072,
+    34349738368, 34349738368, 34349738368, 34349738368, 38554705664,
+    38554705664, 38554705664, 41949672960, 41949672960, 41949672960,
+    42949672960, 42949672960};
+  return (x + table[int_log2(x)]) >> 32;
+}
+
+
+SEXP Cfast_nchar(SEXP x) {
+  if (TYPEOF(x) != INTSXP) {
+    return R_NilValue;
+  }
+  R_xlen_t N = xlength(x);
+  const int * xp = INTEGER(x);
+  SEXP ans = PROTECT(allocVector(INTSXP, N));
+  int * restrict ansp = INTEGER(ans);
+  
+  for (R_xlen_t i = 0; i < N; ++i) {
+    ansp[i] = fast_digit_count(xp[i]);
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+
+
+
+
+
