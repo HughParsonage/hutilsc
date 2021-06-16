@@ -109,7 +109,8 @@ SEXP Callocate0_int(SEXP N, SEXP nThread) {
   return ans;
 }
 
-SEXP Cevery_int32(SEXP nthreads) {
+SEXP Cevery_int32(SEXP nthreads, SEXP Na) {
+  const int na_req = asInteger(Na);
   int nThread = as_nThread(nthreads);
   SEXP ans = PROTECT(allocVector(INTSXP, 4294967296));
   int * restrict ansp = INTEGER(ans);
@@ -120,6 +121,7 @@ SEXP Cevery_int32(SEXP nthreads) {
     ansp[i] = i;
   }
   ansp[4294967295] = -1;
+  ansp[2147483648] = na_req;
   UNPROTECT(1);
   return ans;
 }

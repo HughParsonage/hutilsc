@@ -34,7 +34,7 @@ extern SEXP CencodeRecordID(SEXP);
 extern SEXP Censeq(SEXP);
 extern SEXP CEnsure_fwc(SEXP);
 extern SEXP Censure_leq(SEXP, SEXP);
-extern SEXP Cevery_int32(SEXP);
+extern SEXP Cevery_int32(SEXP, SEXP);
 extern SEXP Cfast_nchar(SEXP);
 extern SEXP Cfibonacci(SEXP, SEXP);
 extern SEXP Cfind_ftc(SEXP, SEXP, SEXP, SEXP);
@@ -105,7 +105,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Censeq",                                (DL_FUNC) &Censeq,                                 1},
     {"CEnsure_fwc",                           (DL_FUNC) &CEnsure_fwc,                            1},
     {"Censure_leq",                           (DL_FUNC) &Censure_leq,                            2},
-    {"Cevery_int32",                          (DL_FUNC) &Cevery_int32,                           1},
+    {"Cevery_int32",                          (DL_FUNC) &Cevery_int32,                           2},
     {"Cfast_nchar",                           (DL_FUNC) &Cfast_nchar,                            1},
     {"Cfibonacci",                            (DL_FUNC) &Cfibonacci,                             2},
     {"Cfind_ftc",                             (DL_FUNC) &Cfind_ftc,                              4},
