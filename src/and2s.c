@@ -556,7 +556,7 @@ SEXP do_and_int_int(SEXP x1, SEXP op1, SEXP y1,
     return ans;
   }
   
-  if (xlength(x1) == length(x2) &&
+  if (xlength(x1) == xlength(x2) &&
       xlength(y1) == 1 && xlength(y2) == 1) {
     const int y_1 = asInteger(y1);
     const int y_2 = asInteger(y2);
