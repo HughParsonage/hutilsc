@@ -78,7 +78,7 @@ void radix_find_range(int a,
                       unsigned int * R);
 void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
 void ftc2(int * U0, int * U1, const int * k1, int N);
-int binary_find(int key, int * xp, int N)
+int binary_find(int key, int * xp, int N);
 
 // maxmin
 unsigned int amax(unsigned int x[], int n);
@@ -91,6 +91,7 @@ SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);
 unsigned int pcg_sample1(unsigned int max);
 unsigned int pcg_sample_halfmax();
 unsigned int tpcg_sample_halfmax(int thread);
+unsigned char tpcg_sample1c(int thread);
 
 // ScalarLength
 SEXP ScalarLength(R_xlen_t o);

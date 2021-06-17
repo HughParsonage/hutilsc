@@ -2,6 +2,12 @@
 
 #define MAX_WID 256
 #define SUSCEPTIBLE_DATE 255
+#define INCUBATION_PERIOD 8
+#define N_COLLEAGUES 32
+
+// Chance of being infectious on any particular day
+// times UINT_MAX. Say 4/7
+#define RUINT_INFECTIOUS 2454267026
 
 
 int wanyOutside(const int * x, R_xlen_t N) {
@@ -70,12 +76,18 @@ void insertNe(unsigned char * x, int a, int n) {
   x[j + 1] = a;
 }
 
-
+bool is_infectious(unsigned char infection_datei, 
+                   unsigned char today, 
+                   unsigned int ruint) {
+  return ((today - infection_datei) < INCUBATION_PERIOD) && 
+    (ruint < RUINT_INFECTIOUS);
+}
 
 
 SEXP Csimulate_racf(SEXP K1, SEXP K2, 
                     SEXP J1, SEXP J2,
                     SEXP M1, SEXP M2,
+                    SEXP Resistance,
                     SEXP PatientZero,
                     SEXP nDays,
                     SEXP Epi,
@@ -83,6 +95,8 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   // K1, K2  -- from pid to wid
   // J1, J2  -- from wid to pid
   // M1, M2 -- the positions of wid
+  // E1 Raw vector, the number of individuals in contact with
+  // E2 Reproduction number
   
   
   int np = 0;
@@ -102,6 +116,9 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   int N = xlength(K1);
   if (N <= 1) {
     error("N <= 1 was unexpected.");
+  }
+  if (TYPEOF(Resistance) != RAWSXP || xlength(Resistance) >= INT_MAX) {
+    error("Resistance was not of type RAWSXP.");
   }
   
   if (N >= (INT_MAX / 8)) {
@@ -161,7 +178,8 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
       error("minima[%d] = %d != 0", i, minima[i]);
     }
   }
-  if (maxima[0] != maxima[2]) {
+  int n_persons = maxima[0];
+  if (n_persons != maxima[2]) {
     error("maxima[0] != maxima[2]\n(%d != %d)", maxima[0], maxima[2]);
   }
   if (maxima[1] != maxima[3]) {
@@ -177,6 +195,11 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   if (!wjd_sorted) {
     error("wjd unsorted");
   }
+  // length(Resistance) already known to be int
+  if ((length(Resistance) - 1) != n_persons) {
+    error("length(Resistance) = %d, yet n_persons = %d.", length(Resistance), n_persons);
+  }
+  const unsigned char * resistance = RAW(Resistance);
   
   
   int n_days = asInteger(nDays);
@@ -207,50 +230,6 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     RACF_SIZE[widi] += 1;
   }
   
-  Racf * Racfs = malloc(sizeof(Racf) * n_wid);
-  for (int w = 0; w < n_wid; ++w) {
-    Racf Racfi;
-    Racfi.n_infected = 0;
-    Racfi.n_new_infections = 0;
-    Racfi.nNeighbours = 0;
-    Racfi.EdgeWeight = NULL;
-    memset(Racfi.Neighbours, 0, sizeof(Racfi.Neighbours));
-    Racfs[w] = Racfi;
-  }
-  // do links pid
-  // first look at the first pid
-  for (int i = 0; i < N; ++i) {
-    int pidi = pid[i];
-    int ii = i;
-    // now we see which widis are linked by moving down
-    while (++ii < N && pid[ii] == pidi) {
-      // the individual is linked to another Racf
-      // viz. wid[ii];
-      int widi = wid[i];
-      int widii = wid[ii];
-      Racfs[widi].nNeighbours  += (Racfs[widi].Neighbours[widii] == 0);
-      Racfs[widii].nNeighbours += (Racfs[widii].Neighbours[widi] == 0);
-      Racfs[widi].Neighbours[widii] = 1;
-      Racfs[widii].Neighbours[widi] = 1;
-      
-      if (Racfs[widi].EdgeWeight == NULL) {
-        Racfs[widi].EdgeWeight = calloc(MAX_WID, sizeof(int));
-        Racfs[widi].EdgeWeight[widii] = 1;
-      } else {
-        Racfs[widi].EdgeWeight[widii] += 1;
-      }
-      
-      
-      if (Racfs[widii].EdgeWeight == NULL) {
-        Racfs[widii].EdgeWeight = calloc(MAX_WID, sizeof(int));
-        Racfs[widii].EdgeWeight[widi] = 1;
-      } else {
-        Racfs[widii].EdgeWeight[widi] += 1;
-      }
-    }
-  }
-  
-  
   
   
   // array of possible reinfections
@@ -258,10 +237,10 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   const unsigned int R16_WORKPLACE[16] = {0, 1, 0, 1, 1, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 2};
   
-  const unsigned int INCUBATION_PERIOD = 8u;
-  
+
   bool malloc_failures[8] = {0};
   unsigned char * infection_dates = malloc(sizeof(char) * N * 8);
+  nThread = 1;
   
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) schedule(static)
@@ -302,28 +281,36 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
       // calculate the number of new infections at each RACF
       // then cycle through each person until infections exhausted
       
-      int RACF_NEW_INFECTIONS[256] = {0};
-      int n_new_infections = 0;
+      // These should be unsigned in case we get (unphysical)
+      // explosive transmission
+      unsigned short int RACF_NEW_INFECTIONS[256] = {0};
+      unsigned short int n_new_infections = 0;
       // internal infections
+      bool no_one_infected = true; // for early return
       for (int i = 0; i < N; ++i) {
         if (infection_date[i] == SUSCEPTIBLE_DATE) {
           continue;
         }
-        unsigned int widi = wid[i];
-        unsigned int days_since_infection = day - infection_date[i];
+        no_one_infected = false;
+        int pidi = pid[i];
+        int widi = wid[i];
+        unsigned char days_since_infection = day - infection_date[i];
         // if at end of incubation period, no longer infectious
         if (days_since_infection == INCUBATION_PERIOD) {
           RACF_INFECTED[widi] -= 1;
           int pidi = pid[i];
           int i_down = i;
           // decrement adjacent wid
-          while (++i_down < N && pid[i_down] == pidi) {
+          while (++i_down < N && pid[i_down] == pidi && RACF_INFECTED[wid[i_down]]) {
             RACF_INFECTED[wid[i_down]] -= 1;
           }
-          n_infected -= 1;
+          if (n_infected) {
+            n_infected -= 1;
+          }
           continue;
         }
         if (days_since_infection < INCUBATION_PERIOD) {
+
           unsigned int R16i = pcg_sample1(16u);
           // infect others by R factor
           // never more than 15 a day(!!)
@@ -333,6 +320,10 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
           n_new_infections += new_infections;
           n_infected += new_infections;
         }
+      }
+      
+      if (no_one_infected) {
+        break;
       }
       // shuffle rindex
       if ((day % 7u) == 3) {
@@ -344,17 +335,27 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
         }
       }
       
+      
+      
       // Now infect others by RACF
       for (int k = 0; k < N; ++k) {
         if (n_new_infections <= 0) {
           break;
         }
         int i = rindex[k];
-        
-        unsigned int widi = wid[i];
+        int pidi = pid[i];
+        int widi = wid[i];
         
         if (RACF_NEW_INFECTIONS[widi] && infection_date[i] == SUSCEPTIBLE_DATE) {
-          infection_date[i] = day;
+          // if resistant (random variable based on k, which is random here)
+          // Use < because we need instances of 100% vaccination
+          // Resistance means the infection is spent -- we don't just search 
+          // for someone
+          unsigned char P = tpcg_sample1c(thread);
+          
+          if (resistance[pidi] < P) {
+            infection_date[i] = day;
+          }
           RACF_NEW_INFECTIONS[widi] -= 1;
           --n_new_infections;
         }

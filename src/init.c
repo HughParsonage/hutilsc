@@ -38,6 +38,7 @@ extern SEXP Cevery_int32(SEXP, SEXP);
 extern SEXP Cfast_nchar(SEXP);
 extern SEXP Cfibonacci(SEXP, SEXP);
 extern SEXP Cfind_ftc(SEXP, SEXP, SEXP, SEXP);
+extern SEXP CfindAbsent(SEXP, SEXP);
 extern SEXP Cfuse3(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Chaversine_distance(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cis_constant(SEXP, SEXP);
@@ -54,7 +55,7 @@ extern SEXP Cpcg_hash(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cpmax0(SEXP);
 extern SEXP Crange_nchar(SEXP);
 extern SEXP CShuffleRindex(SEXP);
-extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Csqrt2(SEXP);
 extern SEXP Csum_isna(SEXP, SEXP);
 extern SEXP CSumRaw(SEXP, SEXP);
@@ -109,6 +110,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cfast_nchar",                           (DL_FUNC) &Cfast_nchar,                            1},
     {"Cfibonacci",                            (DL_FUNC) &Cfibonacci,                             2},
     {"Cfind_ftc",                             (DL_FUNC) &Cfind_ftc,                              4},
+    {"CfindAbsent",                           (DL_FUNC) &CfindAbsent,                            2},
     {"Cfuse3",                                (DL_FUNC) &Cfuse3,                                 4},
     {"Chaversine_distance",                   (DL_FUNC) &Chaversine_distance,                    5},
     {"Cis_constant",                          (DL_FUNC) &Cis_constant,                           2},
@@ -125,7 +127,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cpmax0",                                (DL_FUNC) &Cpmax0,                                 1},
     {"Crange_nchar",                          (DL_FUNC) &Crange_nchar,                           1},
     {"CShuffleRindex",                        (DL_FUNC) &CShuffleRindex,                         1},
-    {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                        10},
+    {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                        11},
     {"Csqrt2",                                (DL_FUNC) &Csqrt2,                                 1},
     {"Csum_isna",                             (DL_FUNC) &Csum_isna,                              2},
     {"CSumRaw",                               (DL_FUNC) &CSumRaw,                                2},

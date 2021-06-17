@@ -16,10 +16,11 @@ Imports:
     data.table,
     checkmate,
     fastmatch,
+    fst,
     hutils,
+    hutilscpp,
     utils
 Suggests: 
-    fst,
     igraph,
     tinytest,
     withr

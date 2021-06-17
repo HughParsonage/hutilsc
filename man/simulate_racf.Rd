@@ -7,6 +7,7 @@
 \usage{
 simulate_racf(
   STP,
+  Resistance = NULL,
   keyz = c("id", "racf_abm"),
   Epi = set_epipars(),
   PatientZeroGroup = NULL,
@@ -16,6 +17,7 @@ simulate_racf(
 )
 
 set_epipars(
+  sir = c(1/5, 1/14),
   incubation_distribution = c("dirac", "pois", "lnorm", "cauchy"),
   incubation_mean = 8,
   incubation_sigma = 0.44,
@@ -34,7 +36,12 @@ If present, it may be used to indicate which rows are vaccinated. If
 a row is \code{NA}, it will be replaced with \code{TRUE} or \code{FALSE}
 based on the epidemiological parameter \code{Epi$v_workplaces}.}
 
+\item{Resistance}{If \code{NULL}, a \code{raw} vector indicating the
+resistance of the individual}
+
 \item{Epi}{Epidemiological parameters.}
+
+\item{sir}{\code{double{3}} A vector.}
 }
 \description{
 Simulate transmission through bipartite graph

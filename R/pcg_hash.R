@@ -17,3 +17,7 @@ pcg_hash <- function(n, r = NULL, raw_result = FALSE, nThread = getOption("hutil
   }
   .Call("Cpcg_hash", as.double(n), r, nThread, raw_result, PACKAGE = packageName()) 
 }
+
+
+
+

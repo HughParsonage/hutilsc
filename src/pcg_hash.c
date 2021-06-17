@@ -38,9 +38,13 @@ unsigned int pcg_sample_halfmax() {
   unsigned int r = rand_pcg();
   return r & 1073741823u;
 }
-unsigned int tpcg_sample_halfmax(int nthread) {
-  unsigned int r = trand_pcg(nthread);
+unsigned int tpcg_sample_halfmax(int thread) {
+  unsigned int r = trand_pcg(thread);
   return r & 1073741823u;
+}
+unsigned char tpcg_sample1c(int thread) {
+  unsigned int r = trand_pcg(thread);
+  return r & 255u;
 }
 
 SEXP Cpcg_hash(SEXP n, SEXP r, SEXP nthreads, SEXP rawres) {
