@@ -328,28 +328,36 @@ void ftc2(int * U0, int * U1, const int * k1, int N) {
   }
 }
 
-/*
- int cmpfunc(const void * a, const void * b) {
- return ( *(int*)a - *(int*)b );
- }
- 
- SEXP do_bsearch(SEXP a, SEXP x) {
- if (TYPEOF(a) != INTSXP || TYPEOF(x) != INTSXP) {
- return R_NilValue;
- }
- int * ap = INTEGER(a);
- const int * xp = INTEGER(x);
- 
- R_xlen_t N = xlength(x);
- int key = asInteger(a);
- int * res = (int*)bsearch(&key, xp, N, sizeof(int), cmpfunc);
- if (res) {
- return ScalarInteger(*res);
- } else {
- return ScalarInteger(0);
- }
- }
- */
+
+int cmpfunc(const void * a, const void * b) {
+  return ( *(int*)a - *(int*)b );
+}
+
+int binary_find(int key, int * xp, int N) {
+  int * res = (int *)bsearch(&key, xp, N, sizeof(int), cmpfunc);
+  if (res) {
+    return *res;
+  }
+  return -1;
+}
+
+SEXP do_bsearch(SEXP a, SEXP x) {
+  if (TYPEOF(a) != INTSXP || TYPEOF(x) != INTSXP) {
+    return R_NilValue;
+  }
+  int * ap = INTEGER(a);
+  const int * xp = INTEGER(x);
+  
+  R_xlen_t N = xlength(x);
+  int key = asInteger(a);
+  int * res = (int*)bsearch(&key, xp, N, sizeof(int), cmpfunc);
+  if (res) {
+    return ScalarInteger(*res);
+  } else {
+    return ScalarInteger(0);
+  }
+}
+
 
 
 

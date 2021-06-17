@@ -78,8 +78,11 @@ void radix_find_range(int a,
                       unsigned int * R);
 void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
 void ftc2(int * U0, int * U1, const int * k1, int N);
+int binary_find(int key, int * xp, int N)
 
 // maxmin
+unsigned int amax(unsigned int x[], int n);
+int sxp_required(unsigned int x[], int n);
 int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy);
 void Vminmax_i(int minmax[], const int * x, R_xlen_t N, int nthreads);
 SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);

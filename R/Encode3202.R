@@ -116,6 +116,24 @@ Decode_fwalnum <- function(e, cipher) {
   .Call("Calphnum_dec", e, cipher, PACKAGE = packageName())
 }
 
+TestCipher <- function() {
+  library(data.table)
+  ans <- fread("~/../Downloads/trip_fare/trip_fare_1.csv", select = "medallion")
+  cat(head(ans$medallion))
+  cat("\n")
+  enc <- Encode_fwalnum(ans$medallion)
+  cat(head(enc))
+  cat("\n")
+  cip <- attr(enc, "hutilsc_cipher")
+  cat(("cipher\n\t"))
+  cat(cip)
+  cat("\n")
+  dec <- Decode_fwalnum(enc[1:10], cip)
+  data.table(orig = head(ans$medallion, 10), enc = enc[1:10], dec = dec[1:10])
+}
+
+
+
 
 
 

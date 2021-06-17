@@ -836,6 +836,10 @@ SEXP Calphnum_dec(SEXP x, SEXP ee) {
     char_non_const[j] = j_const;
     non_const += j_const;
   }
+  
+  if (non_const == 0) {
+    error("Cipher implies no non-constant columns.");
+  }
   SEXP ans = PROTECT(allocVector(STRSXP, N));
   
   unsigned int * J = malloc(sizeof(int) * non_const);
@@ -861,26 +865,25 @@ SEXP Calphnum_dec(SEXP x, SEXP ee) {
     int len = length(eej);
     for (int i = 0; i < 62; ++i) {
       if (i < len) {
-      C[j][i] = CHAR(STRING_ELT(ee, j))[i];
+        C[j][i] = CHAR(STRING_ELT(ee, j))[i];
       } else {
         C[j][i] = '0';
       }
     }
   }
-  
-  
-  
   for (R_xlen_t i = 0; i < N; ++i) {
     unsigned int xi = (unsigned int)xp[i];
     char oi[max_nchar1];
     memcpy(oi, default_c, sizeof(oi));
     for (unsigned int k = 0, b = 1; k < non_const; ++k) {
       int j = J[k];
-      unsigned int lenj = lens[j];
-      unsigned int c = (xi / b) % lenj;
-      unsigned char cc = C[j][c];// CHAR(STRING_ELT(ee, j))[c];
-      oi[j] = cc;
-      b *= lenj;
+      if (b > 0u) {
+        unsigned int lenj = lens[j];
+        unsigned int c = (xi / b) % lenj;
+        unsigned char cc = C[j][c];// CHAR(STRING_ELT(ee, j))[c];
+        oi[j] = cc;
+        b *= lenj;
+      }
     }
     oi[max_nchar] = '\0';
     const char * ansi = (const char *)oi;

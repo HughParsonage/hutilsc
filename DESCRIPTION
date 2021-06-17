@@ -19,5 +19,7 @@ Imports:
     hutils,
     utils
 Suggests: 
+    fst,
+    igraph,
     tinytest,
     withr

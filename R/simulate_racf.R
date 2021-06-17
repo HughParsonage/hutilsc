@@ -81,7 +81,7 @@ simulate_racf <- function(STP,
         J1, J2,
         IMIN, IMAX,
         PatientZero, 
-        28L,
+        n_days,
         list(), 
         nThread)
   
@@ -130,7 +130,7 @@ ShuffleRindex <- function(x) {
 }
 
 TestSimulate <- function(nn = 1e3) {
-  STP <- fst::read_fst("~/dhhs/ATO-RACF/data/STP.fst", as.data = TRUE)
+  STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data = TRUE)
   simulate_racf(STP[Month == "Dec"])
 }
 

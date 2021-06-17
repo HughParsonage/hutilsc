@@ -8,6 +8,35 @@ unsigned int minuu(unsigned int x, unsigned int y) {
   return (x <= y) ? x : y;
 }
 
+unsigned int amax(unsigned int x[], int n) {
+  unsigned int o = 0u;
+  for (int i = 0; i < n; ++i) {
+    if (x[i] > o) {
+      o = x[i];
+    }
+  }
+  return o;
+}
+
+unsigned int amin(unsigned int x[], int n) {
+  unsigned int o = UINT_MAX;
+  for (int i = 0; i < n; ++i) {
+    if (x[i] < o) {
+      o = x[i];
+    }
+  }
+  return o;
+}
+
+int sxp_required(unsigned int x[], int n) {
+  if (amax(x, n) > INT_MAX) {
+    return REALSXP;
+  }
+  return INTSXP;
+}
+
+
+
 int maxX(const int * x, R_xlen_t N, bool sx) {
   if (N == 0) {
     return INT_MIN;

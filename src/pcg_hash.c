@@ -256,7 +256,12 @@ SEXP CNot(SEXP x, SEXP nthreads) {
   return x;
 }
 
-
+// given a uniform random variable p, and an unsigned int
+// a, return TRUE on realization (concretetly when p < U(0, 1))
+bool unif_p2b(double p, unsigned int a) {
+  unsigned int p_ = p * UINT_MAX;
+  return a <= p_;
+}
 
 
 
