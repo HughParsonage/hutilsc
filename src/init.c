@@ -61,6 +61,7 @@ extern SEXP Csum_isna(SEXP, SEXP);
 extern SEXP CSumRaw(SEXP, SEXP);
 extern SEXP Ctabula_RecordID(SEXP);
 extern SEXP Ctest_find_first(SEXP, SEXP, SEXP);
+extern SEXP Ctest_qru(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Ctest_radix_find(SEXP, SEXP, SEXP);
 extern SEXP Ctest_radix_find_range(SEXP, SEXP, SEXP);
 extern SEXP Cunique_sorted(SEXP);
@@ -133,6 +134,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"CSumRaw",                               (DL_FUNC) &CSumRaw,                                2},
     {"Ctabula_RecordID",                      (DL_FUNC) &Ctabula_RecordID,                       1},
     {"Ctest_find_first",                      (DL_FUNC) &Ctest_find_first,                       3},
+    {"Ctest_qru",                             (DL_FUNC) &Ctest_qru,                              5},
     {"Ctest_radix_find",                      (DL_FUNC) &Ctest_radix_find,                       3},
     {"Ctest_radix_find_range",                (DL_FUNC) &Ctest_radix_find_range,                 3},
     {"Cunique_sorted",                        (DL_FUNC) &Cunique_sorted,                         1},

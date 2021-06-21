@@ -88,6 +88,9 @@ void Vminmax_i(int minmax[], const int * x, R_xlen_t N, int nthreads);
 SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);
 
 // pcg_hash
+unsigned int rand_pcg();
+unsigned int trand_pcg(int thread);
+unsigned int pcg_hash(unsigned int input);
 unsigned int pcg_sample1(unsigned int max);
 unsigned int pcg_sample_halfmax();
 unsigned int tpcg_sample_halfmax(int thread);

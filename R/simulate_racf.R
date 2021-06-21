@@ -177,6 +177,13 @@ Simulate_all <- function(STP,
                          Epi = set_epipars(),
                          n_days = 28L,
                          nThread = getOption("hutilsc.nThread", 1L)) {
+  if (missing(STP)) {
+    STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data = TRUE)
+    STP_Dec <- STP[Month == "Dec"]
+    STP_Dec[, i := .I]
+    stopifnot(is.character(STP_Dec[["racf_abn"]]))
+    STP <- STP_Dec
+  }
   PREP <- prepare_racf(STP, keyz)
   u_id <- PREP[["u_id"]]
   
@@ -193,29 +200,28 @@ Simulate_all <- function(STP,
                            raw_result = TRUE, 
                            nThread = nThread)
   }
-  iter <- 0:1e3
+  iter <- 0:999
+  cat(hh_ss(), "\n")
   Out <- 
-    lapply(iter, function(i) {
-      cat(formatC(i, width = 5L), "\r")
-      Resistance <- pcg_hash(length(u_id),
-                             r = sample.int(1e9, size = 88),
-                             raw_result = TRUE, 
-                             nThread = nThread)
       .Call("Csimulate_racf", 
             PREP[[1]], PREP[[2]],
             PREP[[3]], PREP[[4]],
             PREP[[5]], PREP[[6]],
             Resistance,
-            i * 8L + 0:7, 
+            iter, 
             n_days,
             list(), 
             nThread)
-    })
-  setDT(Out)
-  setnames(Out, paste0("PZ", formatC(iter, width = 5L, flag = "0")))
-  Out[]
+  data.table(InfectionDate = Out,
+             Patient = rep_len(u_id, length(Out)),
+             Patient0 = rep(iter, each = length(u_id) - 1))
 }
 
+test_qru <- function(p, q, m = 0L, z = 5L, n = 1e5L) {
+  ai <- as.integer
+  stopifnot(length(p) == 1, p <= q)
+  .Call("Ctest_qru", ai(p), ai(q), ai(m), ai(z), ai(n), PACKAGE = packageName())
+}
 
 
 
