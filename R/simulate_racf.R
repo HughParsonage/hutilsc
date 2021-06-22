@@ -109,10 +109,14 @@ prepare_racf <- function(STP, keyz = c("id", "racf_abm")) {
   IMIN <- .subset2(iminmax_by_racf_id, "imin")
   IMAX <- .subset2(iminmax_by_racf_id, "imax")
   
-  list(K1, K2,
-       J1, J2,
-       IMIN, IMAX,
-       u_id = u_id)
+  list(K1 = K1, 
+       K2 = K2,
+       J1 = J1,
+       J2 = J2,
+       IMIN = IMIN, 
+       IMAX = IMAX,
+       u_id = u_id,
+       multi_employer = .subset2(id_racf, "n_employers_per_month") > 1L)
 }
 
 
@@ -175,6 +179,7 @@ Simulate_all <- function(STP,
                          Resistance = NULL,
                          keyz = c("id", "racf_abm"),
                          Epi = set_epipars(),
+                         iter_head = 1024,
                          n_days = 28L,
                          nThread = getOption("hutilsc.nThread", 1L)) {
   if (missing(STP)) {
@@ -186,6 +191,7 @@ Simulate_all <- function(STP,
   }
   PREP <- prepare_racf(STP, keyz)
   u_id <- PREP[["u_id"]]
+  stopifnot(hasName(PREP, "multi_employer"))
   
   if (is.null(Resistance)) {
     if (hasName(STP, "Resistance")) {
@@ -200,7 +206,9 @@ Simulate_all <- function(STP,
                            raw_result = TRUE, 
                            nThread = nThread)
   }
-  iter <- 0:999
+  # Only simulate multi-employer patients
+  iter <- which(PREP[["multi_employer"]]) - 1L
+  iter <- head(iter, iter_head)
   cat(hh_ss(), "\n")
   Out <- 
       .Call("Csimulate_racf", 

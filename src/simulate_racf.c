@@ -7,11 +7,13 @@
 #define MAX_NTHREAD 8
 
 // unsigned chars for in-thread errors handled gracefully
-#define WIDJ_SMALL 1
+#define WIDJ_SMALL 'w'
 
 // Chance of being infectious on any particular day
 // times UINT_MAX. Say 4/7
 #define RUINT_INFECTIOUS 2454267026
+
+#define RET_ONE_INT_PER_PATIENTZ 2
 
 
 int wanyOutside(const int * x, R_xlen_t N) {
@@ -196,8 +198,10 @@ bool isnt_susceptible(int pidi,
 
 
 void do_simulate(int thread,
+                 int start,
+                 unsigned char * infection_date,
                  int n_days,
-                 int * patientsZero, 
+                 int patientZero, 
                  int n_persons,
                  bool malloc_failures[MAX_NTHREAD],
                  unsigned char misc_failure[MAX_NTHREAD],
@@ -209,26 +213,19 @@ void do_simulate(int thread,
                  const int * R16_WORKPLACE,
                  const int * RACF_SIZE,
                  const unsigned char * resistance,
-                 unsigned char * infection_dates,
                  const int * m1,
                  const int * m2,
                  int m1_len) {
-  int patientZero = patientsZero[thread];
-  unsigned char * infection_date = malloc(sizeof(char) * n_persons);
-  if (infection_date == NULL) {
-    free(infection_date);
-    malloc_failures[thread] = true;
-    return;
-  }
-  for (int i = 0; i < n_persons; ++i) {
-    infection_date[i] = SUSCEPTIBLE_DATE;
-  }
-  infection_date[patientZero] = 0;
-  
+  infection_date[start + patientZero] = 0;
   int RACF_INFECTED[MAX_WID] = {0};
-  int racf_zero = wid[patientZero];
-  RACF_INFECTED[racf_zero] = 1;
-  int n_infected = 1;
+  // Show the first RACF as infected
+  unsigned int which_pid_is_zero = binary_find(patientZero, (int *)pid, N);
+  
+  while (which_pid_is_zero < N && pid[which_pid_is_zero] == patientZero) {
+    RACF_INFECTED[wid[which_pid_is_zero]] += 1;
+    ++which_pid_is_zero;
+  }
+  
   for (unsigned int day = 1; day <= n_days; ++day) {
     // each day
     // calculate the number of new infections at each RACF
@@ -236,13 +233,14 @@ void do_simulate(int thread,
     
     // These should be unsigned in case we get (unphysical)
     // explosive transmission
-    unsigned short int RACF_NEW_INFECTIONS[256] = {0};
+    unsigned short int RACF_NEW_INFECTIONS[MAX_WID] = {0};
     unsigned short int n_new_infections = 0;
     // internal infections
     bool no_one_infected = true; // for early return
     for (int i = 0; i < N; ++i) {
       int pidi = pid[i];
-      unsigned char pid_infection_date = infection_date[pidi];
+      unsigned int ruint = trand_pcg(thread);
+      unsigned char pid_infection_date = infection_date[start + pidi];
       if (pid_infection_date == SUSCEPTIBLE_DATE) {
         continue;
       }
@@ -258,9 +256,6 @@ void do_simulate(int thread,
         while (++i_down < N && pid[i_down] == pidi && RACF_INFECTED[wid[i_down]]) {
           RACF_INFECTED[wid[i_down]] -= 1;
         }
-        if (n_infected) {
-          n_infected -= 1;
-        }
         continue;
       }
       if (days_since_infection < INCUBATION_PERIOD) {
@@ -271,7 +266,6 @@ void do_simulate(int thread,
         RACF_INFECTED[widi] += new_infections;
         RACF_NEW_INFECTIONS[widi] += new_infections;
         n_new_infections += new_infections;
-        n_infected += new_infections;
       }
     }
     
@@ -289,7 +283,7 @@ void do_simulate(int thread,
       if (widj_size < n_infections) {
         // number of infections exceeded
         misc_failure[thread] = WIDJ_SMALL;
-        continue;
+        n_infections = RACF_SIZE[widj] - 1;
       }
       // so widj needs n_infections allocated
       int idj[32] = {0};
@@ -300,15 +294,10 @@ void do_simulate(int thread,
         if (is_resistant(pidj, resistance, tpcg_sample1c(thread))) {
           continue;
         }
-        infection_date[pidj] = day;
+        infection_date[start + pidj] = day;
       }
     }
   }
-  const int start = N * thread;
-  for (int i = 0; i < N; ++i) {
-    infection_dates[start + i] = infection_date[i];
-  }
-  free(infection_date);
 }
 
 
@@ -451,25 +440,61 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   const unsigned int R16_WORKPLACE[16] = {0, 1, 0, 1, 1, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 2};
   
-  
   bool malloc_failures[8] = {0};
   unsigned char misc_failure[8] = {0};
   const unsigned int N_ans = nPatientZero * n_persons;
-  Rprintf("N_ans = %u\n", N_ans);
   SEXP ans = PROTECT(allocVector(RAWSXP, N_ans)); np++;
   unsigned char * infection_dates = RAW(ans);
-  nThread = 8;
+  if (nPatientZero & 7) {
+    error("nPatientZero not divisible by 8.");
+  }
+
+#if 0
+  const unsigned int N_ans0 = N_ans / 8;
+  
+  unsigned char * infection_dates0 = malloc(sizeof(char) * N_ans0);
+  unsigned char * infection_dates1 = malloc(sizeof(char) * N_ans0);
+  unsigned char * infection_dates2 = malloc(sizeof(char) * N_ans0);
+  unsigned char * infection_dates3 = malloc(sizeof(char) * N_ans0);
+  unsigned char * infection_dates4 = malloc(sizeof(char) * N_ans0);
+  unsigned char * infection_dates5 = malloc(sizeof(char) * N_ans0);
+  unsigned char * infection_dates6 = malloc(sizeof(char) * N_ans0);
+  unsigned char * infection_dates7 = malloc(sizeof(char) * N_ans0);
+  
+  if (infection_dates0 == NULL ||
+      infection_dates1 == NULL ||
+      infection_dates2 == NULL ||
+      infection_dates3 == NULL ||
+      infection_dates4 == NULL ||
+      infection_dates5 == NULL ||
+      infection_dates6 == NULL ||
+      infection_dates7 == NULL) {
+    free(infection_dates0);
+    free(infection_dates1);
+    free(infection_dates2);
+    free(infection_dates3);
+    free(infection_dates4);
+    free(infection_dates5);
+    free(infection_dates6);
+    free(infection_dates7);
+    UNPROTECT(np);
+    return R_NilValue;
+  }
+  
+  for (unsigned int i = 0; i < N_ans0; ++i) {
+    infection_dates0[i] = SUSCEPTIBLE_DATE;
+    infection_dates1[i] = SUSCEPTIBLE_DATE;
+    infection_dates2[i] = SUSCEPTIBLE_DATE;
+    infection_dates3[i] = SUSCEPTIBLE_DATE;
+    infection_dates4[i] = SUSCEPTIBLE_DATE;
+    infection_dates5[i] = SUSCEPTIBLE_DATE;
+    infection_dates6[i] = SUSCEPTIBLE_DATE;
+    infection_dates7[i] = SUSCEPTIBLE_DATE;
+  }
+#endif
   
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
-#endif
-  for (unsigned int i = 0; i < N_ans; ++i) {
-    infection_dates[i] = SUSCEPTIBLE_DATE;
-  }
-
-  
-#if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) schedule(dynamic)
 #endif
   for (int pp = 0; pp < nPatientZero; ++pp) {
     int patientZero = patientsZero[pp];
@@ -478,21 +503,17 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
 #if defined _OPENMP && _OPENMP >= 201511
     thread = omp_get_thread_num() & 7;
 #endif
-    for (int i = 0; i < n_persons; ++i) {
-      infection_dates[start + i] = SUSCEPTIBLE_DATE;
-    }
     
     infection_dates[start + patientZero] = 0;
     int RACF_INFECTED[MAX_WID] = {0};
     // Show the first RACF as infected
-    int which_pid_is_zero = binary_find(patientZero, (int *)pid, N);
-    if (which_pid_is_zero >= 0) {
-      while (pid[which_pid_is_zero] && which_pid_is_zero < N) {
-        RACF_INFECTED[wid[which_pid_is_zero]] += 1;
-        ++which_pid_is_zero;
-      }
+    unsigned int which_pid_is_zero = binary_find(patientZero, (int *)pid, N);
+    
+    while (which_pid_is_zero < N && pid[which_pid_is_zero] == patientZero) {
+      RACF_INFECTED[wid[which_pid_is_zero]] += 1;
+      ++which_pid_is_zero;
     }
-    int n_infected = 1;
+    
     for (unsigned int day = 1; day <= n_days; ++day) {
       // each day
       // calculate the number of new infections at each RACF
@@ -523,9 +544,6 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
           while (++i_down < N && pid[i_down] == pidi && RACF_INFECTED[wid[i_down]]) {
             RACF_INFECTED[wid[i_down]] -= 1;
           }
-          if (n_infected) {
-            n_infected -= 1;
-          }
           continue;
         }
         if (days_since_infection < INCUBATION_PERIOD) {
@@ -536,7 +554,6 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
           RACF_INFECTED[widi] += new_infections;
           RACF_NEW_INFECTIONS[widi] += new_infections;
           n_new_infections += new_infections;
-          n_infected += new_infections;
         }
       }
       
@@ -554,7 +571,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
         if (widj_size < n_infections) {
           // number of infections exceeded
           misc_failure[thread] = WIDJ_SMALL;
-          continue;
+          n_infections = RACF_SIZE[widj] - 1;
         }
         // so widj needs n_infections allocated
         int idj[32] = {0};
@@ -568,8 +585,6 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
           infection_dates[start + pidj] = day;
         }
       }
-      
-      
     }
   }
   for (int thread = 0; thread < 8; ++thread) {
@@ -577,7 +592,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
       warning("malloc_failures[%d]", thread);
     }
     if (misc_failure[thread] != 0) {
-      warning("misc_failure[%d] = '%c'.", thread, misc_failure[thread]);
+      Rprintf("misc_failure[%d] = '%c'.", thread, misc_failure[thread]);
     }
   }
   UNPROTECT(np);
