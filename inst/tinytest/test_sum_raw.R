@@ -8,5 +8,5 @@ expect_equal(sum_raw(x), 1)
 expect_equal(sum_raw(charToRaw('a')), utf8ToInt('a'))
 out <- integer(256)
 out[2] <- 1L
-expect_equal(tabulate_raw(as.raw(1L)), out)
+expect_equal(hutilsc:::tabulate_raw(as.raw(1L)), out)
 

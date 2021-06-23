@@ -22,6 +22,8 @@ if (requireNamespace("withr", quietly = TRUE)) {
     x <- sample(200, size = 1)
     expect_equal(hutilsc:::test_radix_find(x, kilo1_large_c), 
                  which.max(kilo1_large_c == x))
+    expect_equal(hutilsc:::bsearch(x, kilo1_large_c), 
+                 which.max(kilo1_large_c == x))
   })
 }
 
