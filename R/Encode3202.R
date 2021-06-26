@@ -117,7 +117,6 @@ Decode_fwalnum <- function(e, cipher) {
 }
 
 TestCipher <- function() {
-  library(data.table)
   ans <- fread("~/../Downloads/trip_fare/trip_fare_1.csv", select = "medallion")
   cat(head(ans$medallion))
   cat("\n")

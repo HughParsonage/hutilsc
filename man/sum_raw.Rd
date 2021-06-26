@@ -2,9 +2,12 @@
 % Please edit documentation in R/sum_raw.R
 \name{sum_raw}
 \alias{sum_raw}
+\alias{tabulate_raw}
 \title{Sum a raw vector}
 \usage{
 sum_raw(x, nThread = getOption("hutilsc.nThread", 1L))
+
+tabulate_raw(x, nThread = getOption("hutilsc.nThread", 1L))
 }
 \arguments{
 \item{x}{A raw atomic vector.}

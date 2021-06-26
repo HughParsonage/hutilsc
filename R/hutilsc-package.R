@@ -9,7 +9,9 @@
 #' @importFrom hutils if_else
 #' @importFrom hutils set_cols_first
 #' @importFrom hutils set_cols_last
+#' @importFrom stats rnorm
 #' @importFrom utils hasName
+#' @importFrom utils head
 #' @importFrom utils packageName
 
 #' @keywords internal

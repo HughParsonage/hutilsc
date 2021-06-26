@@ -51,12 +51,19 @@ simulate_racf <- function(STP,
         PatientZero - 1L, 
         n_days,
         list(), 
+        0L,
         nThread)
   
 }
 
 
 prepare_racf <- function(STP, keyz = c("id", "racf_abm")) {
+  Resistance <- .subset2(STP, "Resistance")
+  if (is.raw(Resistance)) {
+    # Bad interplay with setkey
+    
+    STP[, Resistance := as.integer(Resistance)]
+  }
   if (identical(key(STP), c("id", "racf_abn"))) {
     STP[, racf_abm := chmatch(racf_abn, unique(racf_abn))]
     setkey(STP, id, racf_abm)
@@ -108,6 +115,10 @@ prepare_racf <- function(STP, keyz = c("id", "racf_abm")) {
   
   IMIN <- .subset2(iminmax_by_racf_id, "imin")
   IMAX <- .subset2(iminmax_by_racf_id, "imax")
+  
+  if (hasName(STP, "Resistance")) {
+    STP[, Resistance := as.raw(Resistance)] # by reference
+  }
   
   list(K1 = K1, 
        K2 = K2,
@@ -175,12 +186,16 @@ TestSimulate <- function(nn = 1e3) {
                 nThread = 1L)
 }
 
+
+
 Simulate_all <- function(STP,
                          Resistance = NULL,
+                         Returner = 1L,
                          keyz = c("id", "racf_abm"),
                          Epi = set_epipars(),
-                         iter_head = 1024,
+                         iter_head = 9536L,
                          n_days = 28L,
+                         out.tsv = NULL,
                          nThread = getOption("hutilsc.nThread", 1L)) {
   if (missing(STP)) {
     STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data = TRUE)
@@ -195,6 +210,7 @@ Simulate_all <- function(STP,
   
   if (is.null(Resistance)) {
     if (hasName(STP, "Resistance")) {
+      K1 <- PREP[["K1"]]
       first_ids <- K1 != shift(K1, fill = -1L)
       Resistance <- as.raw(.subset2(STP, "Resistance")[first_ids])
     }
@@ -205,6 +221,7 @@ Simulate_all <- function(STP,
                            r = sample.int(1e9, size = 88),
                            raw_result = TRUE, 
                            nThread = nThread)
+    Resistance <- rep_len(Resistance[Resistance <= 128], length(Resistance))
   }
   # Only simulate multi-employer patients
   iter <- which(PREP[["multi_employer"]]) - 1L
@@ -219,10 +236,24 @@ Simulate_all <- function(STP,
             iter, 
             n_days,
             list(), 
+            Returner,
             nThread)
-  data.table(InfectionDate = Out,
-             Patient = rep_len(u_id, length(Out)),
-             Patient0 = rep(iter, each = length(u_id) - 1))
+  Sys_time <- Sys.time()
+  ans <- 
+    switch(Returner + 1L,
+           
+           data.table(InfectionDate = Out,
+                      Patient = rep_len(u_id, length(Out)),
+                      Patient0 = rep(iter, each = length(u_id) - 1)),
+           data.table(Out, Patient0 = u_id[iter]))
+  if (is.null(out.tsv)) {
+    out.tsv <- (paste0("data-raw/", format(Sys_time, "%d%H%M%S"), ".tsv"))
+  }
+  hutils::provide.file(out.tsv)
+  fwrite(ans, 
+         file = out.tsv,
+         sep = "\t")
+  ans
 }
 
 test_qru <- function(p, q, m = 0L, z = 5L, n = 1e5L) {

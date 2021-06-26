@@ -29,6 +29,8 @@ sum_raw <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
   .Call("CSumRaw", x, nThread, PACKAGE = packageName())
 }
 
+#' @rdname sum_raw
+#' @export
 tabulate_raw <- function(x, nThread = getOption("hutilsc.nThread", 1L)) {
   .Call("CCountRaws", x, nThread, PACKAGE = packageName())
 }

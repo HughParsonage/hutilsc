@@ -55,7 +55,7 @@ extern SEXP Cpcg_hash(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cpmax0(SEXP);
 extern SEXP Crange_nchar(SEXP);
 extern SEXP CShuffleRindex(SEXP);
-extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Csqrt2(SEXP);
 extern SEXP Csum_isna(SEXP, SEXP);
 extern SEXP CSumRaw(SEXP, SEXP);
@@ -72,6 +72,7 @@ extern SEXP Cwhich_isnt_int(SEXP);
 extern SEXP Cwhich_isnt_sorted(SEXP);
 extern SEXP Cwhichminmax(SEXP);
 extern SEXP do_between(SEXP, SEXP, SEXP, SEXP);
+extern SEXP do_bsearch(SEXP, SEXP);
 extern SEXP is_binary_call(SEXP);
 extern SEXP len3_paths(SEXP, SEXP, SEXP);
 extern SEXP len4_paths(SEXP, SEXP, SEXP, SEXP);
@@ -128,7 +129,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cpmax0",                                (DL_FUNC) &Cpmax0,                                 1},
     {"Crange_nchar",                          (DL_FUNC) &Crange_nchar,                           1},
     {"CShuffleRindex",                        (DL_FUNC) &CShuffleRindex,                         1},
-    {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                        11},
+    {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                        12},
     {"Csqrt2",                                (DL_FUNC) &Csqrt2,                                 1},
     {"Csum_isna",                             (DL_FUNC) &Csum_isna,                              2},
     {"CSumRaw",                               (DL_FUNC) &CSumRaw,                                2},
@@ -145,6 +146,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cwhich_isnt_sorted",                    (DL_FUNC) &Cwhich_isnt_sorted,                     1},
     {"Cwhichminmax",                          (DL_FUNC) &Cwhichminmax,                           1},
     {"do_between",                            (DL_FUNC) &do_between,                             4},
+    {"do_bsearch",                            (DL_FUNC) &do_bsearch,                             2},
     {"is_binary_call",                        (DL_FUNC) &is_binary_call,                         1},
     {"len3_paths",                            (DL_FUNC) &len3_paths,                             3},
     {"len4_paths",                            (DL_FUNC) &len4_paths,                             4},
