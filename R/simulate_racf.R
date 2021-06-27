@@ -24,7 +24,15 @@ simulate_racf <- function(STP,
                           PatientZeroGroup = NULL,
                           PatientZero = sample(nrow(STP), size = 1),
                           n_days = 28L,
+                          Returner = 0L,
                           nThread = getOption("hutilsc.nThread", 1L)) {
+  if (missing(STP)) {
+    STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data = TRUE)
+    STP_Dec <- STP[Month == "Dec"]
+    STP_Dec[, i := .I]
+    stopifnot(is.character(STP_Dec[["racf_abn"]]))
+    STP <- STP_Dec
+  }
   PREP <- prepare_racf(STP, keyz)
   u_id <- PREP[["u_id"]]
   stopifnot(is.integer(u_id))
@@ -51,7 +59,7 @@ simulate_racf <- function(STP,
         PatientZero - 1L, 
         n_days,
         list(), 
-        0L,
+        Returner,
         nThread)
   
 }

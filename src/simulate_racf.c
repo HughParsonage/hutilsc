@@ -568,7 +568,6 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   }
     const int nPatientZeroLeq10k = (nPatientZero >= 10e3) ? 10e3 : nPatientZero;
     
-    
     unsigned char * infection_date0 = malloc(sizeof(char) * n_persons);
     unsigned char * infection_date1 = malloc(sizeof(char) * n_persons);
     unsigned char * infection_date2 = malloc(sizeof(char) * n_persons);
@@ -1160,6 +1159,46 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     return ans;
   }
     break;
+  case 33: {
+    bool malloc_failures[8] = {0};
+    unsigned char misc_failure[8] = {0};
+    const unsigned int N_ans = nPatientZero * n_persons;
+    SEXP ans = PROTECT(allocVector(RAWSXP, N_ans)); np++;
+    unsigned char * infection_dates = RAW(ans);
+    
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread)
+#endif
+    for (int pp = 0; pp < nPatientZero; ++pp) {
+      int patientZero = patientsZero[pp];
+      const int start = n_persons * pp; // offset for index into infection_dates,
+      int thread = 0;
+#if defined _OPENMP && _OPENMP >= 201511
+      thread = omp_get_thread_num() & 7;
+#endif
+      do_simulate(thread, 
+                  start,
+                  infection_dates,
+                  n_days,
+                  patientZero,
+                  n_persons,
+                  malloc_failures,
+                  misc_failure,
+                  pid, 
+                  wid,
+                  pjd, 
+                  wjd,
+                  N,
+                  R16_WORKPLACE,
+                  RACF_SIZE,
+                  resistance,
+                  m1,
+                  m2,
+                  m1_len);
+    }
+    UNPROTECT(np);
+    return ans;
+  }
   }
   UNPROTECT(np);
   return R_NilValue;

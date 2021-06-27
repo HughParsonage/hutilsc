@@ -13,6 +13,7 @@ simulate_racf(
   PatientZeroGroup = NULL,
   PatientZero = sample(nrow(STP), size = 1),
   n_days = 28L,
+  Returner = 0L,
   nThread = getOption("hutilsc.nThread", 1L)
 )
 
