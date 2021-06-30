@@ -191,7 +191,7 @@ SEXP Ctest_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
   return ans;
 }
 
-SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
+SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl, SEXP ZeroBased) {
   R_xlen_t N = xlength(x);
   R_xlen_t TN = xlength(tbl);
   if (TYPEOF(x) != INTSXP || TYPEOF(tbl) != INTSXP || TYPEOF(nThreads) != INTSXP) {
@@ -202,6 +202,7 @@ SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   const int * xp = INTEGER(x);
   int nthread = asInteger(nThreads);
   const bool return_lgl = asLogical(ret_lgl);
+  const bool zeroBased = asLogical(ZeroBased);
   
   const int min_tb = tp[0];
   const int max_tb = tp[TN - 1];
@@ -236,6 +237,12 @@ SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
     ansp[i] = (pi >= n_full_table_ui) ? 0 : full_table[pi];
   }
   free(full_table);
+  if (zeroBased && !return_lgl) {
+    for (R_xlen_t i = 0; i < N; ++i) {
+      ansp[i] -= 1;
+    }
+  }
+
   UNPROTECT(1);
   return ans;
 }

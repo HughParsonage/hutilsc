@@ -19,8 +19,11 @@ test_radix_find_range <- function(x, tbl, check_sorted = TRUE, use_tp = FALSE) {
   .Call("Ctest_radix_find_range", x, tbl, isTRUE(use_tp), PACKAGE = packageName())
 }
 
-find_ftc <- function(x, tbl, return_logical = TRUE, nThread = 10L) {
-  .Call("Cfind_ftc", x, tbl, nThread, isTRUE(return_logical), PACKAGE = packageName())
+find_ftc <- function(x, tbl, return_logical = TRUE, nThread = 10L, zero_based = FALSE) {
+  .Call("Cfind_ftc", x, tbl, nThread,
+        isTRUE(return_logical),
+        isTRUE(zero_based),
+        PACKAGE = packageName())
 }
 
 test_find_first <- function(x, k1, k2, u = NULL) {
