@@ -44,6 +44,7 @@ extern SEXP Chaversine_distance(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cis_constant(SEXP, SEXP);
 extern SEXP Cis_sorted(SEXP, SEXP);
 extern SEXP Cis_valid_path(SEXP, SEXP, SEXP);
+extern SEXP CkuniqueN(SEXP);
 extern SEXP Cminmax(SEXP, SEXP, SEXP);
 extern SEXP Cn_paths_svt0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cnames2int(SEXP, SEXP);
@@ -118,6 +119,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cis_constant",                          (DL_FUNC) &Cis_constant,                           2},
     {"Cis_sorted",                            (DL_FUNC) &Cis_sorted,                             2},
     {"Cis_valid_path",                        (DL_FUNC) &Cis_valid_path,                         3},
+    {"CkuniqueN",                             (DL_FUNC) &CkuniqueN,                              1},
     {"Cminmax",                               (DL_FUNC) &Cminmax,                                3},
     {"Cn_paths_svt0",                         (DL_FUNC) &Cn_paths_svt0,                         11},
     {"Cnames2int",                            (DL_FUNC) &Cnames2int,                             2},
