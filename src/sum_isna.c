@@ -109,4 +109,20 @@ SEXP do_which_na(SEXP x, SEXP Not) {
   return ans;
 }
 
+SEXP Csum_int(SEXP x) {
+  if (TYPEOF(x) != INTSXP) {
+    return ScalarInteger(0);
+  }
+  const int * xp = INTEGER(x);
+  R_xlen_t N = xlength(x);
+  uint64_t o = 0;
+#pragma omp parallel for reduction(+:o)
+  for (R_xlen_t i = 0; i < N; ++i) {
+    o += xp[i];
+  }
+  if (o >= INT_MAX) {
+    return ScalarReal(o);
+  }
+  return ScalarInteger(o);
+}
 

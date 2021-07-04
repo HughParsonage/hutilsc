@@ -5,6 +5,7 @@
 #define INCUBATION_PERIOD 8
 #define N_COLLEAGUES 32
 #define MAX_NTHREAD 8
+#define MAX_INFECTED 65536
 
 // unsigned chars for in-thread errors handled gracefully
 #define WIDJ_SMALL 'w'
@@ -82,6 +83,12 @@ void insertNe(unsigned char * x, int a, int n) {
     x[j + 1] = x[j];
   }
   x[j + 1] = a;
+}
+
+void deleteIdx(int * x, int j, int n) {
+  for (int i = j; i < n - 1; ++i) {
+    x[i] = x[i + 1];
+  }
 }
 
 
@@ -204,29 +211,40 @@ void do_simulate(int thread,
                  int patientZero, 
                  int n_persons,
                  bool malloc_failures[MAX_NTHREAD],
-                                     unsigned char misc_failure[MAX_NTHREAD],
-                                                               const int * pid,
-                                                               const int * wid, 
-                                                               const int * pjd,
-                                                               const int * wjd,
-                                                               int N,
-                                                               const int * R16_WORKPLACE,
-                                                               const int * RACF_SIZE,
-                                                               const unsigned char * resistance,
-                                                               const int * m1,
-                                                               const int * m2,
-                                                               int m1_len) {
+                 unsigned char misc_failure[MAX_NTHREAD],
+                 const int * pid,
+                 const int * wid, 
+                 const int * pjd,
+                 const int * wjd,
+                 int N,
+                 const int * idx_pid,
+                 const unsigned int * R16_WORKPLACE,
+                 const unsigned int * RACF_SIZE,
+                 const unsigned char * resistance,
+                 const int * m1,
+                 const int * m2,
+                 int m1_len) {
   infection_date[start + patientZero] = 0;
   int RACF_INFECTED[MAX_WID] = {0};
   // Show the first RACF as infected
   unsigned int which_pid_is_zero = binary_find(patientZero, (int *)pid, N);
+  if (which_pid_is_zero >= N) {
+    return; // patientZero not in pid so no infections possible
+  }
   
   while (which_pid_is_zero < N && pid[which_pid_is_zero] == patientZero) {
     RACF_INFECTED[wid[which_pid_is_zero]] += 1;
     ++which_pid_is_zero;
   }
+  // infected individuals
+  int indx_infected_pi[MAX_INFECTED] = {0};
+  indx_infected_pi[0] = patientZero;
+  int n_infections = 1;
   
   for (unsigned int day = 1; day <= n_days; ++day) {
+    if (!n_infections) {
+      break;
+    }
     // each day
     // calculate the number of new infections at each RACF
     // then cycle through each person until infections exhausted
@@ -236,14 +254,12 @@ void do_simulate(int thread,
     unsigned short int RACF_NEW_INFECTIONS[MAX_WID] = {0};
     unsigned short int n_new_infections = 0;
     // internal infections
-    bool no_one_infected = true; // for early return
-    for (int i = 0; i < N; ++i) {
+    // loop through each infected individual
+    for (int ii = 0; ii < n_infections; ++ii) {
+      unsigned int infection_ii = indx_infected_pi[ii];
+      int i = idx_pid[infection_ii];  
       int pidi = pid[i];
       unsigned char pid_infection_date = infection_date[start + pidi];
-      if (pid_infection_date == SUSCEPTIBLE_DATE) {
-        continue;
-      }
-      no_one_infected = false;
       
       int widi = wid[i];
       unsigned char days_since_infection = day - pid_infection_date;
@@ -255,6 +271,8 @@ void do_simulate(int thread,
         while (++i_down < N && pid[i_down] == pidi && RACF_INFECTED[wid[i_down]]) {
           RACF_INFECTED[wid[i_down]] -= 1;
         }
+        --n_infections;
+        deleteIdx(indx_infected_pi, ii, MAX_INFECTED);
         continue;
       }
       if (days_since_infection < INCUBATION_PERIOD) {
@@ -268,31 +286,33 @@ void do_simulate(int thread,
       }
     }
     
-    if (no_one_infected) {
-      break;
-    }
     
-    // Loop through each RACF. If infected,
+    
+    // Loop through each RACF, recording number of infections at each site
     for (int widj = 0; widj < MAX_WID; ++widj) {
-      int n_infections = RACF_NEW_INFECTIONS[widj] & 31;
-      if (n_infections == 0) {
+      int n_infections_widj = RACF_NEW_INFECTIONS[widj] & 31;
+      if (n_infections_widj == 0) {
         continue;
       }
       int widj_size = RACF_SIZE[widj];
-      if (widj_size < n_infections) {
+      if (widj_size < n_infections_widj) {
         // number of infections exceeded
         misc_failure[thread] = WIDJ_SMALL;
-        n_infections = RACF_SIZE[widj] - 1;
+        n_infections_widj = RACF_SIZE[widj] - 1;
       }
       // so widj needs n_infections allocated
       int idj[32] = {0};
-      sow_wjd_indices(idj, widj, n_infections, m1, m2, m1_len, widj_size, thread);
-      for (int k = 0; k < n_infections; ++k) {
+      sow_wjd_indices(idj, widj, n_infections_widj, m1, m2, m1_len, widj_size, thread);
+      for (int k = 0; k < n_infections_widj; ++k) {
+        // attempt infection for each target
         int j = idj[k];
         int pidj = pjd[j];
         if (is_resistant(pidj, resistance, tpcg_sample1c(thread))) {
           continue;
         }
+        // here we can deterministically infect subsets of each RACF
+        indx_infected_pi[n_infections] = pidj;
+        n_infections += (n_infections < MAX_INFECTED);
         infection_date[start + pidj] = day;
       }
     }
@@ -434,6 +454,12 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   }
   const unsigned int nPatientZero = xlength(PatientZero);
   const int * patientsZero = INTEGER(PatientZero);
+  if (maxX(patientsZero, xlength(PatientZero), false) > n_persons) {
+    UNPROTECT(np);
+    error("max(patientZero) = %d, yet n_persons = %d",
+          maxX(patientsZero, xlength(PatientZero), false),
+          n_persons);
+  }
   
   unsigned int RACF_SIZE[MAX_WID] = {0};
   for (int i = 0; i < N; ++i) {
@@ -446,15 +472,35 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   const unsigned int R16_WORKPLACE[16] = {0, 1, 0, 1, 1, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 2};
   
-  
+  // index of Edgelist
+  int * idx_pid = malloc(sizeof(int) * n_persons);
+  if (idx_pid == NULL) {
+    UNPROTECT(np); // # nocov
+    error("Unable to allocate idx_pid");  // # nocov
+    return R_NilValue;
+  }
+  for (int i = 0; i < n_persons; ++i) {
+    idx_pid[i] = -1; // means not found
+  }
+  // go backwards to get the first entry
+  // Rely on n_persons to have been correct at this time to 
+  // ensure all pidi indices are within bounds
+  for (int i = N - 1; i >= 0; --i) {
+    int pidi = pid[i];
+    idx_pid[pidi] = i;
+  }
+
   
   switch(returner) {
   case 0: {
+    // Return the infection dates for each person for each 
+    // patient zero.
     bool malloc_failures[8] = {0};
     unsigned char misc_failure[8] = {0};
     const unsigned int N_ans = nPatientZero * n_persons;
     SEXP ans = PROTECT(allocVector(RAWSXP, N_ans)); np++;
     unsigned char * infection_dates = RAW(ans);
+    memset(infection_dates, SUSCEPTIBLE_DATE, N_ans);
     
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
@@ -488,8 +534,13 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
         unsigned short int n_new_infections = 0;
         // internal infections
         bool no_one_infected = true; // for early return
-        for (int i = 0; i < N; ++i) {
+        for (int i = 1; i < N; ++i) {
+
           int pidi = pid[i];
+          // don't repeatedly check the same pid
+          if (pidi == pid[i - 1]) {
+            continue;
+          }
           unsigned char pid_infection_date = infection_dates[start + pidi];
           if (pid_infection_date == SUSCEPTIBLE_DATE) {
             continue;
@@ -1159,12 +1210,58 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     return ans;
   }
     break;
+    case 2: {
+      bool malloc_failures[8] = {0};
+      unsigned char misc_failure[8] = {0};
+      unsigned char * infection_dates = malloc(sizeof(char) * n_persons);
+      memset(infection_dates, SUSCEPTIBLE_DATE, n_persons);
+      SEXP ans = PROTECT(allocVector(INTSXP, nPatientZero)); np++;
+      int * restrict ansp = INTEGER(ans);
+      for (int pp = 0; pp < nPatientZero; ++pp) {
+        int patientZero = patientsZero[pp];
+        int thread = 0, start = 0;
+        memset(infection_dates, SUSCEPTIBLE_DATE, n_persons);
+        do_simulate(thread, 
+                  start,
+                  infection_dates,
+                  n_days,
+                  patientZero,
+                  n_persons,
+                  malloc_failures,
+                  misc_failure,
+                  pid, 
+                  wid,
+                  pjd, 
+                  wjd,
+                  N,
+                  (const int *)idx_pid,
+                  R16_WORKPLACE,
+                  RACF_SIZE,
+                  resistance,
+                  m1,
+                  m2,
+                  m1_len);
+        unsigned int anspp = 0;
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) reduction(+:anspp)
+#endif
+        for (int i = 0; i < n_persons; ++i) {
+          anspp += (((int)infection_dates[i]) <= n_days);
+        }
+        ansp[pp] = anspp;
+      }
+      UNPROTECT(np);
+      return ans;
+    }
+    break;
   case 33: {
+    Rprintf("Case 33\n");
     bool malloc_failures[8] = {0};
     unsigned char misc_failure[8] = {0};
     const unsigned int N_ans = nPatientZero * n_persons;
     SEXP ans = PROTECT(allocVector(RAWSXP, N_ans)); np++;
     unsigned char * infection_dates = RAW(ans);
+    memset(infection_dates, SUSCEPTIBLE_DATE, N_ans);
     
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
@@ -1189,6 +1286,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
                   pjd, 
                   wjd,
                   N,
+                  (const int *)idx_pid,
                   R16_WORKPLACE,
                   RACF_SIZE,
                   resistance,

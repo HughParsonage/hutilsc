@@ -11,7 +11,7 @@ simulate_racf(
   keyz = c("id", "racf_abm"),
   Epi = set_epipars(),
   PatientZeroGroup = NULL,
-  PatientZero = sample(nrow(STP), size = 1),
+  PatientZero = sample.int(kuniqueN(STP), size = 1),
   n_days = 28L,
   Returner = 0L,
   nThread = getOption("hutilsc.nThread", 1L)
@@ -37,10 +37,28 @@ If present, it may be used to indicate which rows are vaccinated. If
 a row is \code{NA}, it will be replaced with \code{TRUE} or \code{FALSE}
 based on the epidemiological parameter \code{Epi$v_workplaces}.}
 
-\item{Resistance}{If \code{NULL}, a \code{raw} vector indicating the
-resistance of the individual}
+\item{Resistance}{A \code{raw} vector indicating the
+resistance of each individual.
+If \code{NULL}, the default, the resistance is uniformly
+distributed between \code{00} (255/256 chance of infection) and
+\code{ff} (0/256 chance of infection).}
+
+\item{keyz}{(Temporary)}
 
 \item{Epi}{Epidemiological parameters.}
+
+\item{PatientZeroGroup}{Not yet implemented.}
+
+\item{PatientZero}{\code{integer(nPatient)} An integer vector, the
+starting index cases. By default a random sample of the number of
+individuals is used.}
+
+\item{n_days}{\code{integer(1)} Number of days to simulate.}
+
+\item{Returner}{The return type. An integer.
+\describe{
+\item{\code{0}}{A raw vector of length }
+}}
 
 \item{sir}{\code{double{3}} A vector.}
 }

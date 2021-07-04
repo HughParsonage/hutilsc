@@ -37,7 +37,7 @@ extern SEXP Censure_leq(SEXP, SEXP);
 extern SEXP Cevery_int32(SEXP, SEXP);
 extern SEXP Cfast_nchar(SEXP);
 extern SEXP Cfibonacci(SEXP, SEXP);
-extern SEXP Cfind_ftc(SEXP, SEXP, SEXP, SEXP);
+extern SEXP Cfind_ftc(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP CfindAbsent(SEXP, SEXP);
 extern SEXP Cfuse3(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Chaversine_distance(SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -58,6 +58,7 @@ extern SEXP Crange_nchar(SEXP);
 extern SEXP CShuffleRindex(SEXP);
 extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Csqrt2(SEXP);
+extern SEXP Csum_int(SEXP);
 extern SEXP Csum_isna(SEXP, SEXP);
 extern SEXP CSumRaw(SEXP, SEXP);
 extern SEXP Ctabula_RecordID(SEXP);
@@ -112,7 +113,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cevery_int32",                          (DL_FUNC) &Cevery_int32,                           2},
     {"Cfast_nchar",                           (DL_FUNC) &Cfast_nchar,                            1},
     {"Cfibonacci",                            (DL_FUNC) &Cfibonacci,                             2},
-    {"Cfind_ftc",                             (DL_FUNC) &Cfind_ftc,                              4},
+    {"Cfind_ftc",                             (DL_FUNC) &Cfind_ftc,                              5},
     {"CfindAbsent",                           (DL_FUNC) &CfindAbsent,                            2},
     {"Cfuse3",                                (DL_FUNC) &Cfuse3,                                 4},
     {"Chaversine_distance",                   (DL_FUNC) &Chaversine_distance,                    5},
@@ -133,6 +134,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"CShuffleRindex",                        (DL_FUNC) &CShuffleRindex,                         1},
     {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                        12},
     {"Csqrt2",                                (DL_FUNC) &Csqrt2,                                 1},
+    {"Csum_int",                              (DL_FUNC) &Csum_int,                               1},
     {"Csum_isna",                             (DL_FUNC) &Csum_isna,                              2},
     {"CSumRaw",                               (DL_FUNC) &CSumRaw,                                2},
     {"Ctabula_RecordID",                      (DL_FUNC) &Ctabula_RecordID,                       1},

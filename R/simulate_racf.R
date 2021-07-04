@@ -9,10 +9,29 @@
 #' a row is \code{NA}, it will be replaced with \code{TRUE} or \code{FALSE}
 #' based on the epidemiological parameter \code{Epi$v_workplaces}.
 #' 
-#' @param Resistance If \code{NULL}, a \code{raw} vector indicating the 
-#' resistance of the individual
+#' @param Resistance A \code{raw} vector indicating the 
+#' resistance of each individual.
+#' If \code{NULL}, the default, the resistance is uniformly 
+#' distributed between \code{00} (255/256 chance of infection) and
+#'  \code{ff} (0/256 chance of infection). 
+#'  
+#' @param keyz (Temporary)
+#' 
+#' @param PatientZero \code{integer(nPatient)} An integer vector, the 
+#' starting index cases. By default a random sample of the number of 
+#' individuals is used.
+#' 
+#' @param PatientZeroGroup Not yet implemented.
+#'   
 #' 
 #' @param Epi Epidemiological parameters.
+#' 
+#' @param n_days \code{integer(1)} Number of days to simulate.
+#' 
+#' @param Returner The return type. An integer.
+#' \describe{
+#' \item{\code{0}}{A raw vector of length }
+#' }
 #' 
 #' 
 #' @export simulate_racf
@@ -22,10 +41,13 @@ simulate_racf <- function(STP,
                           keyz = c("id", "racf_abm"),
                           Epi = set_epipars(),
                           PatientZeroGroup = NULL,
-                          PatientZero = sample(nrow(STP), size = 1),
+                          PatientZero = sample.int(kuniqueN(STP), size = 1),
                           n_days = 28L,
                           Returner = 0L,
                           nThread = getOption("hutilsc.nThread", 1L)) {
+  stopifnot(is.integer(Returner), 
+            length(Returner) == 1L)
+  Returner <- coalesce(Returner, 0L)
   if (missing(STP)) {
     STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data = TRUE)
     STP_Dec <- STP[Month == "Dec"]
@@ -39,6 +61,7 @@ simulate_racf <- function(STP,
   
   if (is.null(Resistance)) {
     if (hasName(STP, "Resistance")) {
+      K1 <- .subset2(STP, key(STP)[1])
       first_ids <- K1 != shift(K1, fill = -1L)
       Resistance <- as.raw(.subset2(STP, "Resistance")[first_ids])
     }
@@ -51,16 +74,22 @@ simulate_racf <- function(STP,
                            nThread = nThread)
   }
   
-  .Call("Csimulate_racf", 
-        PREP[[1]], PREP[[2]],
-        PREP[[3]], PREP[[4]],
-        PREP[[5]], PREP[[6]],
-        Resistance,
-        PatientZero - 1L, 
-        n_days,
-        list(), 
-        Returner,
-        nThread)
+  out <- 
+    .Call("Csimulate_racf", 
+          PREP[[1]], PREP[[2]],
+          PREP[[3]], PREP[[4]],
+          PREP[[5]], PREP[[6]],
+          Resistance,
+          PatientZero - 1L, 
+          n_days,
+          list(), 
+          Returner,
+          nThread)
+  switch(as.character(Returner),
+         "0" = out,
+         "1" = out,
+         "33" = out,
+         out)
   
 }
 
@@ -118,8 +147,8 @@ prepare_racf <- function(STP, keyz = c("id", "racf_abm")) {
                 imax = max(i)), 
             keyby = .(racf_abm)]
   
-  iminmax_by_racf_id[, imin := imin ]
-  iminmax_by_racf_id[, imax := imax ]
+  iminmax_by_racf_id[, imin := imin - 1L]
+  iminmax_by_racf_id[, imax := imax - 1L]
   
   IMIN <- .subset2(iminmax_by_racf_id, "imin")
   IMAX <- .subset2(iminmax_by_racf_id, "imax")
@@ -184,17 +213,9 @@ ShuffleRindex <- function(x) {
 }
 
 TestSimulate <- function(nn = 1e3) {
-  STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data = TRUE)
-  STP_Dec <- STP[Month == "Dec"]
-  STP_Dec[, i := .I]
-  stopifnot(is.character(STP_Dec[["racf_abn"]]))
-  # print(STP_Dec[racf_abn == "74082931575", .(i, id, racf_abn)])
-  simulate_racf(STP_Dec, 
-                PatientZero = STP_Dec[, which_last(racf_abn == "74082931575")], 
+  simulate_racf(PatientZero = 1:nn, Returner = 2L,
                 nThread = 1L)
 }
-
-
 
 Simulate_all <- function(STP,
                          Resistance = NULL,
