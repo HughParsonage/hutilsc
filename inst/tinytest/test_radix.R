@@ -28,6 +28,8 @@ if (requireNamespace("withr", quietly = TRUE)) {
 }
 
 x <- 1:101
+expect_equal(bsearch(1L, x), 1L)
+
 expect_equal(diff(sapply(x, test_radix_find, x)),
              rep(1L, 100L))
 expect_equal(sapply(x, test_radix_find_range, x), 

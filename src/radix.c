@@ -344,7 +344,7 @@ int binary_find(int key, int * xp, int N) {
   int * res = (int *)bsearch(&key, xp, N, sizeof(int), cmpfunc);
   if (res) {
     int indx = res - &xp[0];
-    while (indx && xp[indx] == key) {
+    while (indx >= 0 && xp[indx] == key) {
       --indx;
     }
     return indx + 1; 
