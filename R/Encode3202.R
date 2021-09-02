@@ -59,13 +59,80 @@ DecodeRecordID <- function(x) {
   .Call("CdecodeRecordID", x, PACKAGE = packageName())
 }
 
-pad0 <- function(x, w) {
-  stopifnot(is.character(x), is.integer(w))
-  .Call("Cpad0", x, w, PACKAGE = packageName())
-}
 
 tabula_RecordID <- function(x) {
   o <- .Call("Ctabula_RecordID", x, PACKAGE = packageName())
   as.data.table(matrix(o, ncol = 19))[, c := c(0:9, LETTERS, letters)]
 }
+
+fwalnume <- function(x, n = nchar(first(x))) {
+  .Call("Cdetermine_const_width_alnum_encoding", 
+        x, n, PACKAGE = packageName())
+}
+
+validate_fwalnume <- function(x, cipher, check_for_na = TRUE) {
+  stopifnot(is.character(x), is.character(cipher))
+  if (isTRUE(check_for_na) && anyNA(x)) {
+    return(which.max(is.na(x)))
+  }
+  .Call("Cvalidate_encoding", x, cipher, PACKAGE = packageName())
+}
+
+Encode_fwalnum1 <- function(x) {
+  as.integer(Encode_fwalnum(x, cipher = rep(fwalnume(c(0:9, LETTERS, letters)),
+                                 nchar(x[1]))))
+}
+
+Encode_fwalnum <- function(x,
+                           cipher = NULL,
+                           validate_cipher = TRUE,
+                           check_for_na = FALSE) {
+  if (is.null(cipher)) {
+    cipher <- fwalnume(x)
+    n <- length(cipher)
+  } else {
+    stopifnot(is.character(cipher))
+    if (isTRUE(validate_cipher)) {
+      invalid <- validate_fwalnume(x, cipher, check_for_na = check_for_na)
+      if (invalid) {
+        stop("`x` failed validation at position ", invalid, ".\n\t",
+             "x[i] = ", x[invalid], "\n\t", 
+             "cipher = ", toString(cipher))
+      }
+    }
+  }
+  ans <- .Call("Calphnum_enc", x, cipher, PACKAGE = packageName())
+  attr(ans, "hutilsc_cipher") <- cipher
+  ans
+}
+
+
+
+
+Decode_fwalnum <- function(e, cipher) {
+  # if (v <- validate_const_width_alnum_encoding(e, cipher, check_for_na = TRUE)) {
+  #   stop("Invalid cipher due to ", e[v], " at position ", v)
+  # }
+  .Call("Calphnum_dec", e, cipher, PACKAGE = packageName())
+}
+
+TestCipher <- function() {
+  ans <- fread("~/../Downloads/trip_fare/trip_fare_1.csv", select = "medallion")
+  cat(head(ans$medallion))
+  cat("\n")
+  enc <- Encode_fwalnum(ans$medallion)
+  cat(head(enc))
+  cat("\n")
+  cip <- attr(enc, "hutilsc_cipher")
+  cat(("cipher\n\t"))
+  cat(cip)
+  cat("\n")
+  dec <- Decode_fwalnum(enc[1:10], cip)
+  data.table(orig = head(ans$medallion, 10), enc = enc[1:10], dec = dec[1:10])
+}
+
+
+
+
+
 

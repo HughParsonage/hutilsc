@@ -37,7 +37,32 @@ SEXP do_between_lgl(SEXP x, SEXP lwr, SEXP upr) {
   return R_NilValue;
 }
 
-SEXP do_between(SEXP x, SEXP lwr, SEXP upr) {
+SEXP do_between_int(SEXP x, SEXP lwr, SEXP upr, SEXP nthreads) {
+  const int a = asInteger(lwr);
+  const int b = asInteger(upr) == NA_INTEGER ? INT_MAX : asInteger(upr);
+  int nThread = as_nThread(nthreads);
+  R_xlen_t N = xlength(x);
+  SEXP ans = PROTECT(allocVector(RAWSXP, N));
+  unsigned char * restrict ansp = RAW(ans);
+  if (b < a) {
+    for (R_xlen_t i = 0; i < N; ++i) {
+      ansp[i] = 0;
+    }
+    UNPROTECT(1);
+    return ans;
+  }
+  const int * xp = INTEGER(x);
+  const unsigned int b_minus_a = (unsigned int)b - a;
+  const unsigned int au = (unsigned int)a;
+  pragma_omp
+  for (R_xlen_t i = 0; i < N; ++i) {
+    ansp[i] = (unsigned int)(xp[i] - au) <= b_minus_a;
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP do_between(SEXP x, SEXP lwr, SEXP upr, SEXP nthreads) {
   R_xlen_t N = xlength(x);
   if (N == 0) {
     return R_NilValue;
@@ -45,9 +70,9 @@ SEXP do_between(SEXP x, SEXP lwr, SEXP upr) {
   switch(TYPEOF(x)) {
   case LGLSXP:
     return do_between_lgl(x, lwr, upr);
-    /*
   case INTSXP:
-    return do_between_int(x, lwr, upr);
+    return do_between_int(x, lwr, upr, nthreads);
+    /*
   case REALSXP:
     return do_between_dbl(x, lwr, upr);
   case STRSXP:

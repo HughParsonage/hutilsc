@@ -87,4 +87,42 @@ SEXP Cfibonacci(SEXP nn, SEXP return_seq) {
   return ans;
 } 
 
+SEXP Callocate0_int(SEXP N, SEXP nThread) {
+  if (xlength(N) != 1 || (TYPEOF(N) != INTSXP && TYPEOF(N) != REALSXP)) {
+    error("N not a single number.");
+  }
+  if (xlength(nThread) != 1 ||
+      (TYPEOF(nThread) != INTSXP && TYPEOF(nThread) != REALSXP)) {
+    error("nThread not a single number.");
+  }
+  R_xlen_t n = TYPEOF(N) == INTSXP ? asInteger(N) : asReal(N);
+  int nthreads = asInteger(nThread);
+  SEXP ans = PROTECT(allocVector(INTSXP, n));
+  int * restrict out = INTEGER(ans);
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nthreads)
+#endif
+  for (R_xlen_t i = 0; i < n; ++i) {
+    out[i] = 0;
+  }
+  UNPROTECT(1);
+  return ans;
+}
+
+SEXP Cevery_int32(SEXP nthreads, SEXP Na) {
+  const int na_req = asInteger(Na);
+  int nThread = as_nThread(nthreads);
+  SEXP ans = PROTECT(allocVector(INTSXP, 4294967296));
+  int * restrict ansp = INTEGER(ans);
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread)
+#endif
+  for (unsigned int i = 0; i < 4294967295; ++i) {
+    ansp[i] = i;
+  }
+  ansp[4294967295] = -1;
+  ansp[2147483648] = na_req;
+  UNPROTECT(1);
+  return ans;
+}
 

@@ -9,10 +9,20 @@
 #include <stdint.h> // for uint64_t rather than unsigned long long
 #include <stdbool.h>
 #include <math.h>
+#include <ctype.h>
 
 #if _OPENMP
 #include <omp.h>
 #endif
+
+#if defined _OPENMP && _OPENMP >= 201511
+#define pragma_omp _Pragma("omp parallel for num_threads(nThread)")
+#else
+#define pragma_omp 
+#endif
+
+
+
 
 #define DEBUG 0
 
@@ -34,7 +44,7 @@ extern int tens[10];
 
 // character
 bool all_digits_4_12(const char * xi);
-bool all_digits(const char * xi, size_t nchari);
+bool all_digits(const char * xi, int nchari);
 int char2int(const char * x, int s);
 int char12_to_int(const char * x);
 int nth_digit_of(int x, int n);
@@ -43,23 +53,24 @@ char digit2char(int d);
 int n_digits0(unsigned int x);
 
 
-#define return_false do {                                      \
-            SEXP ans = PROTECT(allocVector(LGLSXP, 1));        \
-            LOGICAL(ans)[0] = FALSE;                           \
-            UNPROTECT(1);                                      \
-            return ans;                                        \
-} while (0)
-
-#define return_true do {                                      \
-SEXP ans = PROTECT(allocVector(LGLSXP, 1));                    \
-LOGICAL(ans)[0] = TRUE;                                       \
-UNPROTECT(1);                                                  \
-return ans;                                                    \
-} while (0)                                                    \
-
 int do_op2M(SEXP op);
 
+// character
+SEXP do_pad0(SEXP x, const int w);
+
+// error
+bool notInt(SEXP x);
+bool notDbl(SEXP x);
+int notEquiLgl2(SEXP x, SEXP y);
+int notEquiInt2(SEXP x, SEXP y);
+int notEquiInt3(SEXP x, SEXP y, SEXP z);
+int notEquiDbl3(SEXP x, SEXP y, SEXP z);
+int notEquiDbl2(SEXP x, SEXP y);
+
 float ssqrt_fast(float x);
+double euclid_dist_d(double d0, double d1);
+double euclid_dist(double x0, double y0, double x1, double y1);
+
 unsigned int radix_find(int a, unsigned int x0, unsigned int x1, const int * k1, unsigned int * tbl);
 void radix_find_range(int a, 
                       const int * k1,
@@ -68,12 +79,32 @@ void radix_find_range(int a,
                       unsigned int * R);
 void linear_find_range(int x, const int * k1, R_xlen_t * R, const R_xlen_t N);
 void ftc2(int * U0, int * U1, const int * k1, int N);
+int binary_find(int key, int * xp, int N);
 
 // maxmin
+unsigned int amax(unsigned int x[], int n);
+int sxp_required(unsigned int x[], int n);
+int maxX(const int * x, R_xlen_t N, bool sx);
 int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy);
-void Vminmax_i(int minmax[], int * x, R_xlen_t N, int nthreads);
+void Vminmax_i(int minmax[], const int * x, R_xlen_t N, int nthreads);
+SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);
+
+// pcg_hash
+unsigned int rand_pcg();
+unsigned int trand_pcg(int thread);
+unsigned int pcg_hash(unsigned int input);
+unsigned int pcg_sample1(unsigned int max);
+unsigned int pcg_sample_halfmax();
+unsigned int tpcg_sample_halfmax(int thread);
+unsigned char tpcg_sample1c(int thread);
+
+// ScalarLength
+SEXP ScalarLength(R_xlen_t o);
 
 // sortedness
 bool sorted_int(const int * xp, R_xlen_t N, int nThreads);
+
+// omp_diagnose
+int as_nThread(SEXP x);
   
 #endif

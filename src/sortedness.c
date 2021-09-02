@@ -83,14 +83,14 @@ bool sorted_str(SEXP x, R_xlen_t N, int nThreads) {
 
 SEXP Cwhich_isnt_sorted(SEXP x) {
   R_xlen_t o = which_isnt_sorted(x);
-  return o <= INT_MAX ? ScalarInteger(o) : ScalarReal(o);
+  return ScalarLength(o);
 }
 
 SEXP Cis_sorted(SEXP x, SEXP nThread) {
   int nThreads = asInteger(nThread);
   R_xlen_t N = xlength(x);
   if (N <= 1) {
-    return_true;
+    return ScalarLogical(1);
   }
   
   char o = -1;

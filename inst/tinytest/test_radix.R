@@ -1,3 +1,7 @@
+library(hutilsc)
+library(data.table)
+
+bsearch <- hutilsc:::bsearch
 
 test_radix_find <- hutilsc:::test_radix_find
 test_radix_find_range <- hutilsc:::test_radix_find_range
@@ -22,10 +26,14 @@ if (requireNamespace("withr", quietly = TRUE)) {
     x <- sample(200, size = 1)
     expect_equal(hutilsc:::test_radix_find(x, kilo1_large_c), 
                  which.max(kilo1_large_c == x))
+    expect_equal(hutilsc:::bsearch(x, kilo1_large_c), 
+                 which.max(kilo1_large_c == x))
   })
 }
 
 x <- 1:101
+expect_equal(bsearch(1L, x), 1L)
+
 expect_equal(diff(sapply(x, test_radix_find, x)),
              rep(1L, 100L))
 expect_equal(sapply(x, test_radix_find_range, x), 
@@ -62,6 +70,8 @@ for (i in seq_len(max(x))) {
                    i %in% x))
   expect_equal(hutilsc:::find_ftc(i, x, return_logical = FALSE), 
                match(i, x, nomatch = 0L))
+  expect_equal(hutilsc:::find_ftc(i, x, zero_based = TRUE, return_logical = FALSE), 
+               match(i, x, nomatch = 0L) - 1L)
 }
 
 

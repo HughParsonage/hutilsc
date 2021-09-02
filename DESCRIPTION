@@ -1,6 +1,6 @@
 Package: hutilsc
 Title: High-Performance Functions for Atomic Vectors
-Version: 0.2.5
+Version: 0.3.0
 Authors@R: 
     person(given = "Hugh",
            family = "Parsonage",
@@ -16,8 +16,11 @@ Imports:
     data.table,
     checkmate,
     fastmatch,
+    fst,
     hutils,
+    igraph,
     utils
 Suggests: 
     tinytest,
+    hutilscpp,
     withr

@@ -191,7 +191,7 @@ SEXP Ctest_radix_find_range(SEXP xx, SEXP K1, SEXP usetp) {
   return ans;
 }
 
-SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
+SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl, SEXP ZeroBased) {
   R_xlen_t N = xlength(x);
   R_xlen_t TN = xlength(tbl);
   if (TYPEOF(x) != INTSXP || TYPEOF(tbl) != INTSXP || TYPEOF(nThreads) != INTSXP) {
@@ -202,6 +202,7 @@ SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
   const int * xp = INTEGER(x);
   int nthread = asInteger(nThreads);
   const bool return_lgl = asLogical(ret_lgl);
+  const bool zeroBased = asLogical(ZeroBased);
   
   const int min_tb = tp[0];
   const int max_tb = tp[TN - 1];
@@ -236,6 +237,12 @@ SEXP Cfind_ftc(SEXP x, SEXP tbl, SEXP nThreads, SEXP ret_lgl) {
     ansp[i] = (pi >= n_full_table_ui) ? 0 : full_table[pi];
   }
   free(full_table);
+  if (zeroBased && !return_lgl) {
+    for (R_xlen_t i = 0; i < N; ++i) {
+      ansp[i] -= 1;
+    }
+  }
+
   UNPROTECT(1);
   return ans;
 }
@@ -277,7 +284,7 @@ SEXP Ctest_find_first(SEXP x, SEXP K1, SEXP U) {
     // zero to the lookup table
     
     if (ui < k1[jk1]) {
-    
+      
       kp[ui - uminmax[0]] = 0U;
       continue; // main loop will eventually hit k1
     }
@@ -328,28 +335,34 @@ void ftc2(int * U0, int * U1, const int * k1, int N) {
   }
 }
 
-/*
+
 int cmpfunc(const void * a, const void * b) {
   return ( *(int*)a - *(int*)b );
+}
+
+int binary_find(int key, int * xp, int N) {
+  int * res = (int *)bsearch(&key, xp, N, sizeof(int), cmpfunc);
+  if (res) {
+    int indx = res - &xp[0];
+    while (indx >= 0 && xp[indx] == key) {
+      --indx;
+    }
+    return indx + 1; 
+  }
+  return -1;
 }
 
 SEXP do_bsearch(SEXP a, SEXP x) {
   if (TYPEOF(a) != INTSXP || TYPEOF(x) != INTSXP) {
     return R_NilValue;
   }
-  int * ap = INTEGER(a);
-  const int * xp = INTEGER(x);
+  int * xp = INTEGER(x);
   
   R_xlen_t N = xlength(x);
   int key = asInteger(a);
-  int * res = (int*)bsearch(&key, xp, N, sizeof(int), cmpfunc);
-  if (res) {
-    return ScalarInteger(*res);
-  } else {
-    return ScalarInteger(0);
-  }
+  return ScalarInteger(binary_find(key, xp, N) + 1);
 }
-*/
+
 
 
 

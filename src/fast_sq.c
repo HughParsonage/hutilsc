@@ -1,10 +1,10 @@
 #include "hutilsc.h"
 #include <xmmintrin.h>
 
-inline void SSESqrt_Recip_Times_X( float * restrict pOut, float * restrict pIn )
+inline void SSESqrt_Recip_Times_X(float * restrict pOut, float * restrict pIn )
 {
-  __m128 in = _mm_load_ss( pIn );
-  _mm_store_ss( pOut, _mm_mul_ss( in, _mm_rsqrt_ss( in ) ) );
+  __m128 ink = _mm_load_ss(pIn);
+  _mm_store_ss(pOut, _mm_mul_ss(ink, _mm_rsqrt_ss(ink)));
   // compiles to movss, movaps, rsqrtss, mulss, movss
 }
 
@@ -13,12 +13,11 @@ SEXP showsqrt_fast(SEXP x) {
   
 #ifndef _MSC_VER //Optimal
   #ifdef __AVX__
-     Rprintf("AV");
+     Rprintf("AVX-");
   #else
-      Rprintf("A");
+      Rprintf("NOT-AVX-");
   #endif
     
-  Rprintf("x");
   Rprintf("B");
 #else //TODO: not optimal when in AVX mode or when not inlined
   Rprintf("C");
@@ -45,6 +44,7 @@ inline float rsqrt_fast(float x) {
 #endif
 }
 
+
 float ssqrt_fast(float x) {
   /* https://stackoverflow.com/questions/32687079/getting-fewest-instructions-for-rsqrtss-wrapper */
 #ifndef _MSC_VER //Optimal
@@ -64,7 +64,20 @@ float ssqrt_fast(float x) {
 #endif
 }
 
-SEXP sqrt2(SEXP x) {
+double euclid_dist_d(double d0, double d1) {
+  float squared_dist = d0 * d0 + d1 * d1;
+  return (double)ssqrt_fast(squared_dist); 
+}
+
+double euclid_dist(double x0, double y0, double x1, double y1) {
+  double d0 = y0 - x0;
+  double d1 = y1 - x1;
+  float squared_dist = d0 * d0 + d1 * d1;
+  return (double)ssqrt_fast(squared_dist);
+}
+
+
+SEXP Csqrt2(SEXP x) {
   R_xlen_t N = xlength(x);
   if (!isReal(x)) {
     return R_NilValue;
@@ -108,3 +121,5 @@ SEXP euclid(SEXP x1, SEXP y1, SEXP x2, SEXP y2, SEXP uu) {
   UNPROTECT(1);
   return ans;
 }
+
+

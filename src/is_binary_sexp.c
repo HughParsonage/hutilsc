@@ -3,7 +3,7 @@
 
 SEXP is_binary_call(SEXP sx) {
   if (TYPEOF(sx) != LANGSXP) {
-    return_false;
+    ScalarLogical(0);
   }
   // does it have three elements?
   int len = 0;
@@ -25,11 +25,11 @@ SEXP is_binary_call(SEXP sx) {
   
   
   if (len != 3) {
-    return_false;
+    ScalarLogical(0);
   }
   
   if (TYPEOF(CAR(sx)) != SYMSXP) {
-    return_false;
+    ScalarLogical(0);
   }
   
   SEXP ans = PROTECT(allocVector(LGLSXP, 1));
