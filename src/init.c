@@ -31,7 +31,6 @@ extern SEXP CDist2(SEXP, SEXP, SEXP);
 extern SEXP Cego_net(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP CEncode3202(SEXP);
 extern SEXP CencodeRecordID(SEXP);
-extern SEXP Censeq(SEXP);
 extern SEXP CEnsure_fwc(SEXP);
 extern SEXP Censure_leq(SEXP, SEXP);
 extern SEXP Cevery_int32(SEXP, SEXP);
@@ -55,8 +54,10 @@ extern SEXP Cpad0(SEXP, SEXP);
 extern SEXP Cpcg_hash(SEXP, SEXP, SEXP, SEXP);
 extern SEXP Cpmax0(SEXP);
 extern SEXP Crange_nchar(SEXP);
+extern SEXP Crepe(SEXP, SEXP, SEXP);
+extern SEXP Crorder(SEXP, SEXP, SEXP);
 extern SEXP CShuffleRindex(SEXP);
-extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP Csimulate_racf(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Csqrt2(SEXP);
 extern SEXP Csum_int(SEXP);
 extern SEXP Csum_isna(SEXP, SEXP);
@@ -107,7 +108,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cego_net",                              (DL_FUNC) &Cego_net,                               7},
     {"CEncode3202",                           (DL_FUNC) &CEncode3202,                            1},
     {"CencodeRecordID",                       (DL_FUNC) &CencodeRecordID,                        1},
-    {"Censeq",                                (DL_FUNC) &Censeq,                                 1},
     {"CEnsure_fwc",                           (DL_FUNC) &CEnsure_fwc,                            1},
     {"Censure_leq",                           (DL_FUNC) &Censure_leq,                            2},
     {"Cevery_int32",                          (DL_FUNC) &Cevery_int32,                           2},
@@ -131,8 +131,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"Cpcg_hash",                             (DL_FUNC) &Cpcg_hash,                              4},
     {"Cpmax0",                                (DL_FUNC) &Cpmax0,                                 1},
     {"Crange_nchar",                          (DL_FUNC) &Crange_nchar,                           1},
+    {"Crepe",                                 (DL_FUNC) &Crepe,                                  3},
+    {"Crorder",                               (DL_FUNC) &Crorder,                                3},
     {"CShuffleRindex",                        (DL_FUNC) &CShuffleRindex,                         1},
-    {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                        12},
+    {"Csimulate_racf",                        (DL_FUNC) &Csimulate_racf,                        14},
     {"Csqrt2",                                (DL_FUNC) &Csqrt2,                                 1},
     {"Csum_int",                              (DL_FUNC) &Csum_int,                               1},
     {"Csum_isna",                             (DL_FUNC) &Csum_isna,                              2},

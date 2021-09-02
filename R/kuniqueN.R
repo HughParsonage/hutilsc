@@ -5,6 +5,10 @@
 #' By default, the first key of \code{x} is chosen. If \code{x} is an atomic
 #' vector, \code{k} is ignored (as \code{x} is assumed to be the elements of the
 #' key itself).
+#' 
+#' @param silent Should warnings should be emitted when encountering
+#' corner cases?
+#' 
 #' @export
 
 kuniqueN <- function(x, k = 1L, silent = FALSE) {

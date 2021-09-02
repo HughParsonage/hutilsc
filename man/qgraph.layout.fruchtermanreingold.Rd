@@ -24,6 +24,13 @@ qgraph.layout.fruchtermanreingold(
   digits = 5
 )
 }
+\arguments{
+\item{edgelist}{A \code{data.table} giving the edges.}
+
+\item{Ef, Et}{Integer vectors indicating the edges from and to.}
+
+\item{weights, vcount, niter, max.delta, area, cool.exp, repulse.rad, init, groups, rotation, layout.control, constraints, round, digits}{As in the \code{qgraph} equivalent.}
+}
 \description{
 Layout of nodes from edge weights
 }

@@ -8,13 +8,13 @@
 simulate_racf(
   STP,
   Resistance = NULL,
-  keyz = c("id", "racf_abm"),
   Epi = set_epipars(),
   PatientZeroGroup = NULL,
-  PatientZero = sample.int(kuniqueN(STP), size = 1),
+  PatientZero = NULL,
   n_days = 28L,
   Returner = 0L,
-  nThread = getOption("hutilsc.nThread", 1L)
+  nThread = getOption("hutilsc.nThread", 1L),
+  verbose = FALSE
 )
 
 set_epipars(
@@ -24,7 +24,7 @@ set_epipars(
   incubation_sigma = 0.44,
   v_workplaces = 0.1,
   q_workplace_rate = 1/14,
-  r_workplace_rate = 2
+  r_workplace = 2
 )
 }
 \arguments{
@@ -43,8 +43,6 @@ If \code{NULL}, the default, the resistance is uniformly
 distributed between \code{00} (255/256 chance of infection) and
 \code{ff} (0/256 chance of infection).}
 
-\item{keyz}{(Temporary)}
-
 \item{Epi}{Epidemiological parameters.}
 
 \item{PatientZeroGroup}{Not yet implemented.}
@@ -60,7 +58,13 @@ individuals is used.}
 \item{\code{0}}{A raw vector of length }
 }}
 
-\item{sir}{\code{double{3}} A vector.}
+\item{nThread}{Number of threads to use.}
+
+\item{verbose}{Print simulation logs?}
+
+\item{sir, incubation_distribution, incubation_mean, incubation_sigma, v_workplaces, q_workplace_rate}{Not yet used.}
+
+\item{r_workplace}{The rate of reproduction per workplace.}
 }
 \description{
 Simulate transmission through bipartite graph

@@ -1,7 +1,11 @@
 #' Layout of nodes from edge weights
 #' 
+#' @param edgelist A \code{data.table} giving the edges.
+#' @param Ef,Et Integer vectors indicating the edges from and to.
 #' 
+#' @param weights,vcount,niter,max.delta,area,cool.exp,repulse.rad,init,groups,rotation,layout.control,constraints,round,digits As in the \code{qgraph} equivalent.
 #' 
+#' @export
 
 qgraph.layout.fruchtermanreingold <- function(edgelist,
                                               Ef = .subset2(edgelist, key(edgelist)[1]),

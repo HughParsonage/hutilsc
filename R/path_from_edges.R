@@ -91,78 +91,7 @@ len_four_paths <- function(Edges, set_key = TRUE) {
   out[]
 }
 
-#' @name n_paths
-#' @title Number of paths between vertices
-#' @param s \code{int} A vertex in Edges. The origin of the paths.
-#' @param v \code{int} Optionally a vertex between \code{s} and \code{t}. If \code{NULL}, 
-#' \code{n_paths_svt} returns the number of shortest paths between \code{s} and \code{t}.
-#' @param t \code{int} A vertex in Edges. The destination.
-#' @param Edges A \code{data.table} designating the edgelist.
-#' 
-#' 
-#' @export
 
-n_paths_svt <- function(s = NULL, v = NULL, t = NULL, Edges, nPaths = NULL) {
-  stopifnot(is.data.table(Edges), length(key(Edges)) >= 2)
-  key_names <- key(Edges)[1:2]
-  
-  if (is.null(nPaths)) {
-    EdgesF <-
-      rbind(Edges, 
-            # Want the reverse direction too, hence use.names = FALSE
-            setcolorder(copy(Edges), rev(key_names)),
-            use.names = FALSE)
-    setkeyv(EdgesF, key_names)
-    nPaths0 <- n_paths_between_given_dist(EdgesF, return_dt = TRUE)
-    if (is.null(v)) {
-      return(nPaths0[.(s, t), n_paths])
-    }
-    
-    nPaths <- merge(nPaths0, nPaths0, 
-                    by.x = key_names[2], 
-                    by.y = key_names[1],
-                    allow.cartesian = TRUE, 
-                    suffixes = c(".x", ".y"))
-    nPaths_names3 <- c(key_names, paste0(key_names[2], ".y"))
-    setkeyv(nPaths, nPaths_names3)
-    set_cols_first(nPaths, nPaths_names3)
-  }
-  stopifnot(is.data.table(nPaths), ncol(nPaths) >= 3)
-  stopifnot(hasName(nPaths, paste0(key_names[2], ".y")))
-  
-  # Want the names to be the same for the merge
-  nPaths_names3 <- head(names(nPaths), 3)
-  stopifnot(head(names(Edges), 2) == head(names(nPaths), 2))
-  k1 <- .subset2(Edges, key(Edges)[1])
-  k2 <- .subset2(Edges, key(Edges)[2])
-  k1 <- ensure_integer(k1)
-  k2 <- ensure_integer(k2)
-  u <- union(k1, k2)
-  u <- u[order(u)]
-  if (!length(u) || is.na(last(u))) {
-    stop("length(u) == 0 or u = NA.")
-  }
-  if (!is.null(s)) {
-    # checkmate::assert_int(s, lower = u[1], upper = last(u))
-  } else {
-    s <- u
-  }
-  if (!is.null(t)) {
-    # checkmate::assert_int(t, lower = u[1], upper = last(u))
-  } else {
-    t <- u
-  }
-  nPaths[, n_paths_xy := n_paths.x * n_paths.y]
-  
-  if (!is.null(v)) {
-    # checkmate::assert_int(v, lower = u[1], upper = last(u))
-    return(nPaths[.(s, v, t), n_paths_xy])
-  } else {
-    nPaths_st <-
-      nPaths[, .(n_paths_xy = sum(n_paths_xy)), keyby = c(nPaths_names3[1], nPaths_names3[3])] 
-    return(nPaths_st[.(s, t), n_paths_xy])
-  }
-}
 
 
 dist_bw_edges <- function(Edges) {
@@ -208,63 +137,7 @@ dist_bw_edge_igraph <- function(Edges) {
 }
 
 
-#' @rdname n_paths
-#' @export
-n_paths_between_given_dist <- function(Edges, MoltenDistances = NULL, return_dt = TRUE) {
-  if (is.null(MoltenDistances)) {
-    if (!requireNamespace("igraph", quietly = TRUE)) {
-      stop("igraph not available, yet Distances = NULL.")
-    }
-    Graph <- igraph::graph_from_data_frame(Edges, directed = FALSE)
-    Distances <- igraph::distances(Graph)
-    MoltenDistances <-
-      melt(as.data.table(Distances, keep.rownames = "orig"),
-           id.vars = "orig",
-           variable.name = "dest",
-           variable.factor = FALSE,
-           value.name = "dist")
-    
-    as_int_inf <- function(x) {
-      if (is.integer(x)) {
-        return(x)
-      }
-      if (!is.double(x)) {
-        return(as.integer(x))
-      }
-      # handle Inf at c level (Infinite distance imply no paths)
-      o <- integer(length(x))
-      o[is.finite(x)] <- as.integer(x[is.finite(x)])
-      o
-    }
-    
-    MoltenDistances <- MoltenDistances[, lapply(.SD, as_int_inf)]
-    setkeyv(MoltenDistances, c("orig", "dest"))
-    hutils::set_cols_first(MoltenDistances, c("orig", "dest"))
-  }
-  stopifnot(is.data.frame(MoltenDistances),
-            length(MoltenDistances) == 3L)
-  j1 <- .subset2(MoltenDistances, 1L)
-  j2 <- .subset2(MoltenDistances, 2L)
-  D <- .subset2(MoltenDistances, 3L)
-  stopifnot(length(key(Edges)) >= 2)
-  k1 <- .subset2(Edges, key(Edges)[1])
-  k2 <- .subset2(Edges, key(Edges)[2])
-  k1 <- ensure_integer(k1)
-  k2 <- ensure_integer(k2)
-  u <- unique(c(k1, k2, j1, j2))
-  u <- u[order(u)]
-  K1 <- match(k1, u)
-  K2 <- match(k2, u)
-  J1 <- match(j1, u)
-  J2 <- match(j2, u)
-  uz <- match(u, u)
-  ans <- .Call("C_nPathsBetween_GivenDist", K1, K2, uz, J1, J2, D, PACKAGE = packageName())
-  if (isTRUE(return_dt)) {
-    MoltenDistances[, "n_paths" := ans]
-    return(MoltenDistances[])
-  }
-  ans
-}
+
 
 double_edgelist <- function(Edges) {
   k1 = key(Edges)[1]
@@ -315,63 +188,7 @@ melt_distances <- function(Edges, Distances = NULL) {
   hutils::set_cols_first(MoltenDistances, c("orig", "dest"))
 }
 
-#' @rdname n_paths
-#' @export
-n_paths_svt0 <- function(s, v = NULL, t, Edges,
-                         weight_col = 3L,
-                         MoltenDistances = NULL,
-                         double_edges = TRUE,
-                         nThread = getOption("hutilsc.nThread", 1L)) {
-  stopifnot(is.data.table(Edges), haskey(Edges), 
-            identical(key(Edges)[1:2], names(Edges)[1:2]))
-  if (is.null(MoltenDistances)) {
-    MoltenDistances <- melt_distances(Edges)
-  }
-  if (isTRUE(double_edges)) {
-    Edges <- setkeyv(unique(double_edgelist(Edges)), key(Edges))
-  }
-  j1 <- .subset2(MoltenDistances, 1L)
-  j2 <- .subset2(MoltenDistances, 2L)
-  D <- .subset2(MoltenDistances, 3L)
-  stopifnot(length(key(Edges)) >= 2)
-  k1 <- .subset2(Edges, key(Edges)[1])
-  k2 <- .subset2(Edges, key(Edges)[2])
-  W <- NULL
-  if (is.numeric(weight_col) && isTRUE(weight_col <= length(Edges))) {
-    W <- .subset2(Edges, weight_col)  
-  }
-  if (is.character(weight_col)) {
-    W <- .subset2(Edges, weight_col)
-  }
-  
-  k1 <- ensure_integer(k1)
-  k2 <- ensure_integer(k2)
-  u <- unique(c(k1, k2, j1, j2))
-  u <- u[order(u)]
-  if (length(u) > 255 && is.null(v)) {
-    stop("The number of nodes, length(u) = ", length(u), " > 255, which is not permitted.")
-  }
-  
-  cc <- identity
-  cc(K1 <- match(k1, u))
-  cc(K2 <- match(k2, u))
-  cc(J1 <- match(j1, u))
-  cc(J2 <- match(j2, u))
-  uz <- match(u, u)
-  
-  
-  
-  if (is.null(v)) {
-    .Call("Cn_paths_svt0", s, v, t, K1, K2, W, uz, J1, J2, D, nThread, PACKAGE = packageName())
-  } else {
-    .Call("Cn_paths_svt0",
-          s, v, t, 
-          K1, K2, W,
-          uz,
-          J1, J2, D, nThread, 
-          PACKAGE = packageName())
-  }
-}
+
 
 n_paths_igraph <- function(s, v = NULL, t, Edges) {
   if (!requireNamespace("igraph", quietly = TRUE)) {
@@ -431,15 +248,6 @@ myDists <- function() {
   Edges <- double_edgelist(Edges)
   # print(dist_bw_edges(Edges))
   dist_bw_edges(Edges)[, .N, keyby = .(dist)]
-}
-
-zzz <- function() {
-  hh_ss()
-  suppressMessages(libraries())
-  Edges <- fst::read_fst("~/nComm_by_RACF_Dec_geq10.fst", as.data = TRUE)
-  CJ1 <- CJ(1:41, 2:42)
-  CJ1[, s_t := n_paths_svt0(V1, NULL, V2, Edges = Edges)][]
-  
 }
 
 nFirstOrder <- function(id1, id2, nid2, nThread = 1L) {

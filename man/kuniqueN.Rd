@@ -14,6 +14,9 @@ elements is sought.
 By default, the first key of \code{x} is chosen. If \code{x} is an atomic
 vector, \code{k} is ignored (as \code{x} is assumed to be the elements of the
 key itself).}
+
+\item{silent}{Should warnings should be emitted when encountering
+corner cases?}
 }
 \description{
 The number of unique elements in a key

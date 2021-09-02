@@ -15,7 +15,6 @@
 #' distributed between \code{00} (255/256 chance of infection) and
 #'  \code{ff} (0/256 chance of infection). 
 #'  
-#' @param keyz (Temporary)
 #' 
 #' @param PatientZero \code{integer(nPatient)} An integer vector, the 
 #' starting index cases. By default a random sample of the number of 
@@ -28,43 +27,57 @@
 #' 
 #' @param n_days \code{integer(1)} Number of days to simulate.
 #' 
+
+#' 
 #' @param Returner The return type. An integer.
 #' \describe{
 #' \item{\code{0}}{A raw vector of length }
 #' }
+#' @param nThread Number of threads to use.
 #' 
+#' @param verbose Print simulation logs?
 #' 
-#' @export simulate_racf
-#' 
+#' @export
 simulate_racf <- function(STP, 
                           Resistance = NULL,
-                          keyz = c("id", "racf_abm"),
                           Epi = set_epipars(),
                           PatientZeroGroup = NULL,
-                          PatientZero = sample.int(kuniqueN(STP), size = 1),
+                          PatientZero = NULL,
                           n_days = 28L,
                           Returner = 0L,
-                          nThread = getOption("hutilsc.nThread", 1L)) {
+                          nThread = getOption("hutilsc.nThread", 1L),
+                          verbose = FALSE) {
+  force(PatientZero)
   stopifnot(is.integer(Returner), 
             length(Returner) == 1L)
   Returner <- coalesce(Returner, 0L)
+  
   if (missing(STP)) {
-    STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data = TRUE)
+    STP <- fst::read_fst(Sys.getenv("R_ATO_RACF_STP_FST"), as.data.table = TRUE)
     STP_Dec <- STP[Month == "Dec"]
     STP_Dec[, i := .I]
     stopifnot(is.character(STP_Dec[["racf_abn"]]))
     STP <- STP_Dec
+  } else {
+    STP <- copy(STP)
   }
-  PREP <- prepare_racf(STP, keyz)
+  if (is.null(PatientZero)) {
+    PatientZero <- sample.int(kuniqueN(STP), size = 1)
+  }
+  PREP <- prepare_racf(STP)
   u_id <- PREP[["u_id"]]
   stopifnot(is.integer(u_id))
   
   if (is.null(Resistance)) {
-    if (hasName(STP, "Resistance")) {
-      K1 <- .subset2(STP, key(STP)[1])
-      first_ids <- K1 != shift(K1, fill = -1L)
-      Resistance <- as.raw(.subset2(STP, "Resistance")[first_ids])
-    }
+    # if (hasName(STP, "Resistance")) {
+    #   K1 <- .subset2(STP, key(STP)[1])
+    #   first_ids <- K1 != shift(K1, fill = -1L)
+    #   Resistance <- as.raw(.subset2(STP, "Resistance")[first_ids])
+    # }
+  }
+  
+  if (length(Resistance) == 1L) {
+    Resistance <- rep.int(as.raw(Resistance), length(u_id))
   }
   
   if (!is.raw(Resistance) || length(Resistance) != length(u_id)) {
@@ -74,17 +87,20 @@ simulate_racf <- function(STP,
                            nThread = nThread)
   }
   
+  
   out <- 
     .Call("Csimulate_racf", 
           PREP[[1]], PREP[[2]],
           PREP[[3]], PREP[[4]],
           PREP[[5]], PREP[[6]],
+          .subset2(STP, "R1"),
           Resistance,
           PatientZero - 1L, 
           n_days,
-          list(), 
+          Epi, 
           Returner,
-          nThread)
+          nThread,
+          verbose)
   switch(as.character(Returner),
          "0" = out,
          "1" = out,
@@ -94,61 +110,49 @@ simulate_racf <- function(STP,
 }
 
 
-prepare_racf <- function(STP, keyz = c("id", "racf_abm")) {
+prepare_racf <- function(STP) {
   Resistance <- .subset2(STP, "Resistance")
   if (is.raw(Resistance)) {
     # Bad interplay with setkey
     
     STP[, Resistance := as.integer(Resistance)]
   }
-  if (identical(key(STP), c("id", "racf_abn"))) {
-    STP[, racf_abm := chmatch(racf_abn, unique(racf_abn))]
-    setkey(STP, id, racf_abm)
+  orig_keyz <- copy(key(STP))
+  if (length(orig_keyz) < 2) {
+    stop("length(key(STP)) = ", length(orig_keyz), ", but 2 key columns are required.")
   }
-  
-  if (STP[, first(id)] > 0L) {
-    STP[, id := id - first(id)]
-    setkey(STP, id, racf_abm)
+  orig_key1 <- orig_keyz[1]
+  orig_key2 <- orig_keyz[2]
+
+  if (!hasName(STP, "n_employers_per_month")) {
+    STP[, n_employers_per_month := .N, by = c(orig_key1)]
   }
+  setkeyv(STP, orig_keyz)
+  ok1 <- .subset2(STP, orig_key1)
+  ok2 <- .subset2(STP, orig_key2)
   
-  u_id <- STP[, unique(id)]
-  u_racf_abm <- STP[, unique(racf_abm)]
+  u1_id <- unique_sorted(ok1)
+  u2_id <- unique(ok2)
+  ok1 <- fmatch(ok1, u1_id) - 1L
+  ok2 <- fmatch(ok2, u2_id) - 1L
   
-  stopifnot(identical(keyz, c("id", "racf_abm")))  # just hardcode for now
-  stopifnot(is.data.table(STP),
-            # id, racf
-            length(key(STP)) >= 2L,
-            keyz %in% names(STP),
-            "n_employers_per_month" %in% names(STP))
-  
-  STP[, id := match(id, u_id) - 1L]
-  STP[, racf_abm := match(racf_abm, u_racf_abm) - 1L]
-  setkey(STP, id, racf_abm)
-  
-  id <- racf_abm <- NULL
-  id_racf <- STP[, .(id, racf_abm, n_employers_per_month)]
-  racf_id <- STP[, .(racf_abm, id)]
-  setkey(id_racf, id, racf_abm)
-  setkey(racf_id, racf_abm, id)
-  
-  K1 <- .subset2(id_racf, 1L)
-  K2 <- .subset2(id_racf, 2L)
-  J1 <- .subset2(racf_id, 1L)
-  J2 <- .subset2(racf_id, 2L)
+  DT1 <- data.table(ok1, ok2, key = c("ok1", "ok2"))
+  DT2 <- data.table(ok2, ok1, key = c("ok2", "ok1"))
+  K1 <- .subset2(DT1, 1L)
+  K2 <- .subset2(DT1, 2L)
+  J1 <- .subset2(DT2, 1L)
+  J2 <- .subset2(DT2, 2L)
   stopifnot(is.integer(K1),
             is.integer(K2),
             is.integer(J1),
             is.integer(J2))
-  racf_id[, n_employees := .N, by = .(racf_abm)]
-  racf_id[, i := .I]
+  DT2[, n_employees := .N, by = c("ok2")]
+  DT2[, i := 0:(.N - 1L)]
   
   iminmax_by_racf_id <- 
-    racf_id[, .(imin = min(i),
-                imax = max(i)), 
-            keyby = .(racf_abm)]
-  
-  iminmax_by_racf_id[, imin := imin - 1L]
-  iminmax_by_racf_id[, imax := imax - 1L]
+    DT2[, .(imin = min(i),
+            imax = max(i)), 
+        keyby = c("ok2")]
   
   IMIN <- .subset2(iminmax_by_racf_id, "imin")
   IMAX <- .subset2(iminmax_by_racf_id, "imax")
@@ -163,8 +167,8 @@ prepare_racf <- function(STP, keyz = c("id", "racf_abm")) {
        J2 = J2,
        IMIN = IMIN, 
        IMAX = IMAX,
-       u_id = u_id,
-       multi_employer = .subset2(id_racf, "n_employers_per_month") > 1L)
+       u_id = u1_id,
+       multi_employer = .subset2(DT1, "n_employers_per_month") > 1L)
 }
 
 
@@ -176,11 +180,17 @@ sample_prob <- function(n, prob) {
              c(n_false, n_true)))
 }
 
-
+repe <- function(x, y) {
+  .Call("Crepe", x, y, 6L, PACKAGE =)
+}
 
 
 #' @rdname simulate_racf
-#' @param sir \code{double{3}} A vector.
+#' @param sir,incubation_distribution,incubation_mean,incubation_sigma,v_workplaces,q_workplace_rate 
+#' Not yet used.
+#' 
+#' @param r_workplace The rate of reproduction per workplace.
+#' 
 #' @export
 set_epipars <- function(sir = c(1/5, 1/14),
                         incubation_distribution = c("dirac", "pois", "lnorm", "cauchy"), 
@@ -188,7 +198,7 @@ set_epipars <- function(sir = c(1/5, 1/14),
                         incubation_sigma = 0.44,
                         v_workplaces = 0.1,
                         q_workplace_rate = 1/14,
-                        r_workplace_rate = 2) {
+                        r_workplace = 2) {
   incubation_distribution <- match.arg(incubation_distribution)
   checkmate::assert_number(incubation_mean)
   checkmate::assert_number(incubation_sigma)
@@ -201,7 +211,7 @@ set_epipars <- function(sir = c(1/5, 1/14),
              incubation_sigma,
              v_workplaces,
              q_workplace_rate,
-             r_workplace_rate)
+             r_workplace)
 }
 
 
@@ -233,7 +243,7 @@ Simulate_all <- function(STP,
     stopifnot(is.character(STP_Dec[["racf_abn"]]))
     STP <- STP_Dec
   }
-  PREP <- prepare_racf(STP, keyz)
+  PREP <- prepare_racf(STP)
   u_id <- PREP[["u_id"]]
   stopifnot(hasName(PREP, "multi_employer"))
   
@@ -246,11 +256,15 @@ Simulate_all <- function(STP,
   }
   
   if (!is.raw(Resistance) || length(Resistance) != length(u_id)) {
-    Resistance <- pcg_hash(length(u_id),
-                           r = sample.int(1e9, size = 88),
-                           raw_result = TRUE, 
-                           nThread = nThread)
-    Resistance <- rep_len(Resistance[Resistance <= 128], length(Resistance))
+    if (length(Resistance) == 1) {
+      Resistance <- rep_len(Resistance, length(u_id))
+    } else {
+      Resistance <- pcg_hash(length(u_id),
+                             r = sample.int(1e9, size = 88),
+                             raw_result = TRUE, 
+                             nThread = nThread)
+      Resistance <- rep_len(Resistance[Resistance <= 128], length(Resistance))
+    }
   }
   # Only simulate multi-employer patients
   iter <- which(PREP[["multi_employer"]]) - 1L
@@ -261,12 +275,14 @@ Simulate_all <- function(STP,
             PREP[[1]], PREP[[2]],
             PREP[[3]], PREP[[4]],
             PREP[[5]], PREP[[6]],
+            rpois(length(PREP[[1]]), 1/8),
             Resistance,
             iter, 
             n_days,
             list(), 
             Returner,
-            nThread)
+            nThread,
+            FALSE)
   Sys_time <- Sys.time()
   ans <- 
     switch(Returner + 1L,

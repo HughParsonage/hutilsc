@@ -30,10 +30,7 @@ SEXP CValidate3202(SEXP x) {
       }
     }
   }
-  SEXP ans = PROTECT(allocVector(LGLSXP, 1));
-  LOGICAL(ans)[0] = TRUE;
-  UNPROTECT(1);
-  return ans;
+  return ScalarLogical(1);
 }
 
 SEXP CEncode3202(SEXP x) {

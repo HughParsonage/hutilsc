@@ -14,6 +14,7 @@
 pcg_hash <- function(n, r = NULL, raw_result = FALSE, nThread = getOption("hutilsc.nThread", 1L)) {
   if (is.null(r) || !is.integer(r)) {
     r <- .Random.seed
+    r <- sample(r)  # can't use the same random seed each time!
   }
   .Call("Cpcg_hash", as.double(n), r, nThread, raw_result, PACKAGE = packageName()) 
 }

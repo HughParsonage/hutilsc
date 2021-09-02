@@ -464,8 +464,18 @@ SEXP Cclique1(SEXP U, SEXP K1, SEXP K2, SEXP F1) {
         ansp[p2i] = color;
       }
     } else {
-      color = ansp[p1i];
-      ansp[p2i] = color;
+      if (ansp[p2i] && ansp[p2i] != ansp[p1i]) {
+        int min_color = (ansp[p2i] < ansp[p1i]) ? ansp[p2i] : ansp[p1i];
+        int max_color = (ansp[p2i] > ansp[p1i]) ? ansp[p2i] : ansp[p1i];
+        for (R_xlen_t j = 0; j < UN; ++j) {
+          if (ansp[j] == max_color) {
+            ansp[j] = min_color;
+          }
+        }
+      } else {
+        color = ansp[p1i];
+        ansp[p2i] = color;
+      }
     }
   }
   UNPROTECT(1);
@@ -536,86 +546,26 @@ SEXP Cfuse3(SEXP U, SEXP C, SEXP K1, SEXP K2) {
 
 // given a sequence, i_1, i_2, i_3
 // return the 1, 2, 3
-SEXP Censeq(SEXP x) {
+SEXP Censeq(SEXP x, SEXP ZeroBased) {
   R_xlen_t N = xlength(x);
-  if (TYPEOF(x) != INTSXP || N == 0) {
+  if (TYPEOF(x) != INTSXP || N == 0 || TYPEOF(ZeroBased) != LGLSXP) {
     return R_NilValue; // # nocov 
   }
+  const int zero_based = asLogical(ZeroBased);
   
   const int * xp = INTEGER(x);
-  int xminmax[2] = {xp[0], xp[0]};
-  Vminmax_i(xminmax, xp, N, 1);
-  // the minimum is present
-  // # nocov start
-  if (xminmax[1] - xminmax[0] > INT_MAX) {
-    warning("(Censeq)Large range.");
-    return R_NilValue;
-  }
-  
-  // We need the first entry in the sequence to be 1
-  if (xminmax[0] < 1) {
-    warning("(Censeq): xminmax[0] = %d < 1", xminmax[0]);
-    return R_NilValue;
-  }
-  unsigned int n_range = xminmax[1] - xminmax[0] + 1;
-  unsigned int dmin_from_1 = xminmax[0] - 1U;
-  // # nocov end
-  
-  // work out how many integers to subtract off
-  // e.g. 1, 3, 4, 5, 7
-  // want 1, 2, 3, 4, 5
-  //      0, 1, 1, 1, 2
-  // cumsum
-  
-  // First, detect the gaps (technically gaps[i] == 1 means 'no gap')
-  unsigned char * gaps = calloc(n_range, sizeof(char));
-  // # nocov start
-  if (gaps == NULL) {
-    warning("gaps could not be allocated");
-    return R_NilValue;
-  }
-  // # nocov end
-  
-  // Our x is basically a flawed ans, so we allocate the result here to
-  // allow ourselves to refer to ansp mostly
   SEXP ans = PROTECT(allocVector(INTSXP, N));
   int * restrict ansp = INTEGER(ans);
-  
-  for (R_xlen_t i = 0; i < N; ++i) {
-    int xi = xp[i];
-    ansp[i] = xi - dmin_from_1; // ensure it starts at 1;
-    int pi = ansp[i] - 1;
-    gaps[pi] |= 1; // opposite
+ 
+  int curr = zero_based ? 0 : 1;
+  ansp[0] = curr;
+  for (R_xlen_t i = 1; i < N; ++i) {
+    curr += xp[i] != xp[i - 1];
+    ansp[i] = curr;
   }
-  
-  
-  unsigned int * necessary_cumsum = malloc(sizeof(int) * n_range);
-  // # nocov start
-  if (necessary_cumsum == NULL) {
-    free(gaps);
-    free(necessary_cumsum);
-    UNPROTECT(1);
-    return R_NilValue;
-  }
-  // # nocov end
-  
-  necessary_cumsum[0] = 0U; // already established
-  for (R_xlen_t i = 1; i < n_range; ++i) {
-    necessary_cumsum[i] = necessary_cumsum[i - 1] + (1 - gaps[i]);
-  }
-  
-  
-  for (R_xlen_t i = 0; i < N; ++i) {
-    int xi = ansp[i];
-    int sub = necessary_cumsum[xi - 1];
-    ansp[i] -= sub;
-  }
-  free(necessary_cumsum);
-  free(gaps);
   UNPROTECT(1);
   return ans;
 }
-
 
 // Take a vertex, the order of that node,
 // and a vector (ansp) that records the order from the original
@@ -1112,7 +1062,7 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt,
     }
     
     const int * vp = INTEGER(vv);
-    int miss = 0;
+    
     if (!W_null) {
       for (int i = 0; i < M; ++i) {
         ansp[i] = NA_INTEGER;
@@ -1136,6 +1086,9 @@ SEXP Cn_paths_svt0(SEXP ss, SEXP vv, SEXP tt,
         ansp[i] = anspi;
       }
     } else {
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) 
+#endif
       for (R_xlen_t i = 0; i < M; ++i) {
         ansp[i] = NA_INTEGER;
         int s = sp[i];
@@ -1626,7 +1579,7 @@ SEXP C_nFirstOrder(SEXP id1, SEXP id2, SEXP nid2, SEXP nthreads) {
   int id2_minmax[2] = {INT_MAX, INT_MIN};
   const int * id1p = INTEGER(id1);
   const int * id2p = INTEGER(id2);
-  const int * nid2p = INTEGER(id2);
+  //const int * nid2p = INTEGER(id2);
   if (__builtin_expect(!sorted_int(id1p, N, nThread), 0)) {
     error("id1p was not sorted."); // # nocov
   }

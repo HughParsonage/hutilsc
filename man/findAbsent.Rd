@@ -9,6 +9,8 @@ findAbsent(x, nThread = getOption("hutilsc.nThread", 1L))
 \arguments{
 \item{x}{An integer vector, a proper subset of \code{1:N} with
 \code{N == length(x) + 1}.}
+
+\item{nThread}{Number of threads to use.}
 }
 \description{
 Demo of \code{xor} detection of absent value.

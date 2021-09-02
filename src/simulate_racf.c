@@ -16,6 +16,12 @@
 
 #define RET_ONE_INT_PER_PATIENTZ 2
 
+  // array of possible reinfections
+  // based on rpois(16, 2.2/8)
+static const unsigned int R16_WORKPLACE_DEFAULT[16] = 
+ {0, 1, 0, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 2};
+
 
 int wanyOutside(const int * x, R_xlen_t N) {
   int xminmax[2] = {INT_MAX, NA_INTEGER};
@@ -198,10 +204,24 @@ bool isnt_susceptible(int pidi,
                       unsigned char * infection_date,
                       const unsigned char * resistance,
                       unsigned char r) {
-  return (infection_date[pidi] == SUSCEPTIBLE_DATE) ||
+  return (infection_date[pidi] != SUSCEPTIBLE_DATE) ||
     is_resistant(pidi, resistance, r);
   
 }
+
+// from stats package
+/* get the list element named str, or return NULL */
+
+SEXP getListElement(SEXP list, const char *str) {
+  SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
+
+  for (R_len_t i = 0; i < length(list); i++)
+    if (strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
+     elmt = VECTOR_ELT(list, i);
+     break;
+   }
+   return elmt;
+ }
 
 
 void do_simulate(int thread,
@@ -231,7 +251,6 @@ void do_simulate(int thread,
   if (which_pid_is_zero >= N) {
     return; // patientZero not in pid so no infections possible
   }
-  
   while (which_pid_is_zero < N && pid[which_pid_is_zero] == patientZero) {
     RACF_INFECTED[wid[which_pid_is_zero]] += 1;
     ++which_pid_is_zero;
@@ -280,34 +299,37 @@ void do_simulate(int thread,
         // infect others by R factor
         // never more than 15 a day(!!)
         int new_infections = (R16_WORKPLACE[R16i] * RACF_INFECTED[widi]) & 15u;
+
         RACF_INFECTED[widi] += new_infections;
         RACF_NEW_INFECTIONS[widi] += new_infections;
         n_new_infections += new_infections;
       }
     }
     
-    
-    
     // Loop through each RACF, recording number of infections at each site
     for (int widj = 0; widj < MAX_WID; ++widj) {
-      int n_infections_widj = RACF_NEW_INFECTIONS[widj] & 31;
+      unsigned int n_infections_widj = RACF_NEW_INFECTIONS[widj] & 31u;
       if (n_infections_widj == 0) {
         continue;
       }
-      int widj_size = RACF_SIZE[widj];
+      unsigned int widj_size = RACF_SIZE[widj];
       if (widj_size < n_infections_widj) {
-        // number of infections exceeded
-        misc_failure[thread] = WIDJ_SMALL;
-        n_infections_widj = RACF_SIZE[widj] - 1;
+        n_infections_widj = RACF_SIZE[widj];
       }
       // so widj needs n_infections allocated
-      int idj[32] = {0};
-      sow_wjd_indices(idj, widj, n_infections_widj, m1, m2, m1_len, widj_size, thread);
+      // int idj[32] = {0};
+      int wid_lhs = m1[widj];
+      unsigned int r_ = trand_pcg(thread);
+      // int wid_rhs = m2[widj];
+      // sow_wjd_indices(idj, widj, n_infections_widj, m1, m2, m1_len, widj_size, thread);
       for (int k = 0; k < n_infections_widj; ++k) {
         // attempt infection for each target
-        int j = idj[k];
+        unsigned int j = k + r_;
+        j %= widj_size;
+        j += wid_lhs;
+        
         int pidj = pjd[j];
-        if (is_resistant(pidj, resistance, tpcg_sample1c(thread))) {
+        if (isnt_susceptible(pidj, infection_date, resistance, tpcg_sample1c(thread))) {
           continue;
         }
         // here we can deterministically infect subsets of each RACF
@@ -320,15 +342,18 @@ void do_simulate(int thread,
 }
 
 
+
 SEXP Csimulate_racf(SEXP K1, SEXP K2, 
                     SEXP J1, SEXP J2,
                     SEXP M1, SEXP M2,
+                    SEXP R1,
                     SEXP Resistance,
                     SEXP PatientZero,
                     SEXP nDays,
                     SEXP Epi,
                     SEXP Returner,
-                    SEXP nthreads) {
+                    SEXP nthreads,
+                    SEXP Verbose) {
   // K1, K2  -- from pid to wid
   // J1, J2  -- from wid to pid
   // M1, M2 -- the positions of wid
@@ -336,16 +361,27 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   // E2 Reproduction number
   
   
+  
   int np = 0;
   if (TYPEOF(Epi) != VECSXP) {
     error("Epi not list.");
   }
+  SEXP Epi_r_workplace = getListElement(Epi, "r_workplace");
+  bool use_epi_r_workplace = 
+  TYPEOF(Epi_r_workplace) == INTSXP && 
+  xlength(Epi_r_workplace) == 16;
+  const unsigned int * R16_WORKPLACE = 
+  use_epi_r_workplace ? 
+  ((const unsigned int * )INTEGER(Epi_r_workplace)) : 
+  R16_WORKPLACE_DEFAULT;
+
+
   if (notInt(Returner)) {
     error("Returner not INT."); // # nocov
   }
   const int returner = asInteger(Returner);
   
-  if (notEquiInt2(K1, K2)) {
+  if (notEquiInt3(K1, K2, R1)) {
     error("K1,K2 not equilength integer vectors."); // # nocov
   }
   if (notEquiInt3(K1, J1, J2)) {
@@ -365,7 +401,6 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   if (N >= (INT_MAX / 8)) {
     error("N >= INT_MAX / 8 (N = %d)", N);
   }
-  int N8 = N * 8;
   
   const int * pid = INTEGER(K1); 
   const int * wid = INTEGER(K2);
@@ -373,12 +408,14 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
   const int * pjd = INTEGER(J2);
   const int * m1 = INTEGER(M1);
   const int * m2 = INTEGER(M2);
+  const int * r1 = INTEGER(R1);
   int m1_len = length(M1);
   
   int nThread = as_nThread(nthreads);
   if (nThread > 8) {
     error("nThread > 8, not permitted for simulation.");
   }
+  const bool verbose = asLogical(Verbose) && nThread == 1;
   
   int minima[4] = {pid[0], wid[0], pjd[0], wjd[0]};
   int maxima[4] = {pid[0], wid[0], pjd[0], wjd[0]};
@@ -419,8 +456,8 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
       error("minima[%d] = %d != 0", i, minima[i]);
     }
   }
-  int n_persons = maxima[0];
-  if (n_persons != maxima[2]) {
+  int n_persons = maxima[0] + 1;
+  if (maxima[0] != maxima[2]) {
     error("maxima[0] != maxima[2]\n(%d != %d)", maxima[0], maxima[2]);
   }
   if (maxima[1] != maxima[3]) {
@@ -439,7 +476,7 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     error("wjd unsorted");
   }
   // length(Resistance) already known to be int
-  if ((length(Resistance) - 1) != n_persons) {
+  if (length(Resistance) != n_persons) {
     error("length(Resistance) = %d, yet n_persons = %d.", length(Resistance), n_persons);
   }
   const unsigned char * resistance = RAW(Resistance);
@@ -466,11 +503,6 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     unsigned int widi = wid[i];
     RACF_SIZE[widi] += 1;
   }
-  
-  // array of possible reinfections
-  // based on rpois(16, 2.2/8)
-  const unsigned int R16_WORKPLACE[16] = {0, 1, 0, 1, 1, 0, 0, 0,
-                                          0, 0, 0, 0, 0, 0, 0, 2};
   
   // index of Edgelist
   int * idx_pid = malloc(sizeof(int) * n_persons);
@@ -524,6 +556,9 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
       }
       
       for (unsigned int day = 1; day <= n_days; ++day) {
+        if (verbose) {
+          Rprintf("Day %d:\n", day);
+        }
         // each day
         // calculate the number of new infections at each RACF
         // then cycle through each person until infections exhausted
@@ -559,11 +594,9 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
             }
             continue;
           }
-          if (days_since_infection < INCUBATION_PERIOD) {
-            unsigned int R16i = pcg_sample1(16u);
-            // infect others by R factor
-            // never more than 15 a day(!!)
-            int new_infections = (R16_WORKPLACE[R16i] * RACF_INFECTED[widi]) & 15u;
+          if (days_since_infection < INCUBATION_PERIOD) {            
+            int new_infections = r1[i]; // (R16_WORKPLACE[R16i] * RACF_INFECTED[widi]) & 15u;
+            if (verbose && new_infections) Rprintf("\t(%d) => (%d) %d new_infections\n", pidi, widi, new_infections);
             RACF_INFECTED[widi] += new_infections;
             RACF_NEW_INFECTIONS[widi] += new_infections;
             n_new_infections += new_infections;
@@ -583,16 +616,18 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
           int widj_size = RACF_SIZE[widj];
           if (widj_size < n_infections) {
             // number of infections exceeded
-            misc_failure[thread] = WIDJ_SMALL;
+            // misc_failure[thread] = WIDJ_SMALL;
             n_infections = RACF_SIZE[widj] - 1;
           }
           // so widj needs n_infections allocated
           int idj[32] = {0};
           sow_wjd_indices(idj, widj, n_infections, m1, m2, m1_len, widj_size, thread);
           for (int k = 0; k < n_infections; ++k) {
+            if (verbose) Rprintf("\twidj = %d\n", widj);
             int j = idj[k];
             int pidj = pjd[j];
             if (is_resistant(pidj, resistance, tpcg_sample1c(thread))) {
+              if (verbose) Rprintf("\t\tpidj = %d resist\n", pidj);
               continue;
             }
             infection_dates[start + pidj] = day;
@@ -627,6 +662,12 @@ SEXP Csimulate_racf(SEXP K1, SEXP K2,
     unsigned char * infection_date5 = malloc(sizeof(char) * n_persons);
     if (!(infection_date0 && infection_date1 && infection_date2 && 
         infection_date3 && infection_date4 && infection_date5)) {
+      free(infection_date0);
+      free(infection_date1);
+      free(infection_date2);
+      free(infection_date3); 
+      free(infection_date4); 
+      free(infection_date5); 
       break;
     }
     SEXP ans = PROTECT(allocVector(INTSXP, nPatientZeroLeq10k)); ++np;

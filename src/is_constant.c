@@ -128,3 +128,39 @@ SEXP Cis_constant(SEXP x, SEXP nThread) {
   return R_NilValue;
 }
 
+SEXP Crepe(SEXP x, SEXP y, SEXP nthreads) {
+  R_xlen_t N = xlength(x);
+  if (notEquiInt2(x, y)) {
+    error("notEquiInt2(x, y)");
+  }
+  const int * xp = INTEGER(x);
+  const int * yp = INTEGER(y);
+  int nThread = as_nThread(nthreads);
+  R_xlen_t NN = 0;
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) reduction(+ : NN)
+#endif
+  for (R_xlen_t i = 0; i < N; ++i) {
+    NN += yp[i];
+  }
+  if (NN >= INT_MAX) {
+    error("NN >= INT_MAX");
+  }
+  
+  SEXP ans = PROTECT(allocVector(INTSXP, NN));
+  int * restrict ansp = INTEGER(ans);
+  for (R_xlen_t i = 0, k = 0; i < N; ++i) {
+    int ni = yp[i];
+    int xi = xp[i];
+    for (int j = 0; j < ni; ++j) {
+      ansp[k++] = xi;
+    }
+  }
+  UNPROTECT(1);
+  return ans;
+} 
+
+
+
+
+

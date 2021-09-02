@@ -11,10 +11,16 @@ ensure_leq <- function(k1, k2) {
   
 }
 
-enseq <- function(x, use = TRUE) {
-  if (use) {
-    .Call("Censeq", x, PACKAGE = packageName())
-  } else {
-    match(x, unique(sort(x) - min(x) + 1L))
+enseq <- function(x, use = TRUE, zero_based = FALSE) {
+  o <- match(x, x[order(x)])
+  if (isTRUE(zero_based)) {
+    return(o - 1L)
   }
+  o
 }
+
+hrorder <- function(x, o, nThread = getOption("hutilsc.nThread", 1L)) {
+  .Call("Crorder", x, o, nThread, PACKAGE = packageName())
+}
+
+

@@ -1,3 +1,7 @@
+library(hutilsc)
+library(data.table)
+
+bsearch <- hutilsc:::bsearch
 
 test_radix_find <- hutilsc:::test_radix_find
 test_radix_find_range <- hutilsc:::test_radix_find_range
@@ -66,7 +70,7 @@ for (i in seq_len(max(x))) {
                    i %in% x))
   expect_equal(hutilsc:::find_ftc(i, x, return_logical = FALSE), 
                match(i, x, nomatch = 0L))
-  expect_equal(hutilsc:::find_ftc(i, x, zero_based = TRUE), 
+  expect_equal(hutilsc:::find_ftc(i, x, zero_based = TRUE, return_logical = FALSE), 
                match(i, x, nomatch = 0L) - 1L)
 }
 

@@ -9,6 +9,7 @@
 #include <stdint.h> // for uint64_t rather than unsigned long long
 #include <stdbool.h>
 #include <math.h>
+#include <ctype.h>
 
 #if _OPENMP
 #include <omp.h>
@@ -43,7 +44,7 @@ extern int tens[10];
 
 // character
 bool all_digits_4_12(const char * xi);
-bool all_digits(const char * xi, size_t nchari);
+bool all_digits(const char * xi, int nchari);
 int char2int(const char * x, int s);
 int char12_to_int(const char * x);
 int nth_digit_of(int x, int n);
@@ -83,6 +84,7 @@ int binary_find(int key, int * xp, int N);
 // maxmin
 unsigned int amax(unsigned int x[], int n);
 int sxp_required(unsigned int x[], int n);
+int maxX(const int * x, R_xlen_t N, bool sx);
 int maxXY(const int * x, const int * y, R_xlen_t Nx, R_xlen_t Ny, bool sx, bool sy);
 void Vminmax_i(int minmax[], const int * x, R_xlen_t N, int nthreads);
 SEXP Cminmax(SEXP x, SEXP emptyResult, SEXP nThread);

@@ -59,10 +59,13 @@ SEXP Cpcg_hash(SEXP n, SEXP r, SEXP nthreads, SEXP rawres) {
   if (TYPEOF(r) == INTSXP && xlength(r) >= 32) {
     for (int i = 0; i < 32; ++i) {
       States[i] = (unsigned int)INTEGER_ELT(r, i);
+      rng_state = States[i];
     }
   } else {
+
     for (unsigned int i = 0; i < 32; ++i) {
       States[i] = i + 2U;
+      rng_state = 38u;
     }
   }
   SEXP ans = PROTECT(allocVector(raw_res ? RAWSXP : INTSXP, N));
@@ -97,6 +100,8 @@ SEXP Cpcg_hash(SEXP n, SEXP r, SEXP nthreads, SEXP rawres) {
       States[oi] = new_si;
     }
   }
+
+
   UNPROTECT(1);
   return ans;
 }

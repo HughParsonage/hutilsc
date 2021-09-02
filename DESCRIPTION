@@ -18,9 +18,9 @@ Imports:
     fastmatch,
     fst,
     hutils,
-    hutilscpp,
     igraph,
     utils
 Suggests: 
     tinytest,
+    hutilscpp,
     withr

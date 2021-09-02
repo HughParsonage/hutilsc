@@ -2,6 +2,11 @@
 
 int tens[10] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
 
+bool char_is_number(char x) {
+  unsigned int ux = x - '0';
+  return ux <= 9;
+}
+
 int char12_to_int(const char * x) {
   int o = 0;
   int ten = 1;
@@ -25,21 +30,22 @@ int char2int(const char * x, int s) {
 bool all_digits_4_12(const char * xi) {
   for (int j = 4; j < 12; ++j) {
     char xj = xi[j];
-    if (xj < '0' || xj > '9') {
+    if (!char_is_number(xi[j])) {
       return false;
     }
   }
   return true;
 }
 
-bool all_digits(const char * xi, size_t nchari) {
-  for (size_t j = 0; j < nchari; ++j) {
-    if (xi[j] < '0' || xi[j] > '9') {
+bool all_digits(const char * x, int n) {
+  for (int i = 0; i < n; ++i) {
+    if (!isdigit(x[i])) {
       return false;
     }
   }
   return true;
 }
+
 
 int ipow10(int n) {
   unsigned int j = n % 10U; 
@@ -297,5 +303,6 @@ SEXP CEnsure_fwc(SEXP x) {
   }
   return do_pad0(x, (const int)xminmax[1]);
 }
+
 
 
