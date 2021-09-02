@@ -14,7 +14,12 @@ n_paths_between_given_dist <- function(Edges, MoltenDistances = NULL, return_dt 
       stop("igraph not available, yet Distances = NULL.")
     }
     Graph <- igraph::graph_from_data_frame(Edges, directed = FALSE)
-    Distances <- igraph::distances(Graph)
+    if (nrow(Edges) > (sqrt(.Machine$integer.max) * 0.99)) {
+      stop("nrow(Edges) = ", nrow(Edges), " but this will cause a segfault in the igraph library.\n\t", 
+           "https://github.com/igraph/rigraph/issues/467\n",
+           "Consider an alternative representation.")
+    }
+    Distances <- igraph_distances(Graph)
     MoltenDistances <-
       melt(as.data.table(Distances, keep.rownames = "orig"),
            id.vars = "orig",

@@ -110,7 +110,7 @@ dist_bw_edges <- function(Edges) {
 
 dist_bw_edge_igraph <- function(Edges) {
   Graph <- igraph::graph_from_data_frame(Edges, directed = FALSE)
-  Distances <- igraph::distances(Graph)
+  Distances <- igraph_distances(Graph)
   MoltenDistances <-
     melt(as.data.table(Distances, keep.rownames = "orig"),
          id.vars = "orig",
@@ -161,7 +161,7 @@ melt_distances <- function(Edges, Distances = NULL) {
       stop("igraph not available, yet Distances = NULL.")
     }
     Graph <- igraph::graph_from_data_frame(Edges, directed = FALSE)
-    Distances <- igraph::distances(Graph)
+    Distances <- igraph_distances(Graph)
   }
   MoltenDistances <-
     melt(as.data.table(Distances, keep.rownames = "orig"),
